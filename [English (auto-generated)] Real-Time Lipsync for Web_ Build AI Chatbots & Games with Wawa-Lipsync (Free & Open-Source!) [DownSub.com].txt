@@ -1,0 +1,160 @@
+lip sync. When creating talking
+characters in 2D 3D games or AI powered
+chatbots, you need two things to make it
+convincing. The audio of what is being
+said and the mouth movements to visually
+represent it called lip sync for the
+synchronization between what you hear
+and what you see. For the audio, you can
+record it yourself, generate it with
+texttospech solutions like OpenAI or 11
+Labs, or you can even generate fun
+sounds like what Animal Crossing is
+doing.
+About lip sync and the solutions at our
+disposal for web experiences are
+limited. In my previous tutorials, I
+showed two of them using Asia as our TTS
+solution. The good part is that the data
+to do the lip sync is provided when
+generating the audio. The bad part is
+that Asia is expensive and not the most
+advanced solution to generate realistic
+speech from text. This is what I used in
+my teacher tutorial, but it's also the
+reason why I can keep the AI live as a
+free demo. The second alternative I
+found until now was to use Reubarb lip
+sync library. It's what I used in the
+virtual girlfriend tutorial. It takes an
+audio as an input and generates the
+lip-s sync data as an output. It's free
+and handle any audio source. In the
+virtual girlfriend scenario, I used 11
+Labs which is high quality and got very
+good results. Hey dear, how was your
+day? I missed you so much. Please don't
+go for so long. Seems perfect, right?
+The problem is that it is very slow to
+generate the data. Let's say we have a
+simple flow. We generate the text using
+AI. Then we generate the audio using AI.
+It can take up to a few seconds. By
+adding the rubar blipsing process, it
+adds a few seconds for a short audio and
+many more for longer ones. Not ideal.
+And I didn't even mention the fact it
+only runs server side. Meaning your back
+end should do the process for every
+request from every user. One of the
+project I'm working on is a
+professionalgrade 3D AI chatbot template
+including multiple scenarios. More to
+come about this in the future. But to
+make it happen, I need a fast, free, and
+effective solution. I knew real time was
+possible because many years ago for a
+similar VR use case, I used the Oculus
+Lipsync library with Unity.
+Unfortunately, no equivalent existed so
+far for the web browser. So, I decided
+to create mine. Wawa lips sync. Big
+frogs jump quickly. Vex that sharp duck
+zoom near. Before I show you how to use
+it, let's discuss what it is and how it
+works. Wawa lips sync is an open-source
+JavaScriptbased realtime lip sync
+library. While the main example is using
+3JS with the React 3 fiber, the library
+is written in Typescript and can work
+with any JS project you have with any
+framework. You can even use it to
+animate 2D characters. What it does is
+it analyze the last milliseconds of the
+audio signal and deduct the lip sync
+data called visim. A visim is the visual
+representation of a phone. For example,
+if you close your eyes and I say P, you
+will hear the sound P based on the sound
+I did. This is the P phonem. And to
+produce this sound, my lips will have to
+be pinched together. This is the visim.
+If I say P while you see my mouth wide
+open like this P, it's not very
+convincing. While for the O sound, my
+mouth will be open and slightly rounded.
+There is around a dozen of different
+visims. And the good part is that it
+only relies on the sound and not on the
+language. To be able to detect the phone
+based on the audio, we need to dissect
+it. To do so, we are using the analyzer
+node available on all the browsers. The
+graph you see is a visual representation
+of the played audio. The bars represents
+the volumes per group of frequencies.
+The legend on the bottom represent their
+frequencies and the moving white line is
+the centrid to understand the dynamic of
+the sound. With this we are already able
+to detect some sounds. Let's play a drum
+kick and visualize its frequency.
+It's around 80 Hz while a snare will be
+around 200 hertz. But this alone can't
+help us know exactly what phone we have.
+First, we need to identify the volume
+and frequencies over time. If it's a
+short burst of volume, it's surely a
+plausive like in the B or P sounds. If
+it's a sustained power, it's probably a
+vowel. We also have the fricative
+sounds. You can hear in the F or S sound
+that produce unique high frequencies. By
+combining all of this information, we
+can deduce which phone is played and
+assign the correct visim. I won't go too
+much into the details, but if you are
+curious, the code is open source. Feel
+free to look at the algorithm and even
+contribute to make it even better. Now,
+let's see how to use it within your JS
+projects. First, you need to install
+Wawa lip sync package with npm install
+Wawa lips sync. Then create a lip-s sync
+manager with new lip sync. After setting
+the source of the audio element you want
+to play, connect it to the lips sync
+manager with connect audio. Then you
+simply call process audio in a loop. For
+example, request animation frame. And
+you now have access to the visim
+property in the lip sync manager. This
+is what I'm using in the avatar
+component to render it smoothly on my 3D
+character. It's a simple plug-and-play
+solution to get visims in real time from
+any audio source. Don't be too surprised
+about the Liam voice with a woman face.
+Big frogs jump quickly vexed that sharp
+ducks zoom near. It was for testing
+purpose and we are in 2025. If you want
+to learn how to create and animate this
+character, you can check my dedicated
+tutorial. Or if you are new to 3D web
+development and want to build a solid
+foundation, consider exploring my
+course, React 3 Fiber: The Ultimate
+Guide to 3D Web Development, a
+project-based course with everything you
+need to know to start creating
+professional 3D web experiences with 3JS
+and React. Link in the description.
+Thank you for watching. I hope you enjoy
+this video. Please hit the like button
+to help this channel be more visible to
+other creative developers. Don't forget
+to subscribe to not miss my upcoming
+tutorials. If you want to continue your
+3D web development journey, have a look
+to my course or watch one of my other
+videos like this one available here.

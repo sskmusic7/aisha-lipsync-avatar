@@ -1,0 +1,52 @@
+{
+  "name": "multi-framework-lipsync-demo",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Multi-framework real-time lip synchronization demo using Wawa Lipsync library",
+  "main": "dist/index.html",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "type-check": "tsc --noEmit"
+  },
+  "keywords": [
+    "lipsync",
+    "wawa-lipsync",
+    "three.js",
+    "babylon.js",
+    "canvas",
+    "real-time",
+    "audio",
+    "speech",
+    "visemes",
+    "typescript",
+    "react"
+  ],
+  "author": "Multi-Framework Lipsync Demo",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/example/multi-framework-lipsync-demo"
+  },
+  "dependencies": {
+    "@babylonjs/core": "^8.27.0",
+    "@babylonjs/loaders": "^8.27.0",
+    "@react-three/drei": "^10.7.6",
+    "@react-three/fiber": "^9.3.0",
+    "@tweenjs/tween.js": "^25.0.0",
+    "@types/three": "^0.180.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "three": "^0.180.0",
+    "three-stdlib": "^2.36.0",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.5",
+    "wawa-lipsync": "^0.0.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.9",
+    "@vitejs/plugin-react": "^5.0.2"
+  }
+}
