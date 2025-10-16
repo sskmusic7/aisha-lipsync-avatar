@@ -4,7 +4,6 @@ import { geminiService } from "../services/geminiService";
 import { ttsService } from "../services/ttsService";
 import { ApiKeyManager } from "./ApiKeyManager";
 import { aishaRules } from "../services/aishaPersonalityRules";
-import { syllableAnalyzer } from "../services/syllableAnalyzer";
 
 export const ChatInterface = () => {
   const [messages, setMessages] = useState([
@@ -31,57 +30,6 @@ export const ChatInterface = () => {
   const messagesEndRef = useRef(null);
   const recognitionRef = useRef(null);
   const currentAudioRef = useRef(null);
-
-  // Helper functions for realistic audio feature generation
-  const getCentroidForViseme = (viseme) => {
-    const centroids = {
-      'sil': 0,
-      'aa': 800,   // Low frequency for "ah"
-      'E': 1200,   // Mid frequency for "eh"
-      'I': 1600,   // Higher frequency for "ih"
-      'O': 900,    // Low-mid frequency for "oh"
-      'U': 700,    // Low frequency for "oo"
-      'PP': 0,     // Silent for closed mouth
-      'FF': 2000,  // High frequency for fricatives
-      'SS': 3000,  // Very high frequency for "s"
-      'TH': 2500,  // High frequency for "th"
-      'DD': 1000,  // Mid frequency for "d/t"
-      'kk': 800,   // Low frequency for "k/g"
-      'CH': 1500,  // Mid-high frequency for "ch"
-      'nn': 600,   // Low frequency for "n"
-      'RR': 1100   // Mid frequency for "r"
-    };
-    return centroids[viseme] || 1000;
-  };
-
-  const getBandsForViseme = (viseme, intensity) => {
-    const baseBands = [0.1, 0.2, 0.3, 0.2, 0.1];
-    const visemeBands = {
-      'sil': [0, 0, 0, 0, 0],
-      'aa': [0.3, 0.4, 0.2, 0.1, 0.0],
-      'E': [0.2, 0.3, 0.3, 0.2, 0.0],
-      'I': [0.1, 0.2, 0.3, 0.3, 0.1],
-      'O': [0.3, 0.4, 0.2, 0.1, 0.0],
-      'U': [0.4, 0.3, 0.2, 0.1, 0.0],
-      'PP': [0, 0, 0, 0, 0],
-      'FF': [0.0, 0.1, 0.2, 0.3, 0.4],
-      'SS': [0.0, 0.0, 0.1, 0.3, 0.6],
-      'TH': [0.0, 0.1, 0.2, 0.4, 0.3],
-      'DD': [0.2, 0.3, 0.3, 0.2, 0.0],
-      'kk': [0.3, 0.4, 0.2, 0.1, 0.0],
-      'CH': [0.1, 0.2, 0.3, 0.3, 0.1],
-      'nn': [0.3, 0.4, 0.2, 0.1, 0.0],
-      'RR': [0.2, 0.3, 0.3, 0.2, 0.0]
-    };
-    
-    const bands = visemeBands[viseme] || baseBands;
-    return bands.map(band => band * intensity);
-  };
-
-  const getDeltaBandsForViseme = (viseme, intensity) => {
-    const baseDelta = [0.05, 0.1, 0.15, 0.1, 0.05];
-    return baseDelta.map(delta => delta * intensity);
-  };
 
   // Auto-scroll to bottom of messages
   const scrollToBottom = () => {
@@ -189,7 +137,6 @@ export const ChatInterface = () => {
       console.log('🎤 Starting ultra-fast TTS with pre-buffered lip-sync...');
       console.log('🔍 LipsyncManager available:', !!lipsyncManager);
       console.log('🔍 LipsyncManager features:', lipsyncManager?.features);
-      console.log('🔍 TTS Service API key available:', !!ttsService.apiKey);
       
       // Use the new pre-buffering system for maximum responsiveness
       try {
@@ -225,70 +172,58 @@ export const ChatInterface = () => {
             utterance.voice = preferredVoice;
           }
 
-          // Simulate realistic syllable-based lip-sync movement
+          // Simulate lip-sync movement based on text content
           const simulateLipSync = () => {
-            console.log('🎭 Starting syllable-based lip-sync analysis...');
+            const words = text.toLowerCase().split(' ');
+            let wordIndex = 0;
             
-            // Analyze text into syllable movements
-            const movements = syllableAnalyzer.analyzeText(text);
-            console.log('📝 Generated', movements.length, 'syllable movements');
-            
-            let movementIndex = 0;
-            let currentTimeout = null;
-            
-            const playNextMovement = () => {
-              if (movementIndex >= movements.length) {
-                // End of speech - reset to silence
+            const lipSyncInterval = setInterval(() => {
+              if (wordIndex >= words.length) {
+                clearInterval(lipSyncInterval);
+                // Reset to silence at the end
                 if (lipsyncManager) {
                   lipsyncManager.viseme = 'sil';
                   lipsyncManager.state = 'silence';
-                  lipsyncManager.features = {
-                    volume: 0.0,
-                    centroid: 0,
-                    bands: [0, 0, 0, 0, 0],
-                    deltaBands: [0, 0, 0, 0, 0]
-                  };
                 }
-                console.log('🎭 Syllable-based lip-sync complete');
                 return;
               }
               
-              const movement = movements[movementIndex];
+              const word = words[wordIndex];
               
-              // Apply the viseme movement
+              // Simple viseme mapping based on word content
+              let viseme = 'sil';
+              if (word.includes('a') || word.includes('ah')) viseme = 'aa';
+              else if (word.includes('e') || word.includes('eh')) viseme = 'E';
+              else if (word.includes('i') || word.includes('ih')) viseme = 'I';
+              else if (word.includes('o') || word.includes('oh')) viseme = 'O';
+              else if (word.includes('u') || word.includes('uh')) viseme = 'U';
+              else if (word.includes('m') || word.includes('p') || word.includes('b')) viseme = 'PP';
+              else if (word.includes('f') || word.includes('v')) viseme = 'FF';
+              else if (word.includes('s') || word.includes('z')) viseme = 'SS';
+              else if (word.includes('th')) viseme = 'TH';
+              else if (word.includes('d') || word.includes('t')) viseme = 'DD';
+              else if (word.includes('k') || word.includes('g')) viseme = 'kk';
+              else if (word.includes('ch') || word.includes('j')) viseme = 'CH';
+              else if (word.includes('n')) viseme = 'nn';
+              else if (word.includes('r')) viseme = 'RR';
+              
+              // Manually set the viseme in the lipsync manager
               if (lipsyncManager) {
-                lipsyncManager.viseme = movement.viseme;
-                lipsyncManager.state = movement.viseme === 'sil' ? 'silence' : 'vowel';
-                
-                // Create realistic audio features based on movement
+                lipsyncManager.viseme = viseme;
+                lipsyncManager.state = viseme === 'sil' ? 'silence' : 'vowel';
+                // Simulate some audio features for visual feedback
                 lipsyncManager.features = {
-                  volume: movement.intensity * 0.4,
-                  centroid: getCentroidForViseme(movement.viseme),
-                  bands: getBandsForViseme(movement.viseme, movement.intensity),
-                  deltaBands: getDeltaBandsForViseme(movement.viseme, movement.intensity)
+                  volume: 0.3,
+                  centroid: 1000,
+                  bands: [0.1, 0.2, 0.3, 0.2, 0.1],
+                  deltaBands: [0.05, 0.1, 0.15, 0.1, 0.05]
                 };
               }
               
-              console.log(`🎭 Syllable ${movementIndex + 1}/${movements.length}:`, 
-                movement.sound || movement.syllable || 'unknown', 
-                '->', movement.viseme, 
-                `(${movement.duration}ms, ${(movement.intensity * 100).toFixed(0)}%)`);
+              console.log('🎭 Simulated lip-sync for word:', word, 'viseme:', viseme);
               
-              movementIndex++;
-              
-              // Schedule next movement
-              currentTimeout = setTimeout(playNextMovement, movement.duration);
-            };
-            
-            // Start the movement sequence
-            playNextMovement();
-            
-            // Return cleanup function
-            return () => {
-              if (currentTimeout) {
-                clearTimeout(currentTimeout);
-              }
-            };
+              wordIndex++;
+            }, 250); // Adjust timing based on speech rate
           };
 
           utterance.onstart = () => {

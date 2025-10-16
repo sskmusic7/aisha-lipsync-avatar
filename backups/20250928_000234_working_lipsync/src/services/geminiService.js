@@ -16,36 +16,27 @@ class GeminiService {
 
   // Initialize with API key from environment or prompt user
   async initialize() {
-    // Priority 1: Environment variable (set in Netlify)
+    // Try to get API key from environment first
     this.apiKey = import.meta.env.VITE_GEMINI_API_KEY;
     
-    if (this.apiKey) {
-      console.log('✅ Using Gemini API key from environment variables');
-      return !!this.apiKey;
-    }
-    
-    // Priority 2: localStorage (for local development)
-    this.apiKey = localStorage.getItem('gemini-api-key');
-    
-    if (this.apiKey) {
-      console.log('✅ Using Gemini API key from localStorage');
-      return !!this.apiKey;
-    }
-    
-    // Priority 3: Prompt user (fallback)
-    console.log('⚠️ No Gemini API key found in environment or localStorage');
-    this.apiKey = prompt(
-      'Please enter your Gemini API key\n\n' +
-      'To get your free API key:\n' +
-      '1. Go to https://makersuite.google.com/app/apikey\n' +
-      '2. Create a new API key\n' +
-      '3. Copy and paste it here\n\n' +
-      'Your key will be stored locally in your browser.\n\n' +
-      'NOTE: For production, set VITE_GEMINI_API_KEY in Netlify environment variables'
-    );
-    
-    if (this.apiKey) {
-      localStorage.setItem('gemini-api-key', this.apiKey);
+    if (!this.apiKey) {
+      // If no environment variable, prompt user for API key
+      this.apiKey = localStorage.getItem('gemini-api-key');
+      
+      if (!this.apiKey) {
+        this.apiKey = prompt(
+          'Please enter your Gemini API key\n\n' +
+          'To get your free API key:\n' +
+          '1. Go to https://makersuite.google.com/app/apikey\n' +
+          '2. Create a new API key\n' +
+          '3. Copy and paste it here\n\n' +
+          'Your key will be stored locally in your browser.'
+        );
+        
+        if (this.apiKey) {
+          localStorage.setItem('gemini-api-key', this.apiKey);
+        }
+      }
     }
     
     return !!this.apiKey;

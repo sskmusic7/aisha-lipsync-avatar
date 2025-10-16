@@ -35,47 +35,39 @@ class TTSService {
     // Try to get API key from environment first
     this.apiKey = import.meta.env.VITE_GCP_TTS_API_KEY;
     
-    if (this.apiKey) {
-      console.log('✅ Using Google Cloud TTS API key from environment variables');
-      return !!this.apiKey;
-    }
-    
-    // Priority 2: localStorage (for local development)
-    this.apiKey = localStorage.getItem('gcp-tts-api-key');
-    
-    if (this.apiKey) {
-      console.log('✅ Using Google Cloud TTS API key from localStorage');
-      return !!this.apiKey;
-    }
-    
-    // Priority 3: Prompt user (fallback)
-    console.log('⚠️ No Google Cloud TTS API key found in environment or localStorage');
-    const userWantsLipSync = confirm(
-      'Google Cloud TTS API key required for lip-sync support.\n\n' +
-      'Without this key, A.Isha will speak but her mouth won\'t move.\n\n' +
-      'To get your free API key:\n' +
-      '1. Go to https://console.cloud.google.com/\n' +
-      '2. Enable Text-to-Speech API\n' +
-      '3. Create credentials (API key)\n' +
-      '4. Copy the API key\n\n' +
-      'Click OK to enter your API key, or Cancel to continue without lip-sync.\n\n' +
-      'NOTE: For production, set VITE_GCP_TTS_API_KEY in Netlify environment variables'
-    );
-    
-    if (userWantsLipSync) {
-      this.apiKey = prompt(
-        'Please enter your Google Cloud Text-to-Speech API key:\n\n' +
-        'Your key will be stored locally in your browser for lip-sync support.'
-      );
-      
-      if (this.apiKey) {
-        localStorage.setItem('gcp-tts-api-key', this.apiKey);
-        console.log('✅ Google Cloud TTS API key set. Lip-sync will work!');
-      }
-    }
-    
     if (!this.apiKey) {
-      console.warn('⚠️ No Google Cloud TTS API key. Using Web Speech API fallback (no lip-sync).');
+      // If no environment variable, check localStorage
+      this.apiKey = localStorage.getItem('gcp-tts-api-key');
+      
+      if (!this.apiKey) {
+        // Prompt user for Google Cloud TTS API key for lip-sync support
+        const userWantsLipSync = confirm(
+          'Google Cloud TTS API key required for lip-sync support.\n\n' +
+          'Without this key, A.Isha will speak but her mouth won\'t move.\n\n' +
+          'To get your free API key:\n' +
+          '1. Go to https://console.cloud.google.com/\n' +
+          '2. Enable Text-to-Speech API\n' +
+          '3. Create credentials (API key)\n' +
+          '4. Copy the API key\n\n' +
+          'Click OK to enter your API key, or Cancel to continue without lip-sync.'
+        );
+        
+        if (userWantsLipSync) {
+          this.apiKey = prompt(
+            'Please enter your Google Cloud Text-to-Speech API key:\n\n' +
+            'Your key will be stored locally in your browser for lip-sync support.'
+          );
+          
+          if (this.apiKey) {
+            localStorage.setItem('gcp-tts-api-key', this.apiKey);
+            console.log('✅ Google Cloud TTS API key set. Lip-sync will work!');
+          }
+        }
+        
+        if (!this.apiKey) {
+          console.log('⚠️ No GCP TTS API key found. A.Isha will speak but without lip-sync.');
+        }
+      }
     }
     
     return true; // Always return true since we have fallback
@@ -179,9 +171,6 @@ class TTSService {
       const remainingDelay = Math.max(0, this.preBufferConfig.delayMs - timeSincePreBuffer);
       
       console.log(`⏱️ Scheduling audio playback in ${remainingDelay}ms for perfect sync`);
-      console.log('🔍 Pre-buffer start time:', this.preBufferState.preBufferStartTime);
-      console.log('🔍 Current time:', now);
-      console.log('🔍 Time since pre-buffer:', timeSincePreBuffer);
       
       // Schedule playback for perfect synchronization
       const playAudio = () => {
@@ -190,14 +179,7 @@ class TTSService {
         // CRITICAL: Connect the actual playback audio to lipsync manager
         if (lipsyncManager) {
           console.log('🔗 Connecting playback audio to lipsync manager...');
-          try {
-            lipsyncManager.connectAudio(audio);
-            console.log('✅ Audio successfully connected to lipsync manager');
-          } catch (error) {
-            console.error('❌ Failed to connect audio to lipsync manager:', error);
-          }
-        } else {
-          console.error('❌ No lipsyncManager provided for audio connection');
+          lipsyncManager.connectAudio(audio);
         }
         
         audio.play().then(() => {
@@ -207,15 +189,10 @@ class TTSService {
 
       if (remainingDelay <= 0) {
         // Pre-buffer time has passed, play immediately
-        console.log('🚀 Pre-buffer complete, playing immediately');
         playAudio();
       } else {
         // Wait for the remaining delay
-        console.log(`⏰ Waiting ${remainingDelay}ms before playback...`);
-        setTimeout(() => {
-          console.log('⏰ Delay complete, starting playback...');
-          playAudio();
-        }, remainingDelay);
+        setTimeout(playAudio, remainingDelay);
       }
 
       // Set up event handlers
@@ -369,8 +346,7 @@ class TTSService {
     try {
       // Try Google Cloud TTS first if API key is available
       if (this.apiKey && !voiceConfig.forceWebAPI) {
-        console.log('✅ Using Google Cloud TTS with pre-buffering');
-        console.log('🔍 API Key available, lipsyncManager provided:', !!lipsyncManager);
+        console.log('Using Google Cloud TTS with pre-buffering');
         const audioUrl = await this.synthesizeSpeechGCP(text, voiceConfig);
         
         if (returnAudioUrl) {
@@ -405,14 +381,7 @@ class TTSService {
               // CRITICAL: Connect audio to lipsync manager for mouth movement
               if (lipsyncManager) {
                 console.log('🔗 Connecting standard audio to lipsync manager...');
-                try {
-                  lipsyncManager.connectAudio(audio);
-                  console.log('✅ Standard audio successfully connected to lipsync manager');
-                } catch (error) {
-                  console.error('❌ Failed to connect standard audio to lipsync manager:', error);
-                }
-              } else {
-                console.error('❌ No lipsyncManager provided for standard audio connection');
+                lipsyncManager.connectAudio(audio);
               }
               
               audio.onended = () => {

@@ -9,7 +9,7 @@ export default defineConfig({
     alias: {
       "wawa-lipsync": path.resolve(
         __dirname,
-        "./src/lib/wawa-lipsync"
+        "../../packages/wawa-lipsync/src"
       ),
     },
   },
