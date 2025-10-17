@@ -1,11 +1,14 @@
 # Netlify Configuration for A.Isha Lipsync Avatar
 
 [build]
+  # Base directory where the build should run
+  base = "wawa-lipsync/examples/lipsync-demo"
+  
   # Build command
   command = "npm run build"
   
   # Directory with the final build output
-  publish = "dist"
+  publish = "wawa-lipsync/examples/lipsync-demo/dist"
   
   # Environment variables for build
   [build.environment]
