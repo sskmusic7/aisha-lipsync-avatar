@@ -32,12 +32,12 @@ class TTSService {
 
   // Initialize with API key
   async initialize() {
-    // Try to get API key from environment first
+    // Priority 1: Environment variable (set in Netlify)
     this.apiKey = import.meta.env.VITE_GCP_TTS_API_KEY;
     
     if (this.apiKey) {
       console.log('✅ Using Google Cloud TTS API key from environment variables');
-      return !!this.apiKey;
+      return true;
     }
     
     // Priority 2: localStorage (for local development)
@@ -45,40 +45,12 @@ class TTSService {
     
     if (this.apiKey) {
       console.log('✅ Using Google Cloud TTS API key from localStorage');
-      return !!this.apiKey;
+      return true;
     }
     
-    // Priority 3: Prompt user (fallback)
-    console.log('⚠️ No Google Cloud TTS API key found in environment or localStorage');
-    const userWantsLipSync = confirm(
-      'Google Cloud TTS API key required for lip-sync support.\n\n' +
-      'Without this key, A.Isha will speak but her mouth won\'t move.\n\n' +
-      'To get your free API key:\n' +
-      '1. Go to https://console.cloud.google.com/\n' +
-      '2. Enable Text-to-Speech API\n' +
-      '3. Create credentials (API key)\n' +
-      '4. Copy the API key\n\n' +
-      'Click OK to enter your API key, or Cancel to continue without lip-sync.\n\n' +
-      'NOTE: For production, set VITE_GCP_TTS_API_KEY in Netlify environment variables'
-    );
-    
-    if (userWantsLipSync) {
-      this.apiKey = prompt(
-        'Please enter your Google Cloud Text-to-Speech API key:\n\n' +
-        'Your key will be stored locally in your browser for lip-sync support.'
-      );
-      
-      if (this.apiKey) {
-        localStorage.setItem('gcp-tts-api-key', this.apiKey);
-        console.log('✅ Google Cloud TTS API key set. Lip-sync will work!');
-      }
-    }
-    
-    if (!this.apiKey) {
-      console.warn('⚠️ No Google Cloud TTS API key. Using Web Speech API fallback (no lip-sync).');
-    }
-    
-    return true; // Always return true since we have fallback
+    // No API key available - will use Web Speech API fallback
+    console.warn('⚠️ No Google Cloud TTS API key found. Using Web Speech API fallback (no lip-sync). Set VITE_GCP_TTS_API_KEY in Netlify environment variables for full functionality.');
+    return false; // No GCP TTS, but fallback is available
   }
 
   // Clear stored API key

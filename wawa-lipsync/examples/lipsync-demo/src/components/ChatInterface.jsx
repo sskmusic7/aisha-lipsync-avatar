@@ -22,6 +22,10 @@ export const ChatInterface = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [showApiManager, setShowApiManager] = useState(false);
   const [showPreBufferConfig, setShowPreBufferConfig] = useState(false);
+  const [apiStatus, setApiStatus] = useState({
+    gemini: false,
+    tts: false
+  });
   const [preBufferSettings, setPreBufferSettings] = useState({
     enabled: true,
     delayMs: 200,
@@ -125,6 +129,25 @@ export const ChatInterface = () => {
     ttsService.configurePreBuffer(preBufferSettings);
   }, [preBufferSettings]);
 
+  // Initialize API services
+  useEffect(() => {
+    const initializeServices = async () => {
+      console.log('🔧 Initializing API services...');
+      
+      // Initialize Gemini service
+      const geminiInitialized = await geminiService.initialize();
+      setApiStatus(prev => ({ ...prev, gemini: geminiInitialized }));
+      
+      // Initialize TTS service
+      const ttsInitialized = await ttsService.initialize();
+      setApiStatus(prev => ({ ...prev, tts: ttsInitialized }));
+      
+      console.log('🔧 API Status:', { gemini: geminiInitialized, tts: ttsInitialized });
+    };
+    
+    initializeServices();
+  }, []);
+
   // Start/stop speech recognition
   const toggleSpeechRecognition = () => {
     if (!recognitionRef.current) {
@@ -157,6 +180,11 @@ export const ChatInterface = () => {
 
   // Send message to Gemini API
   const sendToGemini = async (message) => {
+    // Check if Gemini API is available
+    if (!apiStatus.gemini) {
+      return "I need a Gemini API key to respond. Please set VITE_GEMINI_API_KEY in Netlify environment variables or add to localStorage for local development.";
+    }
+    
     try {
       // Get conversation history (excluding the initial welcome message)
       const conversationHistory = messages.slice(1);
@@ -167,7 +195,7 @@ export const ChatInterface = () => {
       console.error('Error calling Gemini API:', error);
       
       if (error.message.includes('API key')) {
-        return "I need a valid Gemini API key to respond. Please refresh the page to set up your API key.";
+        return "I need a valid Gemini API key to respond. Please set VITE_GEMINI_API_KEY in Netlify environment variables.";
       } else if (error.message.includes('rate limit')) {
         return "I'm getting too many requests right now. Please wait a moment and try again.";
       } else {
@@ -184,6 +212,14 @@ export const ChatInterface = () => {
       // Stop any current microphone input
       if (isListening) {
         recognitionRef.current?.stop();
+      }
+      
+      // Check if TTS API is available
+      if (!apiStatus.tts) {
+        console.warn('⚠️ No TTS API key available. Using Web Speech API fallback (no lip-sync).');
+        // Use Web Speech API fallback with simulated lip-sync
+        await fallbackTextToSpeech(text);
+        return;
       }
       
       console.log('🎤 Starting ultra-fast TTS with pre-buffered lip-sync...');
@@ -373,7 +409,17 @@ export const ChatInterface = () => {
     <div className="flex flex-col h-full max-h-96 bg-white rounded-lg shadow-lg border">
       {/* Chat Header */}
       <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-t-lg">
-        <h3 className="font-semibold">🤖 AI Chat Assistant</h3>
+        <div className="flex flex-col">
+          <h3 className="font-semibold">🤖 AI Chat Assistant</h3>
+          <div className="flex items-center gap-2 text-xs opacity-90">
+            <span className={apiStatus.gemini ? "text-green-300" : "text-yellow-300"}>
+              {apiStatus.gemini ? "✅ Gemini" : "⚠️ Gemini"}
+            </span>
+            <span className={apiStatus.tts ? "text-green-300" : "text-yellow-300"}>
+              {apiStatus.tts ? "✅ TTS" : "⚠️ TTS"}
+            </span>
+          </div>
+        </div>
         <div className="flex items-center gap-2">
           {isSpeaking && (
             <div className="flex items-center gap-1">
