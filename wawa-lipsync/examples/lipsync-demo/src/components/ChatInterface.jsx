@@ -396,42 +396,6 @@ export const ChatInterface = () => {
     return baseDelta.map(delta => delta * intensity);
   };
 
-  // Start/stop speech recognition
-  const toggleSpeechRecognition = () => {
-    if (!recognitionRef.current) {
-      alert('Speech recognition not supported in this browser');
-      return;
-    }
-
-    if (isListening) {
-      recognitionRef.current.stop();
-      setIsListening(false);
-    } else {
-      // Stop any current speech first
-      if (isSpeaking) {
-        stopSpeaking();
-      }
-      recognitionRef.current.start();
-      setIsListening(true);
-    }
-  };
-
-  // Stop current speech
-  const stopSpeaking = () => {
-    if (currentAudioRef.current) {
-      currentAudioRef.current.pause();
-      currentAudioRef.current.currentTime = 0;
-    }
-    speechSynthesis.cancel();
-    setIsSpeaking(false);
-    
-    // Reset lipsync to silence
-    if (lipsyncManager) {
-      lipsyncManager.viseme = 'sil';
-      lipsyncManager.state = 'silence';
-    }
-  };
-
   // Handle sending a message
   const handleSendMessage = async (text = inputText) => {
     if (!text.trim() || isLoading) return;
