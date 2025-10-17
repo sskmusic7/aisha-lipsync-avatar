@@ -192,6 +192,3 @@ Remember: You're speaking to someone through a 3D avatar that can speak your res
 
 # Global instance
 aisha_rules = AishaPersonalityRules()
-
-
-

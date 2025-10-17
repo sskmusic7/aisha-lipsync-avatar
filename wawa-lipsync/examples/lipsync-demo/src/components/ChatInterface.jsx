@@ -4,7 +4,6 @@ import { geminiService } from "../services/geminiService";
 import { ttsService } from "../services/ttsService";
 import { ApiKeyManager } from "./ApiKeyManager";
 import { aishaRules } from "../services/aishaPersonalityRules";
-import { syllableAnalyzer } from "../services/syllableAnalyzer";
 
 export const ChatInterface = () => {
   const [messages, setMessages] = useState([
@@ -22,10 +21,6 @@ export const ChatInterface = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [showApiManager, setShowApiManager] = useState(false);
   const [showPreBufferConfig, setShowPreBufferConfig] = useState(false);
-  const [apiStatus, setApiStatus] = useState({
-    gemini: false,
-    tts: false
-  });
   const [preBufferSettings, setPreBufferSettings] = useState({
     enabled: true,
     delayMs: 200,
@@ -35,57 +30,6 @@ export const ChatInterface = () => {
   const messagesEndRef = useRef(null);
   const recognitionRef = useRef(null);
   const currentAudioRef = useRef(null);
-
-  // Helper functions for realistic audio feature generation
-  const getCentroidForViseme = (viseme) => {
-    const centroids = {
-      'sil': 0,
-      'aa': 800,   // Low frequency for "ah"
-      'E': 1200,   // Mid frequency for "eh"
-      'I': 1600,   // Higher frequency for "ih"
-      'O': 900,    // Low-mid frequency for "oh"
-      'U': 700,    // Low frequency for "oo"
-      'PP': 0,     // Silent for closed mouth
-      'FF': 2000,  // High frequency for fricatives
-      'SS': 3000,  // Very high frequency for "s"
-      'TH': 2500,  // High frequency for "th"
-      'DD': 1000,  // Mid frequency for "d/t"
-      'kk': 800,   // Low frequency for "k/g"
-      'CH': 1500,  // Mid-high frequency for "ch"
-      'nn': 600,   // Low frequency for "n"
-      'RR': 1100   // Mid frequency for "r"
-    };
-    return centroids[viseme] || 1000;
-  };
-
-  const getBandsForViseme = (viseme, intensity) => {
-    const baseBands = [0.1, 0.2, 0.3, 0.2, 0.1];
-    const visemeBands = {
-      'sil': [0, 0, 0, 0, 0],
-      'aa': [0.3, 0.4, 0.2, 0.1, 0.0],
-      'E': [0.2, 0.3, 0.3, 0.2, 0.0],
-      'I': [0.1, 0.2, 0.3, 0.3, 0.1],
-      'O': [0.3, 0.4, 0.2, 0.1, 0.0],
-      'U': [0.4, 0.3, 0.2, 0.1, 0.0],
-      'PP': [0, 0, 0, 0, 0],
-      'FF': [0.0, 0.1, 0.2, 0.3, 0.4],
-      'SS': [0.0, 0.0, 0.1, 0.3, 0.6],
-      'TH': [0.0, 0.1, 0.2, 0.4, 0.3],
-      'DD': [0.2, 0.3, 0.3, 0.2, 0.0],
-      'kk': [0.3, 0.4, 0.2, 0.1, 0.0],
-      'CH': [0.1, 0.2, 0.3, 0.3, 0.1],
-      'nn': [0.3, 0.4, 0.2, 0.1, 0.0],
-      'RR': [0.2, 0.3, 0.3, 0.2, 0.0]
-    };
-    
-    const bands = visemeBands[viseme] || baseBands;
-    return bands.map(band => band * intensity);
-  };
-
-  const getDeltaBandsForViseme = (viseme, intensity) => {
-    const baseDelta = [0.05, 0.1, 0.15, 0.1, 0.05];
-    return baseDelta.map(delta => delta * intensity);
-  };
 
   // Auto-scroll to bottom of messages
   const scrollToBottom = () => {
@@ -129,25 +73,6 @@ export const ChatInterface = () => {
     ttsService.configurePreBuffer(preBufferSettings);
   }, [preBufferSettings]);
 
-  // Initialize API services
-  useEffect(() => {
-    const initializeServices = async () => {
-      console.log('🔧 Initializing API services...');
-      
-      // Initialize Gemini service
-      const geminiInitialized = await geminiService.initialize();
-      setApiStatus(prev => ({ ...prev, gemini: geminiInitialized }));
-      
-      // Initialize TTS service
-      const ttsInitialized = await ttsService.initialize();
-      setApiStatus(prev => ({ ...prev, tts: ttsInitialized }));
-      
-      console.log('🔧 API Status:', { gemini: geminiInitialized, tts: ttsInitialized });
-    };
-    
-    initializeServices();
-  }, []);
-
   // Start/stop speech recognition
   const toggleSpeechRecognition = () => {
     if (!recognitionRef.current) {
@@ -180,11 +105,6 @@ export const ChatInterface = () => {
 
   // Send message to Gemini API
   const sendToGemini = async (message) => {
-    // Check if Gemini API is available
-    if (!apiStatus.gemini) {
-      return "I need a Gemini API key to respond. Please set VITE_GEMINI_API_KEY in Netlify environment variables or add to localStorage for local development.";
-    }
-    
     try {
       // Get conversation history (excluding the initial welcome message)
       const conversationHistory = messages.slice(1);
@@ -195,7 +115,7 @@ export const ChatInterface = () => {
       console.error('Error calling Gemini API:', error);
       
       if (error.message.includes('API key')) {
-        return "I need a valid Gemini API key to respond. Please set VITE_GEMINI_API_KEY in Netlify environment variables.";
+        return "I need a valid Gemini API key to respond. Please refresh the page to set up your API key.";
       } else if (error.message.includes('rate limit')) {
         return "I'm getting too many requests right now. Please wait a moment and try again.";
       } else {
@@ -214,18 +134,9 @@ export const ChatInterface = () => {
         recognitionRef.current?.stop();
       }
       
-      // Check if TTS API is available
-      if (!apiStatus.tts) {
-        console.warn('⚠️ No TTS API key available. Using Web Speech API fallback (no lip-sync).');
-        // Use Web Speech API fallback with simulated lip-sync
-        await fallbackTextToSpeech(text);
-        return;
-      }
-      
       console.log('🎤 Starting ultra-fast TTS with pre-buffered lip-sync...');
       console.log('🔍 LipsyncManager available:', !!lipsyncManager);
       console.log('🔍 LipsyncManager features:', lipsyncManager?.features);
-      console.log('🔍 TTS Service API key available:', !!ttsService.apiKey);
       
       // Use the new pre-buffering system for maximum responsiveness
       try {
@@ -261,70 +172,58 @@ export const ChatInterface = () => {
             utterance.voice = preferredVoice;
           }
 
-          // Simulate realistic syllable-based lip-sync movement
+          // Simulate lip-sync movement based on text content
           const simulateLipSync = () => {
-            console.log('🎭 Starting syllable-based lip-sync analysis...');
+            const words = text.toLowerCase().split(' ');
+            let wordIndex = 0;
             
-            // Analyze text into syllable movements
-            const movements = syllableAnalyzer.analyzeText(text);
-            console.log('📝 Generated', movements.length, 'syllable movements');
-            
-            let movementIndex = 0;
-            let currentTimeout = null;
-            
-            const playNextMovement = () => {
-              if (movementIndex >= movements.length) {
-                // End of speech - reset to silence
+            const lipSyncInterval = setInterval(() => {
+              if (wordIndex >= words.length) {
+                clearInterval(lipSyncInterval);
+                // Reset to silence at the end
                 if (lipsyncManager) {
                   lipsyncManager.viseme = 'sil';
                   lipsyncManager.state = 'silence';
-                  lipsyncManager.features = {
-                    volume: 0.0,
-                    centroid: 0,
-                    bands: [0, 0, 0, 0, 0],
-                    deltaBands: [0, 0, 0, 0, 0]
-                  };
                 }
-                console.log('🎭 Syllable-based lip-sync complete');
                 return;
               }
               
-              const movement = movements[movementIndex];
+              const word = words[wordIndex];
               
-              // Apply the viseme movement
+              // Simple viseme mapping based on word content
+              let viseme = 'sil';
+              if (word.includes('a') || word.includes('ah')) viseme = 'aa';
+              else if (word.includes('e') || word.includes('eh')) viseme = 'E';
+              else if (word.includes('i') || word.includes('ih')) viseme = 'I';
+              else if (word.includes('o') || word.includes('oh')) viseme = 'O';
+              else if (word.includes('u') || word.includes('uh')) viseme = 'U';
+              else if (word.includes('m') || word.includes('p') || word.includes('b')) viseme = 'PP';
+              else if (word.includes('f') || word.includes('v')) viseme = 'FF';
+              else if (word.includes('s') || word.includes('z')) viseme = 'SS';
+              else if (word.includes('th')) viseme = 'TH';
+              else if (word.includes('d') || word.includes('t')) viseme = 'DD';
+              else if (word.includes('k') || word.includes('g')) viseme = 'kk';
+              else if (word.includes('ch') || word.includes('j')) viseme = 'CH';
+              else if (word.includes('n')) viseme = 'nn';
+              else if (word.includes('r')) viseme = 'RR';
+              
+              // Manually set the viseme in the lipsync manager
               if (lipsyncManager) {
-                lipsyncManager.viseme = movement.viseme;
-                lipsyncManager.state = movement.viseme === 'sil' ? 'silence' : 'vowel';
-                
-                // Create realistic audio features based on movement
+                lipsyncManager.viseme = viseme;
+                lipsyncManager.state = viseme === 'sil' ? 'silence' : 'vowel';
+                // Simulate some audio features for visual feedback
                 lipsyncManager.features = {
-                  volume: movement.intensity * 0.4,
-                  centroid: getCentroidForViseme(movement.viseme),
-                  bands: getBandsForViseme(movement.viseme, movement.intensity),
-                  deltaBands: getDeltaBandsForViseme(movement.viseme, movement.intensity)
+                  volume: 0.3,
+                  centroid: 1000,
+                  bands: [0.1, 0.2, 0.3, 0.2, 0.1],
+                  deltaBands: [0.05, 0.1, 0.15, 0.1, 0.05]
                 };
               }
               
-              console.log(`🎭 Syllable ${movementIndex + 1}/${movements.length}:`, 
-                movement.sound || movement.syllable || 'unknown', 
-                '->', movement.viseme, 
-                `(${movement.duration}ms, ${(movement.intensity * 100).toFixed(0)}%)`);
+              console.log('🎭 Simulated lip-sync for word:', word, 'viseme:', viseme);
               
-              movementIndex++;
-              
-              // Schedule next movement
-              currentTimeout = setTimeout(playNextMovement, movement.duration);
-            };
-            
-            // Start the movement sequence
-            playNextMovement();
-            
-            // Return cleanup function
-            return () => {
-              if (currentTimeout) {
-                clearTimeout(currentTimeout);
-              }
-            };
+              wordIndex++;
+            }, 250); // Adjust timing based on speech rate
           };
 
           utterance.onstart = () => {
@@ -409,17 +308,7 @@ export const ChatInterface = () => {
     <div className="flex flex-col h-full max-h-96 bg-white rounded-lg shadow-lg border">
       {/* Chat Header */}
       <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-t-lg">
-        <div className="flex flex-col">
-          <h3 className="font-semibold">🤖 AI Chat Assistant</h3>
-          <div className="flex items-center gap-2 text-xs opacity-90">
-            <span className={apiStatus.gemini ? "text-green-300" : "text-yellow-300"}>
-              {apiStatus.gemini ? "✅ Gemini" : "⚠️ Gemini"}
-            </span>
-            <span className={apiStatus.tts ? "text-green-300" : "text-yellow-300"}>
-              {apiStatus.tts ? "✅ TTS" : "⚠️ TTS"}
-            </span>
-          </div>
-        </div>
+        <h3 className="font-semibold">🤖 AI Chat Assistant</h3>
         <div className="flex items-center gap-2">
           {isSpeaking && (
             <div className="flex items-center gap-1">
