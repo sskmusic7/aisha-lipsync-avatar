@@ -7,8 +7,8 @@
   # Build command
   command = "npm run build"
   
-  # Directory with the final build output
-  publish = "wawa-lipsync/examples/lipsync-demo/dist"
+  # Directory with the final build output (relative to base directory)
+  publish = "dist"
   
   # Environment variables for build
   [build.environment]
