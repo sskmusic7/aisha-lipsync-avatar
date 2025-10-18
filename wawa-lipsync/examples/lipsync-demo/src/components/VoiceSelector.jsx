@@ -6,8 +6,20 @@ export const VoiceSelector = ({ onVoiceChange, selectedVoiceId }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Popular ElevenLabs voices for A.Isha
+  // A.Isha's preferred ElevenLabs voices
   const defaultVoices = [
+    {
+      voice_id: 'vzb1D7zjti0h5u8StSra',
+      name: 'A.Isha (Primary)',
+      description: 'Smooth, expressive, perfect for A.Isha',
+      labels: { gender: 'Female', accent: 'American' }
+    },
+    {
+      voice_id: 'TfVjIROhkRShQb9pCFfK',
+      name: 'Keke',
+      description: 'Bold, sassy, Keke Palmer vibes',
+      labels: { gender: 'Female', accent: 'American' }
+    },
     {
       voice_id: '21m00Tcm4TlvDq8ikWAM',
       name: 'Rachel',
@@ -18,24 +30,6 @@ export const VoiceSelector = ({ onVoiceChange, selectedVoiceId }) => {
       voice_id: 'EXAVITQu4vr4xnSDxMaL',
       name: 'Bella',
       description: 'Young, energetic American female',
-      labels: { gender: 'Female', accent: 'American' }
-    },
-    {
-      voice_id: 'TxGEqnHWrfWFTfGW9XjX',
-      name: 'Josh',
-      description: 'Deep, confident American male',
-      labels: { gender: 'Male', accent: 'American' }
-    },
-    {
-      voice_id: 'vzb1D7zjti0h5u8StSra',
-      name: 'Aisha',
-      description: 'Smooth, expressive female',
-      labels: { gender: 'Female', accent: 'American' }
-    },
-    {
-      voice_id: 'TfVjIROhkRShQb9pCFfK',
-      name: 'Keke',
-      description: 'Bold, sassy female',
       labels: { gender: 'Female', accent: 'American' }
     }
   ];
@@ -53,9 +47,11 @@ export const VoiceSelector = ({ onVoiceChange, selectedVoiceId }) => {
       const apiVoices = await elevenLabsService.getVoices();
       setVoices(apiVoices);
       
-      // Set default voice if none selected
+      // Set default voice if none selected (prioritize A.Isha's custom voice)
       if (!selectedVoiceId && apiVoices.length > 0) {
-        const defaultVoice = apiVoices.find(v => v.name === 'Rachel') || apiVoices[0];
+        const defaultVoice = apiVoices.find(v => v.voice_id === 'vzb1D7zjti0h5u8StSra') || 
+                            apiVoices.find(v => v.voice_id === 'TfVjIROhkRShQb9pCFfK') ||
+                            apiVoices[0];
         onVoiceChange(defaultVoice.voice_id);
       }
     } catch (error) {

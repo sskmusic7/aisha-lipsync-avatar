@@ -25,7 +25,7 @@ export const ChatInterface = () => {
   const [showApiManager, setShowApiManager] = useState(false);
   const [showPreBufferConfig, setShowPreBufferConfig] = useState(false);
   const [showVoiceSelector, setShowVoiceSelector] = useState(false);
-  const [selectedVoiceId, setSelectedVoiceId] = useState('21m00Tcm4TlvDq8ikWAM'); // Default: Rachel
+  const [selectedVoiceId, setSelectedVoiceId] = useState('vzb1D7zjti0h5u8StSra'); // Default: A.Isha's custom voice
   const [apiStatus, setApiStatus] = useState({
     gemini: false,
     tts: false,

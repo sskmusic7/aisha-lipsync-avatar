@@ -48,7 +48,7 @@ class ElevenLabsService {
       throw new Error('ElevenLabs API key not available');
     }
 
-    const voiceId = options.voiceId || '21m00Tcm4TlvDq8ikWAM'; // Default: Rachel
+    const voiceId = options.voiceId || 'vzb1D7zjti0h5u8StSra'; // Default: A.Isha's custom voice
     const url = `${this.apiUrl}/text-to-speech/${voiceId}`;
     
     try {
@@ -84,7 +84,7 @@ class ElevenLabsService {
       throw new Error('ElevenLabs API key not available');
     }
 
-    const voiceId = options.voiceId || '21m00Tcm4TlvDq8ikWAM'; // Default: Rachel
+    const voiceId = options.voiceId || 'vzb1D7zjti0h5u8StSra'; // Default: A.Isha's custom voice
     const url = `${this.apiUrl}/text-to-speech/${voiceId}/with-timestamps`;
     
     try {
