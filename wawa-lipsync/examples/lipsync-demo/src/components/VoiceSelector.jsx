@@ -43,19 +43,16 @@ export const VoiceSelector = ({ onVoiceChange, selectedVoiceId }) => {
     setError(null);
     
     try {
-      // Try to load from API first
-      const apiVoices = await elevenLabsService.getVoices();
-      setVoices(apiVoices);
+      // Always use our curated A.Isha voices instead of API voices
+      console.log('🎤 Using curated A.Isha voices');
+      setVoices(defaultVoices);
       
       // Set default voice if none selected (prioritize A.Isha's custom voice)
-      if (!selectedVoiceId && apiVoices.length > 0) {
-        const defaultVoice = apiVoices.find(v => v.voice_id === 'vzb1D7zjti0h5u8StSra') || 
-                            apiVoices.find(v => v.voice_id === 'TfVjIROhkRShQb9pCFfK') ||
-                            apiVoices[0];
-        onVoiceChange(defaultVoice.voice_id);
+      if (!selectedVoiceId) {
+        onVoiceChange(defaultVoices[0].voice_id); // A.Isha (Primary)
       }
     } catch (error) {
-      console.warn('Failed to load voices from API, using defaults:', error);
+      console.warn('Failed to load voices, using defaults:', error);
       setError('Using default voices (API unavailable)');
       setVoices(defaultVoices);
       
@@ -75,7 +72,7 @@ export const VoiceSelector = ({ onVoiceChange, selectedVoiceId }) => {
   const previewVoice = async (voiceId, voiceName) => {
     try {
       const audioBlob = await elevenLabsService.textToSpeech(
-        `Hi, I'm A.Isha. This is my ${voiceName} voice. How do I sound?`,
+        `Hey bestie! I'm A.Isha, and this is my ${voiceName} voice. How do I sound? Pretty good, right?`,
         { voiceId }
       );
       
