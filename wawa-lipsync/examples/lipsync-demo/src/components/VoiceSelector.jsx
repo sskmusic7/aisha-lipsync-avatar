@@ -71,6 +71,14 @@ export const VoiceSelector = ({ onVoiceChange, selectedVoiceId }) => {
 
   const previewVoice = async (voiceId, voiceName) => {
     try {
+      console.log('🎤 Previewing voice:', voiceName, 'ID:', voiceId);
+      
+      // Check if ElevenLabs service is available
+      if (!elevenLabsService.apiKey) {
+        console.log('🔑 Initializing ElevenLabs service...');
+        await elevenLabsService.initialize();
+      }
+      
       const audioBlob = await elevenLabsService.textToSpeech(
         `Hey bestie! I'm A.Isha, and this is my ${voiceName} voice. How do I sound? Pretty good, right?`,
         { voiceId }
@@ -84,9 +92,18 @@ export const VoiceSelector = ({ onVoiceChange, selectedVoiceId }) => {
       };
       
       await audio.play();
+      console.log('✅ Voice preview successful');
     } catch (error) {
-      console.error('Failed to preview voice:', error);
-      alert('Failed to preview voice. Please check your ElevenLabs API key.');
+      console.error('❌ Failed to preview voice:', error);
+      
+      // More specific error message
+      if (error.message.includes('API key')) {
+        alert('ElevenLabs API key not found. Please check your Netlify environment variables.');
+      } else if (error.message.includes('network') || error.message.includes('fetch')) {
+        alert('Network error. Please check your internet connection.');
+      } else {
+        alert(`Failed to preview voice: ${error.message}`);
+      }
     }
   };
 

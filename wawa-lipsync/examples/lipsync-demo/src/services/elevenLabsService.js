@@ -44,6 +44,12 @@ class ElevenLabsService {
 
   // Basic text-to-speech conversion
   async textToSpeech(text, options = {}) {
+    // Ensure API key is available
+    if (!this.apiKey) {
+      // Try to get API key from environment or localStorage
+      this.apiKey = import.meta.env.VITE_ELEVENLABS_API_KEY || localStorage.getItem('elevenlabs-api-key');
+    }
+    
     if (!this.apiKey) {
       throw new Error('ElevenLabs API key not available');
     }
