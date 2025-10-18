@@ -80,7 +80,7 @@ export const VoiceSelector = ({ onVoiceChange, selectedVoiceId }) => {
       }
       
       const audioBlob = await elevenLabsService.textToSpeech(
-        `Hey bestie! I'm A.Isha, and this is my ${voiceName} voice. How do I sound? Pretty good, right?`,
+        `Hi, I'm A.Isha. How can I help you today?`,
         { voiceId }
       );
       
@@ -98,7 +98,11 @@ export const VoiceSelector = ({ onVoiceChange, selectedVoiceId }) => {
       
       // More specific error message
       if (error.message.includes('API key')) {
-        alert('ElevenLabs API key not found. Please check your Netlify environment variables.');
+        alert('ElevenLabs API key not found. Please check your environment variables.');
+      } else if (error.message.includes('quota_exceeded')) {
+        alert('Monthly character limit exceeded. Please upgrade your ElevenLabs plan.');
+      } else if (error.message.includes('Invalid voice ID')) {
+        alert('This voice is not available on your ElevenLabs plan. Try a different voice.');
       } else if (error.message.includes('network') || error.message.includes('fetch')) {
         alert('Network error. Please check your internet connection.');
       } else {

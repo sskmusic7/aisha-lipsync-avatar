@@ -6,6 +6,16 @@ class ElevenLabsService {
     this.apiKey = import.meta.env.VITE_ELEVENLABS_API_KEY;
     this.apiUrl = 'https://api.elevenlabs.io/v1';
     
+    // Free account compatible voices (pre-made voices only)
+    this.freeVoices = {
+      'rachel': '21m00Tcm4TlvDq8ikWAM',
+      'bella': 'EXAVITQu4vr4xnSDxMaL',
+      'antoni': 'ErXwobaYiN019PkySvjV',
+      'elli': 'MF3mGyEYCl7XYWbV9V6O',
+      'aisha': 'vzb1D7zjti0h5u8StSra', // Custom voice (may not work on free tier)
+      'keke': 'TfVjIROhkRShQb9pCFfK'   // Custom voice (may not work on free tier)
+    };
+    
     // Default voice settings for natural speech
     this.voiceSettings = {
       stability: 0.5,
@@ -51,10 +61,10 @@ class ElevenLabsService {
     }
     
     if (!this.apiKey) {
-      throw new Error('ElevenLabs API key not available');
+      throw new Error('ElevenLabs API key is missing. Please check your environment variables.');
     }
 
-    const voiceId = options.voiceId || 'vzb1D7zjti0h5u8StSra'; // Default: A.Isha's custom voice
+    const voiceId = options.voiceId || this.freeVoices.rachel; // Default to free-tier voice
     const url = `${this.apiUrl}/text-to-speech/${voiceId}`;
     
     try {
@@ -66,14 +76,26 @@ class ElevenLabsService {
           'xi-api-key': this.apiKey,
         },
         body: JSON.stringify({
-          text,
+          text: text.substring(0, 1000), // Limit for free tier
           model_id: options.modelId || 'eleven_monolingual_v1',
           voice_settings: options.voiceSettings || this.voiceSettings
         })
       });
 
       if (!response.ok) {
-        throw new Error(`ElevenLabs API error: ${response.statusText}`);
+        const error = await response.json().catch(() => ({}));
+        console.error('ElevenLabs API Error:', error);
+        
+        // Specific error handling
+        if (response.status === 401) {
+          throw new Error('Invalid API key. Please check your ElevenLabs API key.');
+        } else if (response.status === 422) {
+          throw new Error('Invalid voice ID or request format.');
+        } else if (error.detail?.status === 'quota_exceeded') {
+          throw new Error('Monthly character limit exceeded. Please upgrade your ElevenLabs plan.');
+        }
+        
+        throw new Error(`ElevenLabs API error: ${error.detail?.message || response.statusText}`);
       }
 
       const audioBlob = await response.blob();
@@ -126,10 +148,16 @@ class ElevenLabsService {
     }
   }
 
-  // Get available voices
+  // Get available voices (free-tier compatible)
   async getVoices() {
     if (!this.apiKey) {
-      throw new Error('ElevenLabs API key not available');
+      console.warn('No API key, returning default free-tier voices');
+      return [
+        { voice_id: this.freeVoices.rachel, name: 'Rachel', labels: { gender: 'Female', accent: 'American' }},
+        { voice_id: this.freeVoices.bella, name: 'Bella', labels: { gender: 'Female', accent: 'American' }},
+        { voice_id: this.freeVoices.elli, name: 'Elli', labels: { gender: 'Female', accent: 'American' }},
+        { voice_id: this.freeVoices.antoni, name: 'Antoni', labels: { gender: 'Male', accent: 'American' }}
+      ];
     }
 
     const url = `${this.apiUrl}/voices`;
@@ -147,10 +175,23 @@ class ElevenLabsService {
       }
 
       const data = await response.json();
-      return data.voices;
+      
+      // Filter for free-tier voices only (pre-made voices)
+      const freeTierVoices = data.voices.filter(voice => 
+        Object.values(this.freeVoices).includes(voice.voice_id)
+      );
+      
+      // If no free-tier voices found, return defaults
+      if (freeTierVoices.length === 0) {
+        console.warn('No free-tier voices found, using defaults');
+        return this.getVoices(); // Calls the fallback above
+      }
+      
+      return freeTierVoices;
     } catch (error) {
       console.error('Error fetching voices:', error);
-      throw error;
+      // Return default voices on error
+      return this.getVoices(); // Calls the fallback above
     }
   }
 

@@ -1,6 +1,7 @@
 import { Loader } from "@react-three/drei";
 import { Lipsync } from "wawa-lipsync";
 import { UI } from "./components/UI";
+import { DebugEnv } from "./components/DebugEnv";
 import { useEffect } from "react";
 
 // Optimize for faster, more responsive lip-sync
@@ -35,6 +36,7 @@ function App() {
     <>
       <Loader />
       <UI />
+      <DebugEnv />
     </>
   );
 }
