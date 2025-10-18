@@ -13,7 +13,7 @@ export const ChatInterface = () => {
     {
       id: 1,
       type: "assistant",
-      content: "What's good! I'm A.Isha, your AI assistant. You can speak to me or type a message, and I'll respond with both text and speech! How was your day, bestie?",
+      content: "What's good! I'm Ai'sha (pronounced 'aye-ey-shuh'), your AI assistant. You can speak to me or type a message, and I'll respond with both text and speech! How was your day, bestie?",
       timestamp: new Date()
     }
   ]);
@@ -452,7 +452,7 @@ export const ChatInterface = () => {
       {/* Chat Header */}
       <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-t-lg">
         <div className="flex flex-col">
-          <h3 className="font-semibold">🤖 A.Isha Chat Assistant</h3>
+          <h3 className="font-semibold">🤖 Ai'sha Chat Assistant</h3>
           <div className="flex items-center gap-2 text-xs opacity-90">
             <span className={apiStatus.gemini ? "text-green-300" : "text-yellow-300"}>
               {apiStatus.gemini ? "✅ Gemini" : "⚠️ Gemini"}
@@ -590,7 +590,7 @@ export const ChatInterface = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-96 overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">🎤 Select A.Isha's Voice</h2>
+              <h2 className="text-xl font-bold">🎤 Select Ai'sha's Voice</h2>
               <button
                 onClick={() => setShowVoiceSelector(false)}
                 className="text-gray-500 hover:text-gray-700 text-2xl"

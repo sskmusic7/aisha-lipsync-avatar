@@ -24,6 +24,7 @@ export function DebugEnv() {
       <div>🔑 ElevenLabs API: {hasApiKey ? '✅' : '❌'} {keyPreview}</div>
       <div>🌍 Environment: {import.meta.env.MODE}</div>
       <div>📅 Build: {new Date().toLocaleTimeString()}</div>
+      <div>👋 Ai'sha: Pronounced "aye-ey-shuh"</div>
     </div>
   );
 }

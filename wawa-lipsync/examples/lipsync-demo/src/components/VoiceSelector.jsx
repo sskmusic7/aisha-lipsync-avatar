@@ -6,12 +6,12 @@ export const VoiceSelector = ({ onVoiceChange, selectedVoiceId }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // A.Isha's preferred ElevenLabs voices
+  // Ai'sha's preferred ElevenLabs voices
   const defaultVoices = [
     {
       voice_id: 'vzb1D7zjti0h5u8StSra',
-      name: 'A.Isha (Primary)',
-      description: 'Smooth, expressive, perfect for A.Isha',
+      name: 'Ai\'sha (Primary)',
+      description: 'Smooth, expressive, perfect for Ai\'sha',
       labels: { gender: 'Female', accent: 'American' }
     },
     {
@@ -43,13 +43,13 @@ export const VoiceSelector = ({ onVoiceChange, selectedVoiceId }) => {
     setError(null);
     
     try {
-      // Always use our curated A.Isha voices instead of API voices
-      console.log('🎤 Using curated A.Isha voices');
+      // Always use our curated Ai'sha voices instead of API voices
+      console.log('🎤 Using curated Ai\'sha voices');
       setVoices(defaultVoices);
       
-      // Set default voice if none selected (prioritize A.Isha's custom voice)
+      // Set default voice if none selected (prioritize Ai'sha's custom voice)
       if (!selectedVoiceId) {
-        onVoiceChange(defaultVoices[0].voice_id); // A.Isha (Primary)
+        onVoiceChange(defaultVoices[0].voice_id); // Ai'sha (Primary)
       }
     } catch (error) {
       console.warn('Failed to load voices, using defaults:', error);
@@ -80,7 +80,7 @@ export const VoiceSelector = ({ onVoiceChange, selectedVoiceId }) => {
       }
       
       const audioBlob = await elevenLabsService.textToSpeech(
-        `Hi, I'm A.Isha. How can I help you today?`,
+        `Hi, I'm Ai'sha (pronounced 'aye-ey-shuh'). How can I help you today?`,
         { voiceId }
       );
       
@@ -123,7 +123,7 @@ export const VoiceSelector = ({ onVoiceChange, selectedVoiceId }) => {
   return (
     <div className="voice-selector bg-white rounded-lg p-4 shadow-lg">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-800">🎤 A.Isha's Voice</h3>
+        <h3 className="text-lg font-semibold text-gray-800">🎤 Ai'sha's Voice</h3>
         {error && (
           <span className="text-xs text-yellow-600 bg-yellow-100 px-2 py-1 rounded">
             {error}
@@ -178,7 +178,7 @@ export const VoiceSelector = ({ onVoiceChange, selectedVoiceId }) => {
       </div>
       
       <div className="mt-4 text-xs text-gray-500">
-        💡 Tip: Preview voices to find the perfect one for A.Isha's personality!
+        💡 Tip: Preview voices to find the perfect one for Ai'sha's personality!
       </div>
     </div>
   );
