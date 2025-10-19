@@ -48,7 +48,10 @@ export function Avatar(props) {
   const { actions, mixer } = useAnimations(availableAnimations, group);
   const [animation, setAnimation] = useState(() => {
     if (availableAnimations.length === 0) return null;
-    return availableAnimations.find((a) => a.name === "Idle") 
+    // Look for "idle talk" first, then "Idle", then first available animation
+    return availableAnimations.find((a) => a.name === "idle talk") 
+      ? "idle talk" 
+      : availableAnimations.find((a) => a.name === "Idle") 
       ? "Idle" 
       : availableAnimations[0]?.name || null;
   });
