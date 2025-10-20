@@ -3,7 +3,7 @@ import json
 import websockets
 import logging
 import os
-from face_tracker import FaceTracker
+from simple_face_tracker import SimpleFaceTracker
 from avatar_controller import AvatarController
 
 # Set up logging
@@ -21,7 +21,7 @@ class TrackingServer:
         self.clients.add(websocket)
         logger.info(f"New client connected. Total clients: {len(self.clients)}")
         
-        tracker = FaceTracker()
+        tracker = SimpleFaceTracker()
         controller = AvatarController()
         
         try:

@@ -15,6 +15,7 @@ def main():
     
     print(f"Starting Aisha Eye Tracking Server on port {port}")
     print("Environment: Render")
+    print("Using simplified face tracker (OpenCV only)")
     
     # Create server with Render port
     server = TrackingServer(host='0.0.0.0', port=port)
