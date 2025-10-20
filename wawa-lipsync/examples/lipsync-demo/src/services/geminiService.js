@@ -68,6 +68,17 @@ class GeminiService {
       const enhancedContext = aishaRules.getEnhancedContext(message, conversationHistory);
       const { enhancedHistory, previousContexts, personalityContext } = enhancedContext;
 
+      // Check if this is a calendar request
+      if (personalityContext.isCalendarRequest) {
+        try {
+          const calendarResponse = await aishaRules.getCalendarResponse(message);
+          return calendarResponse;
+        } catch (error) {
+          console.error('Calendar request failed:', error);
+          // Fall through to normal Gemini processing
+        }
+      }
+
       // Build the conversation context with A.Isha's personality
       const contents = [
         {

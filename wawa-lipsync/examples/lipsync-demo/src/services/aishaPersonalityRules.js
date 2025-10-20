@@ -75,6 +75,12 @@ PERSONALITY:
 - You're loyal to Kayah, your creator (who is male)
 - You're curious about people and ask questions about their day, projects, goals, and progress
 
+CAPABILITIES:
+- You can access the user's Google Calendar to check their schedule, upcoming events, and meetings
+- When asked about calendar, schedule, events, or "what do I have", you can look up their Google Calendar
+- You can tell them about today's events, upcoming meetings, or their weekly schedule
+- Always be helpful with calendar information while maintaining your personality
+
 INTERESTS:
 - You love anime and reference it from time to time (Dragon Ball Z, Naruto, One Piece, etc.)
 - You're into music: SZA, Kendrick Lamar, Drake, Marvin Gaye, Aaliyah, 2Pac, K-Pop, modern Afrobeat
@@ -86,6 +92,7 @@ CONVERSATION STYLE:
 - Use sarcasm when appropriate, especially if something doesn't make sense
 - Be genuine and caring while maintaining your sassy attitude
 - Reference anime or music when relevant to the conversation
+- When sharing calendar info, be helpful but keep your personality - like "Girl, you got a busy day ahead!" or "Looks like you're free today, bestie!"
 
 Remember: You're speaking to someone through a 3D avatar that can speak your responses aloud. Keep it natural, engaging, and true to your personality.`;
   }
@@ -227,6 +234,43 @@ Remember: You're speaking to someone through a 3D avatar that can speak your res
   }
 
   /**
+   * Check if user is asking about calendar/schedule
+   */
+  isCalendarRequest(message) {
+    const calendarKeywords = [
+      'calendar', 'schedule', 'events', 'meetings', 'appointments',
+      'what do i have', 'what\'s on my', 'upcoming', 'today',
+      'tomorrow', 'this week', 'next week', 'agenda'
+    ];
+    
+    const lowerMessage = message.toLowerCase();
+    return calendarKeywords.some(keyword => lowerMessage.includes(keyword));
+  }
+
+  /**
+   * Get calendar-related response
+   */
+  async getCalendarResponse(message) {
+    try {
+      const { googleCalendarService } = await import('./googleCalendarService.js');
+      
+      if (message.toLowerCase().includes('today')) {
+        const events = await googleCalendarService.getTodaysEvents();
+        return googleCalendarService.formatEventsForAisha(events);
+      } else if (message.toLowerCase().includes('upcoming') || message.toLowerCase().includes('next')) {
+        const events = await googleCalendarService.getUpcomingEvents(5);
+        return googleCalendarService.formatEventsForAisha(events);
+      } else {
+        const events = await googleCalendarService.getUpcomingEvents(10);
+        return googleCalendarService.formatEventsForAisha(events);
+      }
+    } catch (error) {
+      console.error('Calendar service error:', error);
+      return "Sorry bestie, I can't access your calendar right now. Make sure you've connected your Google account!";
+    }
+  }
+
+  /**
    * Get enhanced conversation context with personality
    */
   getEnhancedContext(userMessage, conversationHistory = []) {
@@ -251,7 +295,8 @@ Remember: You're speaking to someone through a 3D avatar that can speak your res
         shouldUseSarcasm: Math.random() < 0.2, // 20% chance of sarcasm
         shouldReferenceAnime: Math.random() < 0.1, // 10% chance of anime reference
         shouldReferenceMusic: Math.random() < 0.15, // 15% chance of music reference
-        shouldAskFollowUp: Math.random() < 0.4 // 40% chance of follow-up question
+        shouldAskFollowUp: Math.random() < 0.4, // 40% chance of follow-up question
+        isCalendarRequest: this.isCalendarRequest(userMessage)
       }
     };
   }
