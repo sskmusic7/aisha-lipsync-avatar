@@ -2,6 +2,7 @@ import asyncio
 import json
 import websockets
 import logging
+import os
 from face_tracker import FaceTracker
 from avatar_controller import AvatarController
 
@@ -10,9 +11,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class TrackingServer:
-    def __init__(self, host='localhost', port=8765):
+    def __init__(self, host='0.0.0.0', port=None):
         self.host = host
-        self.port = port
+        self.port = port or int(os.environ.get('PORT', 8765))
         self.clients = set()
     
     async def handle_client(self, websocket):
