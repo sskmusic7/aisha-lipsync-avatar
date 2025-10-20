@@ -7,7 +7,7 @@ This script handles the Render environment setup
 import os
 import sys
 import asyncio
-from websocket_server import TrackingServer
+from aiohttp_server import TrackingServer
 
 def main():
     # Get port from Render environment
@@ -15,6 +15,7 @@ def main():
     
     print(f"Starting Aisha Eye Tracking Server on port {port}")
     print("Environment: Render")
+    print("Using aiohttp server (HTTP + WebSocket)")
     print("Using simplified face tracker (OpenCV only)")
     
     # Create server with Render port
