@@ -1,0 +1,574 @@
+hi Welcome to our part number six of our
+online Sims experience today we will do
+three interesting things the first one
+will be to integrate Ready Player me
+avatars into our experience we won't be
+only using the ready player Me avatar as
+we did in the previous tutorial but we
+will be using the SDK to integrate the
+Avatar configurator directly into our
+project then in our interface we will
+add a button to let the player dance it
+will open you the door to make other
+actions and finally we will fix the way
+we handle the events of player movement
+to make it more optimized as always have
+a look at what we will build together in
+this
+[Music]
+episode
+as always let's start by cloning the
+previous part so part five to start
+building our F part go to code copy the
+https address and clone it then in the
+terminal go to the server folder run
+yarn to install the dependencies and run
+yarn Dev to start the development server
+then open another terminal go to the
+client run yarn to install the
+dependencies and yarn Dev to start the
+client development server you can click
+on the URL here to open the client when
+you open it you can see your previous
+character you can move in the room but
+it's empty because I disabled the object
+for the shop Let's reenable them open
+the index file from the server search
+for
+items and uncomment all the items
+here and you can save now our room is
+filled with objects we will see in in
+another tutorial how to save rooms and
+to create different rooms before adding
+the SDK we will change the Avatar to use
+my own Ready Player Me avatar go to
+animated woman first thing I think we
+can rename it to Avatar we will also
+rename the file and in
+experience instead of animated woman
+we'll be using Avatar there is a
+shortcut with F2 to do it but I chose
+the complication way Avatar we can open
+Avatar component add a new prop named
+Avatar
+URL and we will set the default to the
+URL of my model you can get it from a
+Ready Player me website so now instead
+of loading that Avatar that comes from
+our model folder here in public
+models we will be using the Avatar URL
+so we don't need any more below the the
+component to preload it but if we try to
+open it right now we will have issue
+because of the animation that don't fit
+that Avatar in my other tutorials like
+the portfolio or the lip sync tutorial I
+show you how to use mixam animations but
+now ready player me has an animation
+Library made for those avatars that we
+can use it's a GitHub repository and you
+have the different sections of Animation
+you can open it for example dense for
+male you can scroll and see the
+different animations they provide an fbx
+file that is not compatible out of the
+box with 3js and react 3 fiber so I made
+some research and I dived deeper into
+Ready Player me issues and by chance
+there was this issue the author is crazy
+Ramirez and he said that he converted
+all of them for Babylon JS into glb
+format and thanks to him he provided a
+repository with the glb animation that
+we can use and our compatible with 3js
+of course I will add the link in the
+description you can go to resources
+models animations and it's the same path
+Than Ready Player me Library masculine
+dense expression Idol it's the same but
+inside for example dence it's glb files
+for now we will need two ones let's go
+to masculine and we will need a standing
+Idol one so in the idol by the way we
+are using the masculine because the
+feminine are very too feminine on
+masculine model but the masculine one
+are okay for feminine we will be using
+standing Idol 001 we can download it
+here and we will also go to masculine
+Locomotion so it's for movements we'll
+search for walk not Crouch
+walk and we will be using the
+w001 GB of course try different ones and
+enjoy download it here in public let's
+create a new folder that we name
+animations and let's do drag and drop
+our two animations here now we have our
+two
+animations in our model we will starts
+by loading and preloading them we do the
+same use gltf do
+preload then it's
+animations and the name of the animation
+so it's m
+buul
+001b and same
+for standing Idol 001 now we can go on
+top of our component after loading the
+glb we will stop getting the materials
+and animations here from the model but
+we will load our
+animations One By One The const
+animations but we will name it like walk
+animation it would be equal to use gltf
+of the P of the work animation we do the
+same for idle
+animation and here the path is standing
+idle for use animations we need to pass
+an array of animations so it's an array
+of work animation of the first
+and the idol animation it's the first
+one because they only contain one
+animation each okay now we need to
+render our Avatar because it's a bit
+different from before here we don't need
+all of this that we got from the gtf
+file we'll be using a primitive the
+object we'll use is the Clone and we
+need a ref on our object we'll name it
+Avatar let's create this reference
+uh on top of it so con Avatar is equal
+to use reference and now we have it we
+will need to pass it to the use
+animation so it's based on this model
+here it's Avatar not on the parent group
+last change about the animations is here
+the name won't be character orature run
+but it will be the name of the animation
+so walk is for
+run and Idol
+it's standing idle
+001 it's the way it's named in inside
+the file let's also set it as the
+default animation when it starts now if
+we reload we can see our Avatar is in
+standing stance but if we move it you
+can see that our Avatar is moving more
+than it should it's because in the
+animation the character is also moving
+forward but we are already moving it to
+understand what inside our animation is
+moving our character we can import that
+animation in blender so go to file
+import glb go to client public
+animations and walk we can remove the
+cube here and we have our character
+animation here we can enlarge the bottom
+panel for the animation then hit a to
+have everything that is happening and we
+can look at the different parts to
+understand what is making our character
+moving so here if we play it manually
+you can see the character is moving we
+want it to stay at the main position at
+zero here we can disable some animations
+and if you disable location you can see
+it's the hips animation that is causing
+it knowing that you have two options the
+first one is to rework the animation and
+Export it as a glb or to make it generic
+and to be able to use different files
+without opening blender every time you
+can change the code to reset the
+position of the that very bone let's go
+to our use frame so every time we will
+reset the position of that bone so we
+need to get the hips because we know
+it's what is moving it will be equal to
+Avatar do current get object by name and
+hips of course you could store it
+elsewhere to not find it every time so
+it could um use less resources then you
+do hips
+Doos do set you want it to be on zero
+for the Y position I don't know it maybe
+it's moving up and down because of the
+hips moving so you can keep the actual
+position hips.
+positiony and zero let's try it and our
+character stay in place it's only us
+that control the movement now it's time
+to allow our players our users to change
+their Avatar using Ready Player me
+before we learned how to use our own
+avatar with the player login but this
+time we will be using the developer
+sections of Ready Player me let's go to
+developer login I have already done the
+registration process it's quite easy and
+it's free so I let you do it by yourself
+you will need to create an application
+it's what I did there you have different
+options available you will need to have
+a subdomain an app ID an organization ID
+and be sure to use the full body Avatar
+type because if you use only the upper
+part of the body you won't have the legs
+for our experience once you have it go
+to documentation and go to the react
+section open the quick start guide and
+let's install the SDK for react to open
+the terminal be sure you are in the
+client and we yarn add and the react SDK
+we can restart it and hide the terminal
+then what we need to do is to use Avatar
+Creator viewer it will display like an i
+frame into our experience we just need
+to pass the subdomain and we'll have an
+on Avatar exported event with the new
+URL of our Avatar so let's do it go to
+UI it's where we have all our user
+interface let's add another mode it
+doesn't need to be Global it's just
+related to the UI so we can directly use
+a state let's name it Avatar mode set
+Avatar mode use State let's make it true
+by default for now but later we will
+make it to false because it's an ey
+frame that need to be on top of
+everything we will put it
+separately so let's wrap everything into
+empty
+brackets and here if we have Avatar mode
+then we will add the SDK the component
+name is Avatar Creator it doesn't want
+to Auto Import it so I will do it
+manually import Avatar
+Creator from Ready Player me SL react
+Avatar Creator okay I just remember
+something the documentation state that
+package but if we go to the GitHub the
+one we install they say it's deprecated
+and we need to use RPM react Avatar
+Creator so let's install this one
+instead open the terminal stop
+everything we can remove the one we
+installed and add the correct one now we
+shouldn't have any more issue go to UI
+it should find it okay perfect and now
+we can continue our code we need to pass
+the sub domain so me it's wa Sensei
+tutorial we have a class name prop so we
+can style it with Tailwind so fixed top
+zero left zero put it on top of
+everything and make it full screen and
+finally there is an on Avatar exported
+when the user finish choosing its Avatar
+we have a call back function with an
+event
+console.log event. dat and inside we
+have the URL okay when you reload the
+experience you have it in a full screen
+but you can embedd it it to a model it's
+just me that decided this you can either
+use customize or select if you select it
+it will open this which is weird but it
+looks like it also trigger my event with
+the URL of the Avatar what we will do is
+when we have this event we will just
+close it let's see if it's also trigger
+like confirm I choose
+customize okay here the event isn't
+trigger and I will let the user choose
+it then they will use next and then the
+event will be triggered perfect so we
+know we want to do it so when we have
+this we want to close the model or the
+UI of the Avatar pier and we want to
+tell the server so with socket
+do emit we need to import the socket so
+do we have access to it socket manager
+it's exported so yeah yeah we can have
+access to it import socket from socket
+manager socket. emit we can name it
+character Avatar update and we pass
+event of data and URL let's handle this
+event in our server code open index of
+server find all our event handler here
+just below the character socket.
+on how did we name it it was character
+Avatar update and the function Handler
+we receive directly the Avatar URL and
+we need to implement our logic here we
+need to find the character of the socket
+open so the one that change it's
+Avatar so
+it's a fine with the ID is equal to
+socket ID then we will update the Avatar
+URL it will be Avatar URL and em
+characters with the list of new
+characters for now our characters didn't
+have Avatar URL so let's add the default
+one where we create our character so
+characters. push here let's add Avatar
+URL and we'll be using the default one
+that we were finding here of course you
+can change that logic and force the user
+to select an avatar when it logins
+before joining the experience I decided
+to preload everyone with my avatar now
+we have it we need to go to experience
+and here at the prop Avatar URL it will
+be equal to
+character.
+Avatar URL and in socket manager because
+we emit the characters event we already
+have before it will automatically update
+our characters List if we reload we can
+select our character let's take this one
+it close it but we have a blank screen
+while it's loading the character and
+then we have our character that can walk
+let's add um a picker here to be able
+during the experience to change our
+Avatar go to
+UI and it will
+be right be right after the back button
+will do Avatar picker so it will only be
+when we are not in build mode and not in
+shop mode we need a button like the
+other ones and close the
+button onclick what it will do is set
+Avatar mode to True let's search in hero
+icons one that would suit it like user
+maybe this one is okay let's put it
+inside our button and save now we have
+our button here we can click on it it
+open the Ready Player me it restart
+it and we can select another Avatar we
+have that blank screen let's hle this to
+not stop the rendering we can go to
+experience here instead of rendering
+directly the Avatar we can wrap it into
+a sub suspense sorry so it will render
+the other things but it will render
+nothing when the Avatar is loading so
+the key we need to put it on the
+suspensive object now if we change our
+Avatar oh I have it in Cache so let's
+clear our cash first now let's try to
+change to another character we have
+while it's loading we can move because
+the camera isn't uh catched by the fact
+that we have our character and now it's
+fine oh we can see our Avatar doesn't
+have shadows we need to enable it
+because we are not using anym the D
+structuration using used gtf we only
+have primitive so the logic will be the
+same that we used for item we did this
+code to enable the Shadow on every mesh
+let's go to our
+avatar on top let's use use effect and
+do it here it was quite simple now we
+have shadows also on the Avatar let's
+add some action on our avatar for
+example to make it dense to find the
+animation you want to use go to go back
+to Ready Player me animation library and
+open the den folder then you can scroll
+and see all the dense animations then go
+back to Crazy Ramirez repository
+resources
+models
+animations masculine or feminine
+feminine if you decided to use this one
+dance and download the one you want
+there is also the female one so use the
+M if you want masculine I will be using
+the first one drop the animation in the
+animations folder like the other ones
+and let's load it on our
+character animation dense
+animation the name is dences 001
+and on the bottom of the file preload it
+and dences Idol 00 uh not idle Just
+Dances let's go back to our
+UI below the Avatar so just after it
+we'll add a dance button we won't find a
+dance icon so maybe we can use something
+related to music musical not copy the
+jsx paste it instead of the previous SVG
+and on click it should trigger an event
+so socket.
+emit dense of course you can go further
+by adding multiple denes and multiple
+buttons to trigger different things and
+for the D system we will need to go to
+the server to handle this event and we
+will make it simpler than the way we
+handled movement that's why I want to
+update it just after so what we'll do is
+socket
+on dance we will just emit to
+everyone that our player is dancing and
+we will pass the ID it will be the
+socket ID so we know what character is
+dancing now we need to handle this event
+but previously we handled everything
+into socket manager and we passed down
+to the characters so it reload each
+character and render it so it was not
+effective at all instead let's add in
+Avatar an event handler so it doesn't
+recreate anything let's add a use effect
+in our
+code what can trigger it is either
+nothing when it's instantiated or the ID
+of our user but it shouldn't change but
+let's add it inside it we will do
+socket on player dance we will call on
+player
+Dan and we will return socket. off
+player dance so if it's reinstated it
+will turn off that call back now let's
+add our event handler function on player
+Den we will receive an object with the
+ID so if the value is equal to our
+character id so if it correspond to that
+specific character we will set the
+animation to dens is 001 but no this is
+not the correct logic because we have a
+use frame that is setting the animation
+if we work or not so we will need to add
+a new state like
+set is dencing and we will set it to
+True let's go on the
+top with the
+animation is dancing and set is dancing
+we'll set it to false by default and and
+where we said the animation so if we are
+walking we don't want to dance we are
+walking but if we are standing idle
+doing nothing either we are
+dancing so we set the animation to Dan
+is
+001 otherwise we are just doing nothing
+but that won't work because we didn't
+add the dense animation to our use
+animations here so we need to add it to
+the list of Animation to load and to
+create actions from those animations
+when we reload it automatically uh open
+the Avatar Pier let's disable it go to
+UI Avatar
+mode and set it to force by default okay
+so now when we reload we directly have
+our Avatar we can dance does it work yes
+perfect let's try with another character
+so if we start dancing with one
+character is it trigger on the other yes
+but I think we have an issue when our
+character works it shouldn't dance again
+so let's set it to FS after we are
+working go to
+Avatar walk where are we setting it to
+walk we need to set is dancing to false
+okay now when they walk they stop
+dancing perfect let's try to change the
+avatar from one to the other to see if
+it's dispatch correctly if we select
+this one we now see both characters but
+we might have issue if we just change an
+object to an avatar that is already
+loaded for example this one we will
+change our Su glasses we go here
+glasses and we select new one perfect
+next so it didn't update our character
+because the URL doesn't change from
+Ready Player me unfortunately we will
+need to use an ugly solution we need to
+go to our server on
+character Avatar update here instead of
+setting directly the Avatar URL we can
+use split and remove the quotation mark
+to add um query URL parameters and we
+will add one ourself so for
+example we will add the date I can do
+new date of get time because of this
+parameter it won't use the cache of the
+model and it will try to reload it and
+it's what we want let's try it for
+example on this character here select it
+customize and let's change the
+sunglasses with very cool ones next and
+it didn't work let's have a look at why
+oh it seems it work it's which one did I
+change okay it's this one I
+change okay so it worked now have one
+with those glasses and the other one
+which isn't updated has the previous
+ones let's change the Avatar here to
+another character so don't have twice
+the
+same and you can see this weird movement
+every time we will fix it by changing
+the movement system our current code
+from the server is correct we say Player
+move and we pass the character that is
+moving but it's in our client that we're
+are doing something that is not the best
+way to handle it we have a state with
+all characters so where is the player
+move here and we are updating our state
+so to reender all characters and set the
+path with the new one we don't want it
+anymore so we can get rid of it on
+Player move we don't want it we won't
+handle it here we can save it we go to
+our Avatar and like we did for Den where
+where is it here we have a use effect on
+our socket so we can add other event
+handler on its Player move we will call
+on Player move and we will unbind the
+event also so here let's create our
+function Handler for on Player move we
+have the value same we need to check
+that we are on the correct character
+otherwise we ignore it we are not
+concerned by this event and for the
+logic we have it somewhere where we said
+the path so it's here we were using the
+path from the props we don't need it
+anymore so we can remove it let's also
+ensure that we don't have the path here
+as a prop we don't need it we go to our
+Avatar uh Player move function here we
+can put our logic but we don't get the
+path from the props we get it from the
+value now if we move our characters it's
+just this character handling this event
+and it's not all characters rendered and
+handling the path as a prop it's way
+cleaner thank you for watching I hope
+you enjoy this video I think we are
+getting very close to the end of this
+video series let me know in the comments
+what you'd like to see before I finish
+this video tutorial series what I'm
+thinking would be the next episode would
+be a Lobby so you can create your room
+join a room and save it with persistent
+storage because currently the shop and
+the editor mode are restarted every time
+we restart the server if you want to
+help the channel grows please hit the
+like button and share it with your
+friends don't forget to subscribe to not
+miss the upcoming video tutorials if you
+want to continue learning react 3 fiber
+you have my PID course available right
+now you have the link in the description
+or you can watch my other free video
+tutorials available
+here

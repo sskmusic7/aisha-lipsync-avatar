@@ -1,0 +1,1912 @@
+hey my name is felipe and welcome to my
+channel in this video i am going to show
+you how to build this face attendance
+system which is based on face
+recognition so let me show you super
+quickly how this works i am going to
+register myself into this system so i am
+going to put myself handsome and smile
+i think that's a very good picture i
+don't know what you think i'm going to
+put my name felipe accept user was
+registered successfully and now we'll
+try to log in so i am going to smile
+again and i had to wait a couple of
+seconds and then i get a message saying
+welcome felipe so this is exactly the
+tool i am going to show you how to build
+in this video welcome to my channel
+welcome to this video and let's get
+started so this is the system we are
+going to be building in this tutorial
+you can see that this is a very simple
+user interface
+these are all different windows we are
+going to be coding today this is going
+to be our face attendance system and you
+can see that this is basically our main
+window this is going to be the main
+window of our program and you can see we
+have two different use cases for this
+system we have two different buttons
+covering the two different use cases one
+of them is for users which are already
+registered into the system and those
+users could log in those users could
+press the login button and then for
+users which are not registered for new
+users and we also include a button to
+register a new user and then we have
+this huge
+label which is going to be your webcam
+so we are going to have the footage of
+our webcam in this window in this
+label and then we will have two
+different buttons covering the two
+different use cases of this system now
+let me show you what happens if we have
+a new user if we want to register a new
+user if a user clicks in the register
+new user button we go here
+to this
+second window and you can see this is
+very similar to the first window but now
+we don't have our webcam but we have the
+we have only a picture once the user
+clicks into register new user the system
+will take a selfie we take will take a
+capture of the webcam and it will put
+the picture here and then it's going to
+prompt the user to provide a name in
+order to
+to create a new registry in the in the
+database so the user will
+type something in the username and then
+click accept if he agrees with the
+capture and with the username and once
+the user clicks accept
+a new window pops up and it's going to
+say user was registered successfully and
+then accept
+but if the user is in this window and
+for whatever reason he doesn't like the
+picture that was taken maybe he didn't
+realize the system was going to take a
+selfie
+maybe he wants to he or she wants to
+prepare himself or herself in order to
+make this picture for whatever reason
+the user doesn't like this picture then
+the he can press try again and when the
+user press try again
+he goes to the main window so he can
+click register new user again
+so yeah so if maybe the user didn't know
+the system was going to take a picture
+and he he or she wants to prepare
+himself or herself in order to
+be a prettier or more handsome for this
+picture then he can just try again and
+the
+app will take a new a new picture a new
+capture in order to login into the
+database and it's very important because
+if we are talking about the face
+recognition software this is the picture
+we are going to match against our
+database this is very important this is
+the this is going to be the picture
+inner database and every time the user
+tries to log in into the system we are
+going to match it against this picture
+so this has to be a very clear and
+frontal picture of the user's face
+okay and then this is about the register
+new user window and we already covered
+this functionality but if the user is
+already
+is already registered into the system he
+will try to log in he will try to press
+this button
+and then he something will happen if
+that user is registered and
+we are taking a picture we are running
+or face recognition software and if the
+user is indeed in our database then
+we will welcome this user and we will
+create a log into the face attendance
+system we will say something like this
+user was logged in at this given time
+but what happens if the user is not in
+the database if some if an unknown user
+is trying to login into the system in
+that case we will prompt the user with a
+message like this saying
+hey who are you you are not logged into
+the system you are not registered into
+the system so please return a new user
+or try again
+because maybe he is indeed in the
+database but for some reason the face
+recognition software
+didn't
+work so he can try again pressing the
+login button again or he can just
+register our new user in case he is not
+already registered so this is going to
+be the app we are going to be building
+today you can see that this is a very
+very very simple using user interface
+all the different windows are very very
+very simple
+but it provides all the needed
+functionality we are going to need in
+this app in this software so
+this is going to be all for the design
+of the app we are going to be building
+today and something else i should say
+about this is that
+when you are about to build an user
+interface when you're about to build
+something like a software something else
+we are going to be doing today i
+strongly recommend you to do something
+like this i strongly recommend you to do
+like a system design something visual so
+you know exactly what you are building
+or what you are about to build
+because if you do something like this
+it's going to be super clear to set like
+the direction of where you are going
+with this software and it's also going
+to give you like uh
+like a visual
+assistance in order to know exactly
+exactly where you are
+at every given at every given time of
+your development process
+you know exactly what you need to do you
+know exactly what you are doing and you
+know exactly where you are going so
+doing something like this is going to be
+very very helpful and i strongly
+recommend you to do
+a system design
+even if it's something super simple like
+this
+for every project you work in okay so
+this is going to be the or system design
+now let me show you the face recognition
+software or the face recognition engine
+core we are going to be using in this
+tutorial
+this is a repository for face
+recognition and this is the face
+recognition
+machine learning software or i don't
+know how to say the most the face
+recognition engine we are going to be
+using
+um
+so i am going to post a link into this
+repository in in the description of this
+video in case you are interested in
+taking a look but this is going to be
+super easy to install we are just going
+to run a pip install which is around
+somewhere
+let me see if i find it
+install
+okay yeah
+a peep install and this library name
+and then for using this library it's
+going to be very simple too it's going
+to be enough to run a command like this
+or i think this is not even mandatory so
+we can just specify the
+two directories one of them with the
+people we know one of them is going to
+be your database and then the other one
+is going to be or unknown people
+so um this is pretty much the repository
+we are going to use
+and uh yeah and i'm going to show you in
+a few minutes how to use it and how it
+works
+so let's continue
+and let's go to pycharm because it's
+time to start working on our project
+and
+before installing the requirements and
+before starting
+code
+let me show you something first which is
+this util file
+i prefer this util file which contains a
+few functions which are going to be
+super super helpful for this tutorial
+this is basically for building the user
+interface this is only a few functions
+these are one two three four five
+functions
+and this is basically because we are
+going to be repeating the same process
+once and again for example you can see
+that we have to create many buttons we
+have many many buttons everywhere so
+it's going to be super super helpful if
+we have a function which is
+a
+get button so every time we call this
+function we are going to get a button
+and it's going to make everything super
+super easy or easier
+and yeah you're going to see what i mean
+in a few minutes
+and every time we call one of these
+functions we have to specify some
+parameters in the case of the get button
+we have to specify the text for the
+button right you can see each one of
+these buttons have a different text and
+also the color and also exactly what's
+the command what's the function we are
+running when we execute this button when
+we press this button so this is the
+utils file and this is very important we
+are going to be using it in our tutorial
+and then let's start with our today's
+tutorial let's start building this app
+so i am going to
+install the requirements this is a
+requirements file you can see it's only
+three libraries and one of them is the
+face recognition a library
+so i'm going to do bp install miners are
+requirements
+you can see i have already created a
+virtual environment this virtual
+environment is created with python 3.8
+so that's already created and ready to
+be used
+and now everything is installed okay so
+i have installed
+opencv pilot which is another library
+for computer vision and face recognition
+and super quickly let me show you how
+this works
+you can see that from the repository the
+way to use this
+library
+sorry the way to use this
+engine is by specifying two directories
+let me see if i find it here
+and here it's the only two
+arguments we are
+putting into these functions so we are
+not specifying the tolerance we are not
+specifying anything we have to provide
+two directories one of them with the
+people we know one of them with our
+database and the other one with the
+people we don't know with the people we
+want too much to the people we know
+so i have prepared this directory which
+contains two folders one of them is
+called known people and the other one is
+called unknown people
+if i show you the known people
+you are going to see i have put four
+people in this directory one of them
+with a biden the other one is john snown
+from game of thrones the other one is
+this guy and then obama
+so this is only an example to show you
+how to use this app and this is going to
+be our database this is going to be all
+the people we know
+now let me show you what happens when i
+try to
+recognize
+this person this unknown person we know
+who this person is because it's like
+yeah we know who he is but this uh
+the the use case of this tool is that we
+are going to try to match unknown people
+to
+these people so i'm going to show you
+how this app works in order to match
+him in order to match this person this
+unknown person we don't know who he is
+into the people we know into the
+database
+so
+and the way this is going to work in
+order to give you like a
+very high level overview
+this face recognition software is going
+to try to match this face his face into
+each one of his of their faces
+and if he finds a match he's going to
+say oh yes i have found your match this
+is your person this is who he this
+person is and if he doesn't find a match
+it's going to say something like unknown
+person unknown user unknown uh whatever
+so let me show you i'm going to call
+face recognition this is how easy we can
+use it
+face recognition then the directory of
+for known people
+and then the directory of all or unknown
+people
+and i will have to wait a couple of
+minutes
+or a few seconds
+and that's going to be it so let's wait
+to see what happens and that's it so uh
+basically we are seeing here the path of
+four file we are seeing this path this
+is the the directory and this is the
+file name unknown person.gpg and then we
+have another
+word next to it which is obama and this
+word it this means that the this face
+recognition software has worked
+perfectly and it has identified what's
+the unknown person
+and if you take a look it has matched
+the the word we got from running this
+tool was the file name of this picture
+right so it has matched this face
+to this other face right i and and it
+had provided the file name for this
+picture let me
+show you what happens
+if i rename this as something random
+right
+if i do that and i run this again
+now we will have the same result but we
+are going to see a different
+value we are going to see all these
+string
+because this is the value of four new
+uh picture this is how we have renamed
+this picture so this is how this system
+works this is what you need to know in
+order how
+to know how this system works because
+this is how we are going to use it we
+are going to have our database which is
+all the people who has registered into
+the system
+it's not going to be with them this is
+only an example we are going to have uh
+other people for sure most likely
+uh and then every new picture we have
+into the system we are or every new user
+who tries to log in we are going to run
+this process and we are going to have
+the file name of the image in our
+database who matches the person who is
+trying to log in that's what we will try
+to do or that's what that's how this
+system works
+so
+we already covered the unit file we have
+installed requirements and i have show
+you how this face recognition software
+works
+so now let's start building our system
+i'm going to close this window and i'm
+going to close this one so i'm going to
+leave it open because we are going to
+need it for sure
+okay so the first thing i'm going to do
+is to
+import
+or library sdk okay
+and let's start by building uh let's
+start by building the main window
+so
+um
+and i think the best way to do it will
+be to define a class
+which is or app
+then i'm going to define
+the constructor which is going to be
+empty for now
+and then i need to define
+if
+name
+equal
+oh
+main
+this is a volume so it's double
+okay then
+we are going to create an instance of
+this class
+so it's going to be something like this
+okay
+and then we are going to run it and in
+order to run it it will be something
+like
+maybe for that it's going to be better
+to have another
+function something like
+start
+and
+i'm going to leave it empty and then
+it's just going to be
+upstart okay
+okay that's like the the most basic user
+interface or the most basic um
+everything is empty but that's going to
+be like the generic structure of our
+application
+okay now let's start creating our
+constructor we want to create a window
+and this is going to be achieved by
+calling
+um
+decay dot
+tk right we want to create a new window
+and it's going to be self dot
+main
+window
+okay so we have created our main window
+this is going to
+this is going to be a variable which is
+going to represent this window
+and now let's tell uh tinker let's tell
+python what's the
+size of this window so we are going to
+call
+geometry
+geometry and we are going to say the
+geometry for this window is going to be
+these numbers i have been doing many
+tests before starting this tutorial
+before recording this video and i have
+already all the values of the different
+sizes of the different windows and all
+the locations and so on so we are not
+going to lose time with that so yeah
+this is the size of our window is going
+to be
+1200 times 520 and this is going to be
+the x and y location
+and this is
+basically this is going to be the size
+of our window of our empty window and
+now every time we want to store this
+application we are going to call
+a
+main loop
+okay
+so what we are doing here is just
+defining like this
+window the main window for now is
+completely empty
+and
+the other function we are defining is
+the start function and this is the one
+we are going to call in order to
+run our app
+so let's take this one step at a time
+and let's see how let's see what happens
+if i press play okay if i press play i
+get my window it's a completely empty
+window and that's all we have so
+everything seems to be working fine fine
+for
+now okay so
+yeah
+so now let's continue and what we need
+to do first is to create these two
+buttons because we have two buttons and
+this label so let's start creating our
+buttons
+let's say this is something like login
+button
+main window
+and it is going to be
+get button sorry
+util dot get button
+and this has import udl automatically
+and we need to specify the window and
+it's going to be self main window
+okay
+then the text the text is going to be
+login
+then the color
+if we follow the exactly same design i
+have specified in this uh
+design template is going to be green
+so we need to still this is going to be
+a green
+i think if we do something this is going
+to work yeah we can specify either text
+or we can just put the
+the rgb
+color if i don't if i'm not mistaken and
+then the command this is very important
+because every time we call
+we press this button we want to trigger
+a process we want to execute a function
+so i'm going to say let's say this
+function is going to be self.login
+and this it doesn't it doesn't exist for
+now but i am going to create it in a few
+minutes
+and that's basically
+uh all and then we have this default
+value which is
+foreground and this four one is
+basically the
+the color of our text but in this case
+we want to leave it in the default value
+because we want the text to be white so
+everything is going to remain like that
+okay so this is for or first button or
+login button and then i am going to
+create something similar but for the
+register new user button so we are going
+to have register new user button main
+window at button main window this is
+going to be register new user
+new user this is going to be grey
+remember this is grey and then
+every time we call this every time we
+press this button we are going to
+trigger register new user
+function that it doesn't exist for now
+but we are going to create in a few
+minutes and then in this case we are
+going to change the foreground we are
+going to change this default value and
+we're going to say this is going to be
+black because we want the text to be
+black in this case
+okay
+so everything is ready for the
+buttons and now what we need to do is to
+place is to locate these buttons exactly
+in this location for now we we haven't
+specified the
+location for these buttons and we will
+be able to do that
+by calling
+place and we will tell python to to
+place these buttons in
+x
+750 and y
+400
+okay this is going to be the location no
+for a first photo no sorry this is going
+to be 300
+and uh yes so
+this is where we are going to locate the
+login button and then
+for the register new user button
+we are going to locate it in 750 and
+400. i was reading the other sentence
+a couple of seconds ago that's why i
+made a mistake
+and this is basically the these are
+going to be the location so for buttons
+and let's see if everything works
+properly for now it doesn't because i
+haven't specified these functions so
+let's do it
+super quickly by calling defining an
+empty function which is login
+and then another empty function which is
+register new user
+and this should work
+and now everything is like
+this is like the
+everything is starting to look like this
+we have a main window and we have two
+buttons and everything
+seems to be in exactly the location we
+want it to be
+so
+everything seems to be fine for now this
+is
+empty we haven't specified the login
+functionality or the register new user
+functionality so for now it's everything
+is empty but let's continue doing it
+this way let's focus on
+building all the interface all the user
+interface interface and let's code the
+functionality as the last step
+okay now i am going to create this
+webcam
+label and for this i'm going to create a
+new
+uh field which is
+cam label
+and for this i am going to call the
+get
+a mesh label
+function in our utils file i'm going to
+call this function and the only thing i
+need to specify is the
+window so i am calling this okay
+okay everything is okay and now we need
+to place it we need to
+call the same
+webcam label
+oh sorry
+dot place and in this case we are going
+to specify
+the x which is going to be
+10
+y
+it's going to be zero and in this case
+we need to specify the width and the
+height
+the width is going to be 708
+is going to be
+500 okay
+so this is pretty much it for the very
+basic functionality we don't really see
+anything in the label because it's an
+empty label for now but it's there trust
+me
+and what we need to do now is to
+put our webcam into the label into the
+label that it's we that we have just
+created and that for now it's empty
+so what i'm going to do is to
+call another function which is
+add webcam
+and i'm going to give it the
+label
+right this is going to be a function we
+haven't created yet but we are going to
+create it and we are going to specify
+this label
+why are we doing this because we need to
+add the webcam into the label so it's
+going to be very appropriate
+if we create a function for that so
+add webcam and this is going to be solve
+and label okay
+we input the label as parameter and in
+this function we are going to code
+everything we need in order to put the
+webcam into this label and for this is
+that we are going to call
+cb2 we are going to call it opencv
+because we need to
+call video capture which is the function
+in opencv that's going to allow us to
+access the webcam so i am going to
+access the full camera which is the
+number zero
+and i'm going to call this object
+dot cap
+right i'm going to call it cap and it's
+going to be a
+a class member so i'm going to call it
+like this
+but something important is that we are
+going to call this same uh function more
+than once
+or we may call the same function more
+than once so
+every time we call this function we
+cannot create a new object so what we
+are going to do is to ask
+if this variable is already created
+in the
+in the class member dictionary
+this basically is asking python if this
+variable was created and if it was not
+created we are going to create it and if
+it's already created then we are not
+going to do anything this is going to be
+very helpful and it's going to be a good
+ch sanity check
+now i am going to do things uh this way
+and i'm going to explain why in a couple
+of minutes i'm going to create another
+label another internal variable which is
+going to be called
+label this is going to be an internal
+variable we are going to use only as an
+auxiliary
+an auxiliary function
+but i'm going to call it this way and
+this is going to be equal to the label
+we are receiving as input
+and now i am going to call another
+function which is process webcam
+and this is the function we are going to
+use in order to
+put the webcam into the label
+the reason for making it this way is
+going to be clear in a couple of minutes
+so just stay with me and you're going to
+see why i'm doing it this way
+so i'm going to define this function
+process webcam and basically what we
+need to do here is to is to read frames
+from our webcam and then we need to put
+these frames into the label
+we need to do some some conversions some
+format conversions the images we are
+going to be reading they are going to be
+in the opencv format because we are
+taking these frames from video capture
+which is an opencv function and we need
+to convert all the frames all the images
+we are going to be reading from the
+webcam from opencv format into
+the pillow format which is the format we
+are going to need in order to put all
+the frames into the
+label we just created
+so
+i created a new function and that's what
+we are going to do in this function we
+are going to call self.cap
+dot read this is going to be empty and
+this is going to be red and frame
+okay
+so what we need to do first is to call
+this frame and what i'm going to do is
+this is the original frame we are
+getting and i'm going to call another
+variable which is going to be
+most recent
+capture
+and i'm going to call it like
+r i'm going to put an r at the end
+because this is going to be a numpy
+array and you're going to see why i'm
+defining this function like this in a
+couple of minutes and this is going to
+be
+my frame okay
+now i need to do a color conversion cv2
+dot
+convert
+color
+i'm going to use my self most recent
+capture array
+and i am going to call
+color
+bgr
+to rgb okay
+so this is going to be only a color
+combination conversion this is going to
+be an auxiliary function this is going
+to be image
+and what i need to do then
+is to
+call now i need to start converting the
+image into pillow
+so i'm going to say something like from
+pillow from peel
+import
+image
+and also image decay which is the other
+object i am going to use
+and now i'm going to convert this into
+pillow so i'm going to say something
+like image dot
+image from array let's see what's the
+exact function name
+i usually work with opencv when it comes
+to image processing i'm not so familiar
+with pillow
+this is going to be image from all right
+yeah and we're going to input
+this new variable okay
+and let's say this is going to be the
+most recent capture
+but now this is going to be fill
+okay
+it's not really needed to define the two
+variables but it's going to be better to
+do it this way so we know exactly
+this is exactly the same information but
+now it's one of them is in the
+bgr format from opencv and the other one
+is in the
+pillow format in the format pilot feels
+comfortable with so
+let's continue and what we need to do
+now what now we need to continue
+uh converting this image and we need to
+create another object
+which is
+image decay and this is going to be
+equal to image decay
+which is going to be your image but in
+the tk format in order to
+process into in order to put it into our
+label
+this is photo image which is another
+object and we're going to call it
+image
+equal to
+this object
+okay this is the only part of this
+tutorial which i recognize it's a little
+like obscure
+because it's not really like there's not
+really a lot of intuition of what we are
+doing here we are just taking frames
+from the camera we are converting these
+frames into another format and then we
+are putting these frames into a label
+and we need to do things in a given way
+but
+it's a little arbitrary it's a little
+like it may be a little confusing so
+just bear with me and it's a few more
+instructions so we are going to
+call now this variable this internal
+variable we have created self dot label
+and we are going to call this member
+image decay okay and this is going to be
+equal to image tk to the object we have
+just created
+now i am going to call configure which
+is another member of this variable
+and
+i'm going to say this is equal to
+no i'm going to call
+this
+member with
+like this
+okay
+and then
+this is pretty much all we need in order
+to put one frame only one single frame
+into our label but we want to put
+the entire webcam we want to make these
+frames to look like a streaming we want
+to make it look like a webcam so what
+we're going to do and this is going to
+be the most important part of this
+function is we are going to
+call this function again
+after
+20 milliseconds
+we are going to
+do this
+so this means that we are
+um
+calling this function again this the
+last instruction means that we are
+repeating the same process every 20
+milliseconds so we are going to take a
+frame from the from the webcam we are
+going to read the frame we are going to
+convert this frame into the format we
+need in order to
+put it into the label we are going to
+put it into the label and once it's
+there we are going to repeat the same
+process every 20 min seconds so
+everything is going to look continuous
+everything is going to look like a video
+like a streaming and that's exactly what
+we want so let's see if this works
+properly i am going to
+open my webcam
+the number zero is my
+built-in webcam oh i made a mistake i
+only have to specify the name
+and that's yeah that's it so this is my
+webcam and this means everything is
+working properly
+now i'm going to do things uh
+the only change i'm going to do is
+instead of opening the number 0 i'm
+going to open the number 2
+which which is an external camera i have
+logged into a system and that's like uh
+yeah that's better i like this camera
+the better because it has more
+it has a higher resolution
+so this is the camera i'm going to be
+using for this tutorial
+and that's pretty much all we need to do
+in order to create our main window
+everything is empty we don't have
+absolutely no functionality whatsoever
+these two functions are completely empty
+but i think we are it we are completely
+done when it comes to the
+uh
+with the aesthetics with the with the
+design with the with the user interface
+but everything is empty if i
+press here nothing is going to happen
+for now
+but everything is starting to look the
+way we want it so everything is going
+well and this is why i created this new
+variable and why i'm making this
+like this because we need to create a
+function with no input variables with no
+input arguments because we are going to
+call this function every 20 milliseconds
+and in order to call it or in order to
+call it like this
+we cannot specify any input argument
+into this function so the only way to do
+it or the way i find that i found to do
+it and it was a good solution was to
+make make it like this to define this or
+variable
+outside this function and then just
+calling this function from this other
+function so that's about it why i'm
+doing this this way with the webcam and
+we can just continue
+i'm going to start building or app i'm
+going to start adding our functionality
+and i'm going to start with the register
+new user i'm going to start with this
+functionality and every time we click on
+resistor user we should have a new
+window which is going to have a very
+similar appearance as our main window so
+let's start doing that
+i'm going back to this uh this is the
+function that's going to be executed
+every time a user clicks here and
+register new user
+and what we need to do is to open a new
+window so what we need to call is a
+function in order to that it's going to
+be very similar to
+this
+and the way we are going to do it is by
+defining a new variable which is going
+to be
+something like register new user
+window
+and this is going to be self main window
+dots
+sorry this is going to be
+tk dot
+top level
+and we need to specify
+this this is how we create a new window
+uh
+which is something like a secondary
+window right we have our main window and
+then we have this window which is
+uh
+inside the other window
+so and then we need to specify the
+geometry so i'm just going to copy and
+paste and actually it's a good idea to
+copy
+paste because it's going to be very
+similar but i'm just going to say 370
+and 120 so what we are doing here is
+i'm creating a new window with exactly
+the same size
+but it's going to be exact slightly
+moved and shift to the right and to the
+bottom
+so
+doing this
+let's see if it works
+we click register new user and we have a
+new window but it's not really the size
+i want it
+so
+this is why
+i have copied and i i forgot to rename
+so
+now everything looks okay it's the same
+size as before but is slightly to the
+right and to the bottom
+okay and the only thing we need to do
+now is to start defining all these
+different fields so let's start with the
+buttons this is going to be very similar
+as before
+so i may just let me just copy and then
+i'm going to
+edit we have a new button this is going
+to be the
+accept
+button register new user window
+okay and this is going to be in this
+window
+the text will be something like accept
+it's going to be green and it's going to
+be
+accept
+register new user
+i need to define this function
+for now it's going to be
+empty okay
+and then the location of this new button
+will be
+let me take a look 750 300 exactly the
+same okay let's see if it works
+okay it works
+now i'm going to create a new bottom
+which is going to be a try again button
+and
+this is try again
+try again
+this is red
+and this is white yeah everything is
+okay
+and then this is 400
+let's see what happens
+okay yeah everything is okay for now
+um okay so and now we have to grade my
+label and it's going to be similar to
+this other label
+i'm going to
+call it like this
+yeah so i'm going to go like this
+so this is going to be
+let's say capture label because now it's
+going to be a capture it's not going to
+be a webcam
+and this is going to be my new window
+and the location
+will be
+in 0 700 and 500 okay it's going to be
+exactly the same location as before
+okay and now as before the similar is
+going to be very similar as before we
+are going to create a new function which
+is going to be self
+add image
+to
+label right because now we want to add a
+single image we don't want to add a
+stream as before
+so this is what we are going to do and
+we are going to input this label
+okay
+now i'm going to define this function
+this is going to be
+like this it's going to receive a label
+and this is going to be very very
+similar as we did before so i'm just
+going to copy and paste some of the code
+what we need to do is to
+i'm going to
+change it better
+we need to now we need to work with one
+of these objects because we are already
+creating um
+remember we are taking captures all the
+time and we are updating the
+the main window all the time right we
+are
+um
+that's something
+like this
+remember this window we are taking
+captures all the time and we are just
+updating this uh picture this this
+webcam
+so what i'm going to do is take one of
+these captures
+and i'm going to
+take this one
+and i am going to
+create i'm going to copy paste these
+three sentences and most likely i will
+need to do something with them
+okay
+this is going to be my label
+um
+okay
+this should work let's see if it does
+okay it works if i
+yeah and the other one continues to work
+yeah everything is okay
+and something else i'm going to do is i
+am going to define a new variable which
+is going to be
+um
+the way i'm going to do it
+is
+self dots
+um
+register new user capture and this is
+going to be
+self most
+copy okay
+this is how i'm going to do it and i'm
+going to explain why in a couple of
+minutes
+i'm going to instead of adding this one
+i'm going to copy the one i get in the
+original
+format but it's going to be the same
+idea
+okay
+i'm going to explain why i'm doing this
+in a few minutes
+but uh for now let's just assume this is
+going to be necessary this is just
+another function another variable which
+is going to get the information for the
+same capture we are drawing into the
+window
+so this is all for now
+everything looks uh everything is empty
+now we are just defining this
+functionality but that's it
+now let's start
+uh coding the try again and they accept
+functionality let's
+find where is the try again
+i have never defined
+i never edited this field that's why we
+didn't have an error
+uh i was thinking why is it if i never
+defined the try again
+function
+uh
+it didn't come as an error when i
+when i executed this calls
+register news and that's why
+okay so today i'm going to return user
+and the only thing we want to do here is
+to call self dot register user window
+and call destroy why because we want to
+exit this secondary window and we want
+to get back to our main window so
+everything seems to be okay okay
+now they accept every time we accept
+sorry i forgot that we have additional
+fields which are the
+input username and also the entry field
+at the entry text so i'm going to code
+those
+i'm going to add those fields
+and let's start with the entry text so
+i'm going to define a new variable which
+is going to be
+entry
+text
+register new user
+and i am going to call
+util dot get entry text and that's why i
+created this function
+i'm going to input
+this variable
+and that's pretty much it for the entry
+text definition
+now i need to locate this entry text
+field and it's going to be located i
+need to call
+this dot place
+on this
+750
+and 150
+okay
+so this is where the uh
+entry text is going to be located yes
+and now let's move to the let's see if
+everything works properly
+register new user yeah everything seems
+to be working properly
+now let's add the label the this text
+for this we are going to need a new
+label so
+i am going to define
+a text label register new user
+and this is going to be
+util
+get
+text label and we need to specify the
+text and the text is going to be
+please
+input
+username
+so underneath this okay and then um i
+need to locate this new variable
+and it's going to be located in the
+750 and 70.
+so x equal 750
+y equal 70. okay
+let's see if it works
+it doesn't work
+let's see why uh
+okay using the text label uh we need to
+specify also the window window and text
+and i was giving only the window
+only a text so i need to something like
+this
+every time we create an object using
+tinker we need to specify exactly in
+what window we are creating this object
+everything seems to be okay
+we are pretty much there we have made a
+lot of progress so far
+so what i'm going to do the first thing
+i'm going to do is to make it look nicer
+so i'm going to put the i'm going to put
+the input username in a different
+line
+so let's see if this works it's only a
+detail but i like it
+uh yeah let's just leave it like this or
+we can put the username in a new window
+uh in order to make it exactly like the
+requirements no i like it better before
+yeah
+let's just leave it like that
+okay so we have pretty much all and now
+let's accept every time we accept every
+time we press this
+button
+what we are going to do is to take this
+a picture and take whatever information
+the user has input here and we are going
+to update our database and or database
+remember
+is going to be something like this we
+need a folder a directory with or known
+people so we are going to have a
+directory with
+pictures
+and the name of the picture the file
+name of this picture is going to be
+how we want to specify this so this user
+in the database so we need a picture and
+we need a file name with the
+picture identifier that's what we need
+so what i'm going to do is go into the
+code directory and i'm going to create a
+new directory but i'm going to make it
+from here
+we need a directory with our database we
+need a directory where we can save our
+images so i am going to define a new
+variable which is going to be
+db directory
+and this is going to be located in my
+current directory
+db
+yes yes this is a good name for the
+db directory and if
+os dot
+path exists
+self.dvdr
+if not
+then
+i need to create it
+als make dear
+self
+dvd
+right if the directory doesn't exist i
+need to create it
+and if it does exist
+i can just leave it and i can just use
+the images that are inside that's
+something that needs to be specified
+what happens if
+when you
+execute this app when you execute this
+software if there are people who have
+already registered into the system do
+you want to use them though or do you
+want to start from scratch
+let's just use it and i'm not going to
+delete the directory if it's already
+there so let's just use it
+okay so this is going to be our
+directory or database with known people
+with known users
+so i need to go back to the accept
+let's see where
+i have the function here accept register
+new user now we need to specify the
+behavior now every time the user clicks
+accept
+and basically what we need to do
+we need to take the name
+the user has input into the entry field
+and in order to do that we are going to
+call
+uh
+let's see what's the variable name
+we need to call this variable
+and we need to call gate
+and this is very obscure
+1.0 and then
+sorry
+[Music]
+1.0 and then
+and
+1c
+okay yeah that's the text we need to
+input i'm not sure why but that's how it
+works so
+calling this command is that we are
+going to get the information that the
+user has input into the text field
+so now let's continue and what i'm going
+to do
+is to define
+i'm going to save my image i'm going to
+save the image in the
+uh
+in the label the image that we have plot
+into the window and in order to do that
+i'm going to call
+cv2
+in grid
+and where am i going to save this image
+i'm going to save it in
+dotpath.join
+the self.dvdr
+and the
+name
+is going to be
+formats
+[Music]
+formats
+name and this is going to be this dot
+jpg okay
+so this is where i'm going to save the
+image and what image i am
+what image am i going to save i am going
+to save
+the image i have created here
+let me find it
+register new user capture and this is
+why we have created a new variable
+because
+remember that the
+remember that our main window is
+capturing data all the time it's
+capturing
+is taking frames from from our webcam
+all the time continuously so we are
+taking one of these frames and we are
+putting this frame into our second
+window but we cannot use this one
+anymore because from the time this was
+plot
+from the time this was um
+from the time the system has taken this
+this frame it has taken many other
+frames many other frames continuously
+remember if we go back to the main
+window
+i'm doing stuff i'm moving and it's
+taking frames every single time so if we
+attempt if we try to use this
+variable
+it's not going to work
+because it's going to take the most
+recent capture which is not the capture
+we have put into this window and the
+user and we want to save this image
+because this is the image the user has
+validated as its selfie
+so what we need to do is to take this
+capture it's already in the opencv
+format so we will not need to
+do anything with it
+so let's see if this works so far
+register user please input username i'm
+going to say something like felipe
+accept and something didn't
+um
+work
+and that's because
+i
+mixed this up
+and it was the other way around okay
+only a detail oh and i need to
+release okay
+let's see registering user felipe accept
+i don't have any error
+let's go to my database and now i see a
+new
+file which is felipe it's this capture
+and it's uh yeah everything is working
+pretty pretty well
+so
+um
+if we go back to the um design to the
+system design when the user clicks
+accept not only we have to save the
+information not only we have to save the
+image and the username but we also need
+to prompt the user and to let the user
+know that everything has
+that everything has happened
+successfully that the user was
+registered successfully
+so after we save the image we need to
+call another function which is
+util.messagebox
+and
+we need to let the user know
+that
+um
+something like
+let's see if there's something
+user
+um
+register
+let's put the description first user was
+register
+successfully and then we need to specify
+the title for this
+message box and this will be
+something like
+success
+okay so
+yeah
+and this is basically why i have defined
+this
+new function this function in my youtube
+file and this is going to be super super
+helpful i guess i guess you realize why
+every time we need to plot one of these
+message boxes one of these windows one
+of these small windows which are
+basically a message to our user and we
+don't really need to do anything with
+them they only have like a default
+accept button so every time we need to
+to display one of these windows is that
+i am going to call this function in my
+utils file
+so i am going to do this and then
+immediately after
+i am going to
+destroy the the register new user window
+because we don't need it anymore
+i'm going to call
+self dot register user window dot
+destroy
+and let's see what happens let's see if
+everything works properly
+so registering user
+i prepare myself well this is uh i'm not
+sure if it's the same the the best
+capture ever but it's going to work
+felipe accept
+user was registered
+registered successfully
+okay and we go back to the main window
+okay
+so
+the user was registered
+successfully
+um this is 2s yeah okay so everything
+seems to be working fine we are almost
+there we have pretty much
+i would say 80 85 percent of all the
+process completely ready so
+everything is going uh great
+and we have completed the register new
+user functionality now let's go back to
+the webcam let's go back to the main
+window and now is that we are going to
+implement the face recognition feature
+the face recognition
+core
+and we need to specify what happens when
+the user clicks login
+so
+let's go back there
+now when the user clicks login we are
+going to have a directory which is the
+database directory which is going to
+have many many many pictures from all
+four users and we need to do some
+we need to compute all this logic for
+the face recognition
+and basically what we need to do is to
+call this same command we have called
+here
+that's basically what we need to do
+and let's do it this way because there
+are many ways to execute a command from
+python but
+as we need the output from this command
+we need to know exactly
+what image in our database was uh found
+us or
+was recognized so what we need to
+specify is
+we need to call the subprocess
+dot
+check output
+check
+output
+and we need to specify oh we need to
+specify it like this like a list of all
+the different words we need to
+offer command so every word every
+element in this list is going to be one
+of these
+words so the first one is face
+recognition which is our command
+and then
+it's going to be
+or
+images directory or database directory
+this is our directory with all all four
+known people
+and then we can specify the the the
+directory with all the unknown people or
+we can also specify the specific part of
+the image we want to
+we want to recognize so i'm going to put
+something like
+unknown
+image path
+okay so this is the command we need to
+to execute
+this is going to be output and now let's
+define this image
+this is going to be only temporary
+because the only thing we need to do is
+to
+save the image
+and then we need to we need the image
+into our hard drive in order to execute
+this command but once we have executed
+we don't need the image anymore so i'm
+going to define it and then after before
+leaving this function i'm going to
+remove it so it's going to be os dot
+remove
+remove yeah
+and i'm going to give it yeah that's
+going to be perfect
+and then in this location is that i need
+to call cb2 in right
+and
+what's the image i am going to write is
+the image
+again is the most recent capture but is
+this array right i'm taking selfies i'm
+taking images continuously and i'm going
+to take the most recent one in order to
+compare with my database
+so i am going to call self.most recent
+capture r
+and i am going to write this uh image
+let's see where am i
+where am i
+logging here
+so
+something like this
+okay
+we are pretty much there
+and now what i'm going to do is to print
+output because i want to see how output
+looks like what the output looks like
+for
+in all four different situations
+i'm going to see what the output looks
+like when
+the user is in fact in our database how
+the output looks like when the user is
+not in our database and when the there's
+going to be another situation which is
+when no face was detected in the face
+the user is trying to recognize so i'm
+just going to plot i'm just going to
+print outputs and i'm going to take a
+look what output looks like in all
+different situations
+i already got an image of me but i'm
+going to make make it look nicer so i'm
+just going to delete this image and i'm
+going to
+register it again but not try again so
+i am going to
+make everything looks i'm going to
+remove the mic for up for a second
+well i think it's like okay i'm not
+saying it's the best image ever and it's
+definitely not but
+it's going to work so this is going to
+be felipe accept user was registered
+successfully a new image was created and
+i'm going to try to
+log in and let's see what happens if i
+put myself into the camera the face
+recognition software should be able to
+detect me
+and if i go back to the terminal i see
+this is the output i get when the uh
+when the software detects me right it
+says this is felipe and um yeah so
+everything is okay
+now let's do it again and this time i am
+going to
+put an empty i'm going to cover my face
+so there should be no faces detected in
+this image let's see what happens no
+person's found this is the output we got
+if i cover my face so if no faces if
+there are no faces in the image we get a
+no person's found
+and now i will see what happens if i if
+if i'm not in the database
+so the way to do this is by deleting
+this image so i am not in the database
+anymore i will try to log in and i will
+see a message saying
+no unknown person because it has
+detected someone is has detected a face
+but this face is not in the database
+so these are the three different options
+we got
+and what we need to do now is to parse
+this
+string so we know exactly what we need
+to display to the user and what we need
+to do
+okay
+so
+the way we are going to do that is by
+splitting output
+into
+split into the comma
+because all these
+values they have a comma
+and i'm going to take the
+um
+second element okay
+i'm going to make sure this is a string
+the first thing i'm going to do i'm not
+completely sure
+okay
+and this is going to be output i'm just
+going to say this is going to be the
+name
+okay
+and this is going to be the first
+element and then i need to remove this
+so
+i'm not completely sure if this is going
+to be minus one or minus two or minus
+three i'm i'm going to put minus one
+and i'm going to see i'm going to print
+name again
+let's see what happens i will try to log
+in without being registered
+and let's see what's the name we get
+unknown person yeah i i
+for some reason is not taking this as a
+string so this is not a character but
+this is a
+i'm taking like all the individual
+characters anyway this it should be a
+three another one so we are reading all
+the values until the minus three
+i'm going to do it again
+and if i try to log in now i get
+uh unknown person and i'm not getting
+anything else if there's no face
+detected and i try to log in
+now i get uh no person's found perfect
+and if i register myself i will try
+again i will register myself and this is
+felipe accept
+user register
+successfully and now i will try to log
+in
+and i get felipe so everything is
+perfect let's continue
+so
+if name
+in
+one of these two values
+if there is an unknown person
+or if it's not persons found
+we will tell the user to try
+again
+so in this case we are going to
+call the util.message
+and we are going to tell
+something like oops
+and the message is
+unknown user please register new user or
+try again
+known user
+please register new user or try again
+okay
+and if the user is in our database else
+what we need to do here is to
+welcome this user so we are going to
+output another message
+and then we are going to tell the user
+something like
+welcome back
+something like that in the title and
+then in the description
+welcome
+um
+and it's going to be
+format on the name right
+it should work
+let's see if it works i'm already
+registered so i try to log in
+and i get
+welcome felipe okay
+and if no persons are found
+on user please return use or try again
+perfect
+yeah
+perfect everything is
+almost there we are almost there
+so
+this is i'm going to add a
+last character a point about
+and what we need to do in this situation
+too is to
+log the system into log the user into
+the system because remember this is a
+face attendance software so we need to
+log all the attendance of for people or
+for users
+and i'm going to create another
+member which is log path
+and this is going to be the path
+of for log we are going to use this file
+in order to log all of our users in
+order to log the data of all of our
+users
+so if this happens if if we have
+recognized successfully all or user
+i'm going to call with open
+soft dots
+log path
+this is going to be append because we
+are going to be logging people all the
+time so we cannot overwrite this
+um this file we need to append new
+information
+this is going to be as if and if dot
+right
+this is going to be we need to lock the
+name who is logging
+in and we also need to log the time
+okay and the new line character
+okay this is going to each entry in or
+log it's a very simple log it's not um
+it's necessary sophisticated we can
+definitely make it more sophisticated
+but for now i think it's going to be
+enough
+so this is going to be format name and
+then we are going to log the exact time
+this user is logging in so we are going
+to import
+date time
+something like
+uh yes
+we need to do it like that
+let's make it pep compliant
+and
+then
+this is going to be the
+datetime.datetime
+dot now okay the exact time the user is
+logging in
+and i think this is going to work let's
+see if it does
+login
+i'm not sure if it's going to recognize
+me he's recognized me this face
+recognition software works very well
+okay and then if i go back to the log
+i see felipe on the exact time felipe is
+logging in
+so everything works uh pretty well let's
+try to log in again let's see if we have
+a new entry
+reload and yeah a new entry so
+everything works perfectly and
+everything is ready everything is
+done so we have created this amazing app
+this very simple user interface but at
+the same time amazing app and in order
+to show you like more comprehensively
+how this works i am going to
+execute this um
+app this software this tool but i'm
+going to do it with more people the
+thing is i live alone so there's no one
+here to test this app with me and i
+don't have any friends so i cannot show
+you with real people but i'm going to
+test it with captain picard i guess you
+are familiar with capitan car he's the
+captain of the uss enterprise and i'm
+also going to test it with frodo so yeah
+these are the two people i'm going to
+test it with so i am going to i have
+already registered myself into a system
+if i go to leave it there's my picture
+and we already noticed this picture is
+well recognized so i'm going to do the
+same but now with
+captain picard and i'm going to put it
+like this i don't want to be on the
+picture
+i think there is going to be a okay
+register new user i'm going to try it
+again because i want a very clear
+picture i think that's going to be okay
+let's do it again
+uh like this right like this register
+user
+i think that's going to be okay this is
+going to be captain p chord
+uh accept
+user was registered successfully we have
+a new entry and now i'm going to do the
+same with frodo so
+this is frodo
+register user
+let's we again
+let's do it again i don't want any glare
+i will kill to me my speculator
+[Music]
+okay i think that's going to work so
+this is going to be frodo
+okay accept
+uh successfully and we should have a new
+entry with with fraud okay so now i will
+try to log in this is me
+this is like always i should be
+recognized as i was recognized before
+welcome felipe everything is okay now
+let's see what happens if frodo tries to
+login into the system i am going to
+something like this login
+and if i wait welcome frodo so yeah
+everything is okay frodo has logged into
+this face attendance software and now
+let's log captain picard
+uh
+something like this login
+and let's see what happens with capital
+welcome captain picard so uh
+and now if i go back to our logs
+i see i have this entry which is the the
+newest one then frodo and then captain
+picard
+so everything is working properly and
+this is going to be all for this
+tutorial this is how you can build a
+face recognition software and face
+attendance system using python and the
+face recognition library i show you in
+this video if you enjoyed this video i
+invite you to click the like button and
+i also invite you to subscribe to my
+channel my name is felipe i'm a computer
+vision developer and in this channel i
+make tutorials exactly like this one
+where i show you different applications
+of computer vision this is going to do
+it for this video and see you on the
+next video

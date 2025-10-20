@@ -1,0 +1,1826 @@
+in this video we are going to do a new
+machine learning project that
+is real time facial recognition so let
+me give you a brief overview that
+what is the output of the project then
+we will move to the roadmap that what we
+are going to do step by step
+okay so the output of the project is
+like this we will open
+with laptops camera camera or webcam and
+a colored box uh will surround our face
+and our name will do that in the box so
+basically our laptop
+will recognize our face that who we are
+and what is our name
+so let me just give you an example of
+that
+yeah so i have just run my test sample
+and this is my face as you can see
+so basically our camera is recognizing
+that what is my name and what is the
+name associated with that with that face
+okay so this is a real-time face
+recognition which our system is doing
+so let us see that how we will proceed
+to this project
+so let me give you a roadblock just that
+what we are going to do step by step
+so basically first we are gonna we are
+gonna feed
+our video that like we should open with
+camera and we should record that
+what face is in front of the camera
+right so
+i have made a several a separate snippet
+of video record
+it is just to check that uh whether the
+camera is working or not
+so by this code we can check that uh our
+camera is working or not
+um don't be stressed out i will explain
+each time of the code step by step i'm
+just
+in the roadmap right now okay so this is
+about just checking
+this this codes check that whether our
+camera is working or not
+okay so this is a real test
+and after this okay so after this
+we are gonna we are gonna uh collect our
+face data
+so basically in this snippet uh
+this the function of this code is like
+this this code
+opens up a camera and uh ask ask
+ourselves write our name
+okay so if i play this sample so
+it is asking my name so i will enter my
+name here
+and after that when i enter the camera
+will open and it will start recording my
+face
+it will start uh memorizing my face
+and will put each and every data in an
+array
+okay i will explain this uh entire thing
+step by step i'm just like giving an
+overview
+overview right now okay so it this code
+recognizes
+this code basically collects our facial
+data
+and stores it in an array and that area
+is used for recognition afterwards
+so after collecting our facial data we
+will
+run this code this is basically facial
+recognition
+okay so after collecting our data
+we will store that data in another area
+and we will start another live streaming
+i mean
+we will we'll start with camera again
+and it will match
+that this current phase matches with the
+previous array
+and it maps down the name of the person
+with that figure
+okay so basically first step is data
+data collection over faces and then
+after that we will do
+a face recognition and we will use
+basically k means algorithm in this
+and a classifier that is hard cascade
+classifier
+okay so this is a brief overview
+overview of the project that what we are
+going to do
+and now i'm gonna explain you okay so
+before go
+deeping uh so because before diving into
+the project
+let us first see that what is hard
+casket classifier okay after explaining
+this hardcasket classifier i will
+explain you each and every line of the
+code that what we have
+we have done step by step okay
+because of what our casket classifier do
+is it is a collection of features
+like edge features light features and
+many or other features
+so basic purpose of hard cassette
+classifier is it detects
+each and every feature of our face okay
+so this is a box it moves in every
+direction
+in the in the entire image and it
+just collects the data that where is our
+eyes where is our nose
+i'll show you the animation that how it
+works uh before that list
+you can just see on this website that
+how uh what is the basic documentation
+of our casket classifier
+um after this i will show you the
+animation of this
+okay so i've done the basic of this so
+if i enter my image here and the hard
+casket classifier will
+basically uh classify that where is our
+eyes and where is
+our face located in that that entire
+image okay
+so as you can see that here is my face
+and these are my eyes
+so this simple code which uses hard
+casket classifier has just recognized
+that
+where are my eyes and where is my face
+in the entire image
+okay so now let us see that
+this hard casket animation
+okay so as you can see that this hard
+casket classifier is just moving in the
+entire image
+and it is just classifying that where is
+our face
+and where are the other components of
+the face so as you can see that
+uh the edge features the line features
+and the other features of the
+casket classifier just checking that
+where are the main features of our face
+okay so it is traversing the whole image
+by increasing the size so just see the
+animation
+i have increased the size of the the
+speed of the video to 5.5 x
+so you can see clearly
+okay so this is how hard casket
+classifier works okay
+so i hope that you will get and you have
+got a
+basic idea of that how and hard casted
+transfer works
+so in this video in this project we are
+we will be using that hard casket
+classifier to detect our facial
+components and
+after detecting that storing that face
+into an array mapping that with the name
+of the person and just recognizing that
+again
+by our k means algorithm okay so
+before that before starting data
+collection let us check that
+whether the camera is working or not
+okay so
+by this code we will just check that
+whether our camera is working
+yes or no okay so let me just explain
+you this code
+so this code starting with like we will
+import cv2
+like we will we are importing opencv
+library
+and by this cap is equal to cv2 let me
+just
+zoom in zoom in okay so second line that
+cap is
+cv dot video capture it means that just
+open our webcam okay so this line opens
+our webcam
+and this loop just tells that
+if a webcam is reading our image
+then just uh continue and if it is false
+then
+move out of the loop okay so
+it shows like a video frame it
+okay so let me just open the camera
+i'm playing this and
+so as you can see that our camera has
+been opened
+and after that this camera name just the
+uh the
+name of uh camera is frame as okay as
+you can see as you have just seen before
+and after this i have entered this
+logic that if i press q q as a key
+if i press the key q then it
+breaks the camera and closes the window
+and the camera will not
+not be closed by the simple closing
+function
+it will be only closed if you enter q
+okay so this is a logic which i have
+entered and i will explain to the
+purpose of that
+why i have entered this okay and this is
+a key pressed
+this line simply means that uh
+if our currently pressed key matches
+with this key
+or not this is that's it and i will
+explain this in the meaning of this line
+later in this project when we are doing
+data collection
+okay i will explain the logic behind
+this that why i have
+bit wise why i have used with bitwise
+and
+here with zero xfs okay so
+for right now you have to just
+understand that we have just opened up a
+camera and just checked that
+if return is equal to false then we will
+just continue and
+if our camera is reading then we will
+just move
+move forward and just show the camera
+that and just check that whether the
+camera is open or not and we'll just
+uh close that camera by pressing the key
+q
+okay and after that we will release our
+camera
+tab dot release if when we break out of
+the loop
+then we just release a camera by this
+line
+this means closing the camera and by
+this
+it means that destroying all windows
+means uh
+disabling all the cookies that have been
+formed by opening the camera
+and deleting all the data which has been
+captioned
+in the back memory okay so this is
+basically a video read
+we are just checking that our camera is
+reading the video or not
+okay so i hope that you have got a clear
+idea that what
+is this okay so after that
+we'll do facial data collection we have
+covered this video read part like we are
+just thinking that how video is being
+read
+from your webcam of the laptop or
+computer
+and how it has been processed and how it
+is the video is being stopping
+so in today's video we're gonna see that
+how the laptop camera or webcam is
+reading our face
+data and storing it in an array to
+like detect further okay so
+this file phase data consists that how
+our phase data is being stored
+in uh the memory of computer and we will
+process it
+later when we are doing phase detection
+using k n algorithm
+okay so so let us get started about it
+so i will explain you line by line that
+what each line is doing
+so so let's get started so
+first we import two libraries like
+opencv and numpy library
+opencv to like read the camera feed or
+open the camera
+and numpy has basic array operations and
+some more operations okay
+so by this line we are just reading we
+are just opening our webcam and
+um in this variable cap our webcam has
+been storing
+the data is being stored in this gap
+okay so after that
+we are using like in previous video i've
+shown you a hard cascade classifier that
+that is classifying the facial
+components of the face okay
+so we have just imported this hard
+casket classifier in this variable
+and like this is the location of hard
+gasket classifier
+so before starting the project uh just
+see here
+it is in my d folder d drive and
+this folder so this hard cascade
+classifier file
+uh we will just download this from the
+internet it is easily
+available on github so just download it
+or i will give the link in the
+description okay we you have to store
+this hard casket file
+in this directory only so like
+just wait a second so in my data
+in my d drive i have a folder called
+face recognition project and in this
+uh folder i have this file hard casket
+classifier
+file okay this is hard casket frontal
+face
+so you have to just download this file
+and
+this is the mainly classifier we are
+going to use here so
+we have just imported this classifier
+here in this
+variable so let's move forward
+the skip variable just means that uh it
+i will explain this later when we are
+just
+using the script variable here for now
+just ignore it and in this space data
+area
+this is basically a list in which we
+will be storing each face
+data okay so don't be confused you will
+get a clear understanding later
+when we are proceeding towards it and
+this dataset path
+is based dataset so this means that
+the faces which we are storing has to be
+downloaded or
+has to be stored in the computer's
+memory okay so like if i
+open my camera and store my face so my
+computer has to download that face and
+store
+that file in a particular folder right
+so
+i have just created this folder here so
+so as you can see that in my d drive i
+have created a folder phase data set by
+this line
+okay and this phase data set contains
+all the
+files that has been deleted through my
+camera so if i open it
+i have just
+i have just recorded my face and given
+my name to this
+like anything and
+this uh every data of my camera feed is
+stored in this data folder in this
+folder okay
+so let's move forward
+so um so like when we open our camera
+then we will enter the name there as i
+just
+shown you in the previous video when we
+open the camera we enter our name
+and after that video starts recording
+and our face
+is starting getting recognized and
+feeding the camera
+okay so uh we are just giving the input
+that
+when we open the camera just enter our
+name
+and index and in the console
+uh this dialog box will appear in where
+we have to enter our name
+don't worry i will just when i will just
+play this video like when i play this
+code then you will see that but this
+line is
+actually doing here in the console okay
+okay so let us just now uh play it once
+so when we play this file then this
+comes in this console
+you can see that here it is coming like
+enter your name
+like enter the name of person so when i
+write my name here like
+this and press enter then the camera
+will open okay
+so as of now i'm just stopping this
+program
+we will do this later okay so i've just
+shown you that
+but how it is being appeared in the
+console
+okay so let us move further so now we
+are opening up a camera and
+we will store our data feed now okay so
+in
+in a while loop which is always true we
+are just doing this code so let me just
+explain
+that what we are doing here okay so
+this red comma frame is equal to it
+means that red is basically a boolean
+variable
+which just check that camera is over or
+not and frame basically captures the cam
+is a variable where we are defining our
+camera okay
+so and here we are just checking that
+if the camera is not open then just
+continue and
+don't do this iteration and this lines
+means that
+we are just converting our uh
+like initially we will be having a
+colorful image like
+we all are colorful right so initially
+our images
+are rgb image and in python we just like
+rgb like we like v red bgr instead of
+rgb every time
+so in this line we are converting our
+rgb image to a grayscale image okay
+and to convert that we use this type of
+syntax like cv2 dot cvt color
+and frame which is storing the camera
+feed
+and cv2 dot color bgr to gray
+bj to gray means we are converting bgr
+like r
+uh it means rgb we are converting rgb
+to grayscale so this is a syntax
+so our gray so initially we are having
+frame
+in this frame we are we are having a
+colorful image
+and now in this gray frame we will have
+we will be having a grayscale image
+okay so grayscale we have converted into
+grayscale limit because
+in gain and gotham it is much easier to
+like
+understand a grayscale image and do the
+algorithm
+like do the functionalities in grayscale
+image it is much easier than a colorful
+image
+and it doesn't affect the output output
+is much better in greyscale
+okay so when we are processing grayscale
+okay
+so let us move forward
+and this line like faces is equal to
+face cascade dot detect multiscale
+okay so i will mx being the parameter
+that is used here
+so this is a gray frame that is we just
+created
+here and this is a scaling factor this
+is
+the number of neighbors okay so
+let me just give a comment here like
+frame name parameter frame name
+scaling factor
+and number of neighbors
+that we defined by k and just we write
+number of
+number of neighbors okay so uh number of
+neighbors is basically used in k n and
+gotham
+if you don't know that k n in custom for
+now
+just skip this line i will explain the
+each and e functionality of scaling
+factor
+k and uh the whole functionality of this
+line later when
+we i will be explaining the k algorithm
+because you will get a clear
+understanding then
+okay so so uh just let me give you a
+quick overview
+that what is the scaling factor so
+initially if our image size
+if we scale down our image to one then
+if we are doing 1.3 then it simply means
+that we are just
+shrinking our image to 30 percent don't
+worry i will just explain to this
+step later when we are doing gaining
+algorithm so for now let us move further
+so in this line we are just checking
+that if face is length
+equal equal to zero like if this
+um if this face is
+equally equal to zero then this continue
+we don't have any phase here
+okay so as of now just understand that
+this line like this function just
+returns you the coordinates of the face
+captured
+like if i open the camera and the camera
+will capture my face
+then this function will return the
+coordinates of my face
+like top left top right bottom left
+bottom right okay
+so all the coordinates will be returned
+by this function
+to this faces variable okay so this
+so this lines this function is only
+doing this this is just
+telling the coordinates of faces to us
+okay
+okay so let me just explain you that
+what actually this function is returning
+us
+and what type of coordinates are they
+okay so just
+let me open my notepad
+okay so this function like this function
+so let me just select a brush here
+okay so just function like space cascade
+dot detect multi scale
+which is uh this variable faces
+just means that this basis is a list and
+this list is storing the cordless of the
+face
+so if i draw here like if i draw pieces
+like like if this is the person here
+like if this is person one like person
+one and if this is the person two
+[Music]
+okay so these both have faces okay
+so these are the top coordinates like x
+y are the top coordinates of the faces
+and this is the width this is the height
+okay so a box it returns like this
+detect multiscale returns a block to you
+like it returns a box in which we have
+the top left and
+we have the top left coordinates of x y
+and
+the height is h and the width
+is w okay so this function just returns
+x this function returns x
+y w and z so the w
+and h x y w and h
+okay so these are the coordinates and by
+this w and h we can just calculate it
+what are what can be these coordinates
+like
+this can be like x plus h and y plus w
+right like you can just calculate it by
+adding w
+h in x and y so we can get this these
+and this coordinate also
+so this function is just returning as
+the coordinates so that
+we can just uh make a box into the field
+around the face okay that said about
+this
+let us move forward okay so now let us
+see that
+the further code so this line like faces
+is sorted faces key lambda x2 into x3
+so what is it is doing so it is just
+arranging your faces like if you have
+multiple faces in the video field
+like if i show my face my sister's face
+my brother's face
+my parents face my every my friend's
+face so
+multiple number of faces will come right
+and we have to sort that
+faces in increasing or decreasing order
+as per our need
+okay so what we are doing here is we are
+passing the function name sorted and we
+are just using
+using a laptop function okay so in this
+uh this time mean that we are passing
+our faces list here
+like in this faces list
+we have uh x y h and w coordinates
+uh numbers okay and we pass this list
+here
+and we are just calculating so this
+means that
+okay so like faces lists like if we have
+faces
+then faces contains a list of
+x y w and
+h okay so it is zero index this is one
+index
+two index is three index okay so the
+area of image is what
+area of any image is weight into height
+okay we went into height and
+weight into height basically here is
+faces
+[Music]
+interfaces three okay this is width into
+height and this is basically area
+and the image which have larger area
+will obviously come first if we are
+sorting it in a decreasing order
+and if the area is less then it will
+come first in
+the sorted order if we are sorting it in
+ascending order right
+so this so in this here so
+lambda x is just representing our faces
+and we are just using the lambda
+function here if you don't
+like what is lambda function so let's
+like just get a quick overview
+by seeing the documents documentations
+okay so
+x is representing this spaces and
+x2 into x3 basically
+arranging this in a descending order
+like we are sorting it in a descending
+order
+right so and these like if we are having
+faces like this first phases this second
+phase is this
+third phase is like small face then big
+face
+and small place and these all faces will
+be sorted in a descending order like
+first become
+big and small and then small this one
+okay so in this way we sort our faces
+and every data will be stored in this
+in this variable okay so i hope that you
+get a clear understanding of what we are
+actually doing here
+and now just forget this line
+as of now so now we are just we will
+just hydrate
+every phases and you'll just store every
+face in our data
+so now we are we are just i'm trending
+in our faces a
+so let us see that we are starting a for
+loop here
+and for loop is going to end okay
+and this x y w h is are the coordinates
+of the face so face and faces means that
+it is like this is phase one this is
+phase two this is stage three this is
+phase four
+like these are the faces and the
+coordinates of each and every face
+will come in this x y w and h variables
+okay as we iterate over every faces then
+the
+uh coordinates of every phase will come
+in
+x y w and h okay and this offset
+simply means that we are providing a
+padding so if you have done
+html before before you might know that
+what is
+padding which is what is margin so
+padding is basically uh
+so if we are having our face here this
+is our face then this
+gap is basically padding okay so this
+gap is padding
+sorry about the handwriting uh actually
+pen is quite bold here
+okay so if you are having a face here
+like
+and this is covered in a box then this
+box
+is having a padding of five okay
+so this length is basically five or five
+carry
+okay so we have just given the padding
+of five to like
+uh show a clear user interface okay
+so as before we are just having this uh
+this box as outer box which is which we
+are having the coordinates x y and
+everything
+so now here we are just extracting the
+face section
+so this line is basically extracting the
+section of a face
+so it is subtracting the offset
+so basically it is subtracting the
+padding and
+it is just uh calculating a particular
+section of a face
+initially there was padding and now we
+are just scattering the particular
+section of the face
+okay and after that like you will see
+you can understand this easily like
+weird is subtracting offset
+from length from top and bottom
+and subtracting from left and right okay
+we are just subtracting our padding and
+just getting the section of face by this
+line okay just
+go through it once and by this face
+selection we are just resizing my face
+to 100 across 100 image
+okay so i hope that you understand it
+and now this skip so this tip just means
+that
+when we start recording our face then
+after every second i will skip after
+every second or
+after every iteration this tip will
+increment
+okay like we have recorded one first
+phase second phase third phase
+like a particular uh time frame of the
+face
+is being recorded by this script by the
+script
+okay so after every 10th phase like
+when i started the recording when i
+started recording my face
+so i recorded at first second second
+second
+third second fourth second i'm recording
+my face at every second
+okay so when i hit the 10 second of
+camera
+i will just do a skip operation okay
+and after every 10th phase i will be
+recording this 10th face
+into my array okay i'll be recording
+each tenth hydrated phase in my array
+so that i don't have many faces in my
+area and i have a good
+like recognize later so as you can see
+that
+like after each 10th 10th iteration
+i am just appending my face into the
+face
+and printing the length of face that's
+it like understanding these lines this
+line simply means that
+we are just creating a rectangular box
+towards our frame
+big frame is basically a section of
+frame a section of face which we are
+having
+and this these are the coordinates like
+top left
+top left quadrants and these are the
+bottom right coordinates
+we pass this these parameters at the
+color of the box which we have to
+display
+okay so this is rgb red green and blue
+so basically we have given green to its
+full number and
+red and blue to zero zero so basically a
+green color box will
+uh will appear on our face okay
+so like let me show you that so so when
+i
+when i will open my camera so what will
+happen like
+a camera will open like this it will be
+a frame
+and my face will be here like i will be
+standing or sitting here
+and a green color box will appear around
+my face like
+around a section of face a green color
+box will appear
+okay and by this like
+this is basically our gp i have given 0
+to
+r 0 to blue and 255 degree 255 is the
+maximum number that's why a green color
+box will appear
+if i give like 255
+zero then a red color box will appear
+around my face red color box will appear
+so this is simply uh this line is simply
+creating a rectangular box
+which will appear around this frame
+frame is basically
+uh this frame okay
+so and by this this will just show the
+frame
+like it is understandable and this uh
+this is
+like that if we have if a webcam
+is open then if we place a key
+if we press q then the webcam will just
+switch off
+like i will explain the function of this
+later so let us move
+forward about this as of now and
+so now after when we have stored our
+faces then after that
+we will we are we will be having a list
+of faces like we are having a list of
+faces
+in which faces our faces data are stored
+okay
+so now to implement the kb's algorithm
+here we have to implement basically kn
+so it implements only on numpy array so
+a numpy array works best in
+some scenarios and the compilation power
+is pretty much higher then list
+okay so we will convert our list so face
+data is basically a list now
+we will convert this list to a numpy
+array by this function
+by np dot array and
+phase data here we are basically
+converting our face
+this is a list here as of now we will we
+are converting this to a numpy array
+okay so to have a faster computation
+and to better fit in algorithm
+after converting into a numpy array we
+will just reshape it
+okay so reshaping is a basic like basic
+concept
+you will know it and if you don't know
+like what is reshaping
+i would say that just look at the
+documentation like
+what it is doing and after this
+reshaping we are just
+printing our face not shape phase data
+shape like what is the
+shape like what is the shape of the face
+as of now
+and after that we are just saving our
+data in
+our folder which we have just made
+like just let me explain you this so
+this data set path is basically
+the d drive path which i have just uh
+stated
+earlier so so basically this
+this is a data set path and now
+we are just storing like current data
+into this folder okay so to store our
+data in this folder what we are doing is
+like we are just saving our current data
+data path file name and phase data
+okay so file name is basically this uh
+when we are entering our name the name
+is storing it this file name
+okay so now just see that what we have
+done
+we have saved our data set plus file
+name
+and phase data and so if we print this
+it will be like data set like let me
+just show you if we print this what will
+happen here
+so now when we print it like it will
+come like this if the
+folder name is my data if data is my
+folder name then
+and my file name is if i write my my
+name
+like our breadth
+and extension is basically dot npy
+because we store in this so this will be
+our
+location or source where we are storing
+the current data
+okay so this this dot np
+will contain all the faces all the my
+face data
+which is being stored in the camera feed
+and we will use this data to recognize
+and pass this data
+okay and now but this this is this means
+that we are releasing our camera which
+we have just opened your webcam and this
+light is just destroying all the windows
+which have
+been created by the camera like
+basically the frames which have been
+created
+here okay so this is the basically
+everything about
+base data reading and data collection so
+now
+we will see that how we can recognize
+the data by using
+gain canon algorithm so this is the
+basically the code
+of the face recognition and here i have
+implemented a canon algorithm that what
+the algorithm is doing
+okay so i will explain line by line that
+every like what
+every line of functions is doing i'll
+explain everything and
+uh if you have any confusion like if you
+don't want to make
+alien algorithm from scratch like here
+in this video i made the
+this algorithm from scratch you can also
+use inbuilt library like
+alien inbuilt library comes it just
+works in simple one line and here i've
+used like
+very lines here to implement it from
+scratch okay so you can use
+like direct library function also and
+you can also like implement it from
+scratch
+okay so don't worry about that we will
+just discuss everything here
+okay so before starting like a face
+recognition
+let me just give you a quick overview
+that what is
+kanan and gotham doing okay so now let's
+see this
+okay so now let me give you an example
+of like what is
+care and in a very very simplest way and
+i will show you that how
+our gain can be implemented in this
+project also
+okay so let us see that so if we are
+having uh suppose
+we are having suppose i have given a
+small example
+before like we are having a class one
+here
+let me just okay so
+it is a it is my class one
+and okay
+and i am just just let me change my
+color
+and this is my class two
+last two
+and in between this class 1 and class 2
+i have
+a person here like suppose this is me
+now i have to like go to class 1 or
+class 2
+and we have to find that this one belong
+to which class like
+this one belongs to this class or this
+class we don't know as of now
+so what we do is we will find distance
+of current point with all the points
+and find the nearest point to this green
+point
+okay we find distance to every point and
+we'll check that
+what is the average nearest distance we
+have so suppose
+if so what we do is
+we find distance of this green person to
+every person of the class and we find
+the top a person's like suppose
+we find distance to every every person
+in the class
+and after that finding we just
+categorize the top five
+person like if we write k is equal to
+five then these five people
+are the nearest people to this like if
+k is equal to five then this three
+people like this this this
+this three people are plus one and these
+two people of class two are the nearest
+people
+to this green okay so
+a is equal to five simply means that
+these five peoples are the nearest
+k people to this green color
+this green person okay now
+there are three persons of class one and
+two persons of class two
+this simply means that the we will just
+check that
+at which class we have the most number
+of
+uh nearest neighbors okay so this class
+one has the most number of nearest
+neighbors to this green
+green person okay so as class one has
+three neighbors
+class two has two nearest tables so
+obviously we will categorize our
+this green person to class one because
+these
+are more nearest neighbors as compared
+to plus two
+okay so here class means class one wins
+so basically this point belongs to class
+one
+is it it is a basic overview like what
+is gaining and i will explain
+this in this further video like by
+giving more detailed examples
+i explain you the complete like how to
+take facial data
+and store into a numpy array and also
+showing the basic
+quick overview that what is scaling
+algorithm and in today's video we're
+going to see that
+how can a gotham can be implemented here
+and
+why should be implemented here okay so
+like
+like in this project we are like
+recognize recognizing our face
+with this canon earth kane and gotham
+but this is not the only way
+there are many other algorithms like
+uh convolution neural networks and like
+many other things by which we can like
+recognize our face so this is the one
+this is one of the method came in
+by which we recognize so let me give you
+example that how can can
+be implemented here so just see this
+so suppose that it is my graph
+and suppose i have stored the data of
+five people like uh four people i have
+state i have uh recorded the data of
+four people
+four of my friends and one of one it's
+me one is me
+and uh other three are my friends okay
+and total is i have four people okay
+one eight one is me and three are
+friends so
+just let's see that suppose this is my
+this is me
+uh this is these these are my face
+records like i just
+i just told you that i am recording my
+faces
+after every 10th iteration in and
+it will depend like when the number of
+the number of minutes or seconds or
+hours i will open my camera
+if my face will be get recorded and and
+due to that i have i will be having
+number of faces like if i open my camera
+for 10 minutes then i will be having a
+lot of faces recorded
+if i open my camera for one minute then
+i will be having only
+six faces recorded because the my faces
+are recording after every 10 seconds
+okay it is just a overview example so
+suppose
+i am i am i am having like my
+six faces and every friend of mine is
+having six faces
+okay so this is person one and these are
+the faces of person one
+and just let me change the color
+this is like this is me and
+suppose this is my friend face
+okay this is my friend's face
+and like like friend one and this is me
+and suppose i'm having my one more
+friend stay stored
+okay so this is my friend's three face
+like
+a second friend face and
+this is these are the faces of my friend
+three okay
+and now i am just like these are the
+these are stored in my data
+these all faces are stored in my data
+and now i open my camera feed to
+recognize
+and use gain in algorithm now so suppose
+i open my camera and i open up my camera
+like my camera face has been opened and
+a random person comes in the camera like
+it is none of us so it will not match
+with any of them
+and it will just simply cannot recognize
+okay so
+if i open my camera and i show my face
+to it like
+i show my face to it and
+it will recognize my face as like this
+so
+how it is happening so if i open my
+camera my face will come here
+like this is my camera and my face will
+come here
+so now my face will calculate the
+distance
+from every facial data okay so i have
+just tell you that i have used hard
+casket classifier
+so my hard casket class where i am just
+calculating my
+difference between faces okay so i will
+calculate the difference
+my of my face with every other face is
+stored okay
+with every other face is stored i will
+calculate the difference
+between my face and other faces okay
+like every faces okay and
+i will just calculate like if i take k
+as
+3 then i will just
+get the three nearest neighbors
+three nearest neighbors and
+obviously i will be having the least
+faced facial difference with me only
+if i am wearing in the front of the
+camera then i will be having the least
+facial difference with me only
+okay so by this algorithm we can just
+state that
+um i am having like
+this space means this is me and
+if if it recognize that this phase means
+like my name is
+so it will just recognize it and show my
+name
+on the box like don't be confused i will
+explain everything
+step by step after like moving into the
+code
+so let us get started about that
+okay so let us get further like
+explaining that what is going on here
+so in this face recognition file what we
+have done is we have just imported
+imported our numpy
+library opencv and os library
+okay so this is the code of canon
+algorithm
+and if you don't know like mathematics
+of canon wortham
+then i pray for you that like just read
+the documentation or just
+read any video just see any video and or
+see any
+code and just try to implement it my own
+by your own
+okay if you try to implement it by own
+you will get a
+clear understanding that what this is
+doing in actual
+i have explained you like like what are
+the logics which have been done
+and these logics are simply coded here
+okay
+like sorting on the basis of this and
+frequency of each label
+finding the max frequency i'm just
+explaining everything about this you
+have to just understand like what code
+is doing
+so i and this is basically a distance
+like uh this point distance from this
+is basically euclidean distance which is
+x 1 minus x 2 whole square plus y 1
+minus y 2 whole square
+so this is basically euclidean distance
+you might know this
+as everyone has started this in school
+so
+here the euclidean distance is being
+calculated
+and here is the basic logic of caden so
+i
+like give the task to you
+i have to find that what this game
+actually doing so i've explained the
+logic
+just go through it once and understand
+that which
+and what is this canon code is doing if
+you don't understand this right in the
+comment box like i will explain
+everything about that
+and make another video in if you don't
+understand but this is very logical
+thing
+i'll explain the logic just go through
+this code once and understand that what
+it is doing
+okay this is quite simple so like like
+uh so now let's move to our main project
+that how to recognize that using our
+inversion so i have just changed my ide
+because
+uh previously i was having spider id
+that come
+that comes from anaconda and now i have
+id of
+python so it doesn't affect our code
+and so let's start it so like in the
+previous
+video we have seen that like uh all the
+things like
+based data collection video camera on
+like how to how to do that
+base recognition okay all of that and
+now like
+we have to do like the last practical
+part of it like we have to recognize our
+face after
+after loading and loading the data of
+the faces
+right like i will open my webcam and i
+will upload my data
+like i will start the webcam and my
+camera feed will constantly
+and consecutively uh load my data
+okay and after that like my facial data
+would be stored in
+a numpy array and in prediction i will
+use that numpy array
+for in my canon algorithm to predict my
+new face
+okay so but okay so basic overview that
+like in your family just record the
+faces of four or five people
+and after that in the data collection
+record that
+and while the data recognition just one
+person coming the camera or
+multiple persons and a label will become
+at
+around your face and a box will come i
+will show you that later
+okay so till then just see here
+so this is our face organization code
+okay so like we have done
+uh this place data collection
+and like everything we have done till
+in the later in the earlier classes and
+this is a hard casket classifier
+which we have used for detecting the
+facial components
+and now like let us see our face
+recognition
+file so basically like we have
+like wait now like we have discussed
+kane and gotham in the other class
+like how our face is detected in the
+bunch of many phases
+okay so like this is my k n algorithm
+i have not used a library function
+rather than i have coded it from scratch
+okay like i will show you later like i
+also told you to study the scaling code
+by yourself
+so basically it is nothing just
+calculating the euclidean distance
+and just calculating that which face is
+the nearest phase
+to the point of convergence like two of
+a new phase
+how many previous places are near to us
+okay
+so like like that thing is done here
+like
+i have also given comments and just you
+can read that
+okay and like i will share this code i
+will share the repository so that you
+can
+uh read the code and understand it and
+run it in your computer
+okay and as of now let me just
+unhide the scale code okay so now let me
+just unhide it
+okay so i have just minimized my canon
+code so let us see now like what further
+things are done in this
+in this part so like initially like
+while we
+while i have to recognize my face so
+before that like basic steps has to be
+done
+as we have done in previous classes like
+okay so like
+we have to first open the camera like
+when we open the camera then only we can
+like put our face in front of it right
+so first we open our camera by cb2 dot
+video capture zero by this we are
+opening our webcam
+like this opencv function video capture
+and by this you open a webcam and like
+with c
+and i have stored my webcam in this cap
+variable
+so cap will contain my webcam okay my
+video field
+basically and after that like i have
+called my classifier that is hardcaster
+classifier
+and the function to call our classifier
+is cascade classifier
+okay and there are multiple classifier
+like hard casper class frontal phase
+classifier is only used for
+like uh directing your faces
+and there are multiple classifiers like
+which are which are used for detection
+the number rate of the car
+or a person is the gender of a person or
+many things
+so there are like a lot of classifiers
+which have already been made
+so we have used hardcast classifier to
+do to classify a particular part of the
+faces
+okay and after that after that the
+series data set paths
+so initial like in previous video we
+have seen that whenever we are
+we are capturing our face then we are
+storing that face in a particular data
+file
+okay so uh just see here face data
+collection
+here we have stored our face um i think
+here
+just see here like we have stored our
+face in this
+data set path okay and this data set
+path is basically this folder
+now like when i show you this folder so
+just see here
+i think this is a folder okay
+just see this okay so this is a folder
+that is like
+my like this is my folder basically
+which contains my all the files python
+files and this is my face data set
+folder
+in which all the faces like whatever the
+name i have given in the data collection
+is being written here in the dot npy
+format
+so if i open this like face data
+then you can see that uh when i was
+printing it
+then i was printing in such a way like
+dot format data set path plus file name
+plus dot npy okay so you can see that
+like
+it is my data set path is space data and
+data set
+name and uh file name is this like
+this is my name and this is the file
+name and dot np by say extension
+okay so like this my store data and now
+i have to use this data
+so like in basic cognition i have
+uh i will be using by this facial data
+for the recognition part
+okay and this is the normal areas by
+which we are just
+calculating our facial data like with
+where we are storing our data
+and label are the name of the data like
+what is the label
+like currently and class i like i have
+made two new variables here
+class id and names so class id will be
+basically labels for every given file
+okay and names are like we are mapping a
+particular name with a particular
+data file okay and now let us
+see like how to do data preparation okay
+so like just see this line just see this
+loop
+for fx in os dot
+os dot list directory data set path so
+basically
+os is a uh another library in python
+which is used to for interaction with
+our operating system
+os basically means operating system okay
+so here you can see that like i have
+also imported this os file
+os library basically and now i'm using
+that
+so by this os dot list direct
+it means list directory and data set
+path so
+this this line is basically looping in
+by this folder okay this is my folder
+face data set
+and here my uh
+like this loop is i this line is
+iterating over this
+uh folder okay so every file like every
+file which is present here will be in
+the
+effects like i will be iterating over
+every file
+and like in this line fx dot with end
+width
+it is just finding that which file ends
+with this
+extension dot npy so basically if i made
+some new file layer like if i made a new
+folder here
+suppose new folder and suppose i make
+a word doc here okay so like i made a
+new folder and a word document dot word
+doc
+so basically if these folders are
+present in my file
+so i have to just find the dot npy files
+okay so with
+if fx dot ends with dot mpy
+i am finding just only dot and py files
+where my data are stored
+okay where the different faces data are
+stored i'm just finding those files
+okay and like just see names
+or names bracket class id is equal to fx
+colon minus four so i hope that you
+remember the slicing operator we have
+discussed in
+previous class also like it is a slicing
+operator so basically
+you see this we are we are taking all
+the num we are taking all the characters
+uh except the last four okay so last
+quarter basically this
+dot npy are the last four indices
+right and everything before
+dot npy is our name so basically
+this names class id contains our name
+basically
+okay and here we are just loading our
+data and
+appending this particular name and data
+item
+in my face data array okay so phase data
+is this so we are just appending every
+data
+data in this phase data area okay
+and now you see that now we are making a
+particular target variable
+like like suppose we have five persons
+person number one two sibo five and
+these five person are the family members
+okay
+and now like we have to make a
+particular area a particular scale down
+array
+with that five percent okay so just see
+that like we have to meet different
+target errors for chart so initially my
+class id is zero
+so let's just see this line so basically
+like we have target variables for
+different phases like we have stored our
+facial data and now we are just
+simplifying that data into target
+variables
+okay so target are nothing just a simple
+array okay
+so basically what we are doing is like
+initially like we are having classes
+like
+initial classes 0 and after that like we
+are will be implement
+incrementing our class id with every
+iteration
+so a particular class id is associated
+with every phase data
+okay initially my class id is zero and
+now you see this
+like i have got my uh data item
+and this i'm just taking the shape of
+the data item
+like the length of my data items data
+items are basically the number of times
+our phase has been stored
+okay so like i'm just calculating the
+length of the data item
+and like converting that into
+an array of once so i'll be forming an
+area of once
+with the length of the data okay
+the size will be length of the rate item
+and i am multiplying it by class id
+so my class id is 0 so when 0 is
+multiplied with then
+one uh ones it will become an area of
+zeros
+okay so this will be my target number
+one
+after that like i will increase my class
+id i'll increment it
+i'll store the target in the labels area
+and i will just
+move to the next iteration after that i
+will go at my second phase
+okay and what i will do is like i will
+get another data item
+i will tell you the size of the data
+item because i'm having a different
+person now
+and i will convert i will make a np
+area of once and the size of that area
+will be
+data item size okay and i will multiply
+that by class id
+so whenever an area of once is
+multiplied with class id
+which is one so it will become the same
+area again
+so that will be my target number two and
+similarly when i class id are being
+incremented
+so basically like when class id is equal
+to when two is multiplied by area of
+once
+then it will become an area of two okay
+the basic difference is that the size of
+this
+these all the target arrays are
+different okay
+based on the particular faces the size
+of errors are different and the number
+on there is our difference
+okay so that's how like we are just
+modifying the facial data
+into target variables and storing all
+the data in this
+labels so labels is also an area we are
+storing all the different
+phase data and labels now and now we are
+just printing that data
+like whatever the face data we have what
+the face labels we have
+all that simple stuff and just combining
+that
+into np like np or concatenate paste
+data and phase labels
+space data is the phase data and phase
+labels are the labels of the faces
+associated with that okay and now just
+see like
+like we have printed that stuff and now
+it is my
+font this line doesn't care as of now
+and now just see that like
+like this this line
+okay so now let's see that like uh
+so now like we have like stored our
+facial data like we have extracted our
+data from the data set and we have
+stored
+okay now like we have to implement our
+like we have to call our gain
+function and we have to make a box
+around our face
+so what will happen is that when you
+store your face data
+okay and like one part is storing our
+face data in face data dot py file
+and now like when we are recognizing it
+like open your camera like play this
+file
+your camera will be open and then you
+will show your face in front of the
+camera
+a box will become around your face
+and your name will be written above that
+box okay suppose
+if i show you this
+we just just see this suppose like we
+are having a phase like this
+and like what what will happen is like
+when i open my webcam
+suppose this is my webcam okay
+this this whole screen is my webcam and
+this is my face
+like i'm having neck also and like so
+[Music]
+okay like rest of the body and a face
+so basically whatever got some will do
+is like when you open up the camera
+then a colored box will be covered on
+our face
+which will be like this which will cover
+only our face part
+okay like
+okay so a squared box will be formed
+around our face
+and our name will become here at the top
+okay so our like our
+algorithm will do that so like this is
+our webcam and this is
+me or anything or you and a particular
+green color box will be covered on this
+and this is due to this hard casket
+classifier which is
+like uh defining our face basically and
+our name will be written over that let
+me just show you that code
+so basically like
+like we are just doing the same thing
+again which we have seen earlier also
+like we will start a loop an infinite
+loop which will be recording our camera
+so we will start on the camera by cap
+dot read
+and this red and frame will basically
+be having our camera variables like
+webcam variables
+return is basically like telling us that
+whether the camera is on or off
+okay and frame is basically our main
+camera opening which we will be using
+okay so first like we have just
+converted our image to a grayscale image
+okay like whatever the video we are
+having we have just converted that into
+a grayscale video
+and after that like we are done same
+thing like we have just
+detect multiscale and these are the
+scaling factor and the number of
+neighbors
+like we have seen all this part in
+earlier video also
+okay just get over here so this spaces
+will basically contain
+our coordinates of the faces like x
+y w and h so basically
+uh if i change the plane so this this
+this corner like top left corner will
+contain the
+will having the point number x and y
+sorry i don't have the mouse so i'm
+talking like this
+so x and y are the coordinates and this
+is
+our width and this is our height
+basically
+okay so basically our
+this function will give us the x y with
+the height
+so that that all will be stored in in
+the face area
+okay and now like we are just starting a
+loop
+okay so like in the new loop we are
+having a face
+and with a phase we are having the
+coordinates and these coordinates are
+stored
+are got from the space okay so this
+space is basically the one
+phase on which we are iterating
+and everything this is same just we are
+just cutting the part of the
+camera frame and just converting that to
+100 cross 100 frame size
+and now just say this out is equal to k
+n
+we are calling our function this c just
+concentrate here
+we are calling our function k in and now
+like train
+train set and face section flatten
+so face section dot plating so basically
+training set is our training set which
+we
+have which we are carrying over from the
+past time and phase section dot platinum
+means
+like we are defined as earlier also like
+we are having a face section
+just here we are having a face section
+basically
+the camera frame which is just uh uh
+calibrating our face
+so we're just flattening that to convert
+that into a area
+okay of one column in multiple rows we
+are just starting that because
+in canon our parameter should be a
+flattened array
+only a area of one call okay so with
+train set we have that we have
+our new face just we are just parting
+passing the two parameters
+and this will give us the output output
+will be that phase
+like training set we have trained and
+space section
+is the section we got here so it will
+basically
+guess the output that which frame we are
+having currently
+so trains that we got from data phase
+data
+okay all the phase data we have so it
+will just iterate over every data and
+just
+apply our k n algorithm with that okay
+which is having a training set and a
+test set okay
+on the base of that it will give us the
+prediction which is this
+and it will tell us that which point it
+belongs to
+okay it's like if we have this
+basically like this is a stuff like if
+you are having a face in between so it
+will just tell us that
+which face does our face belong to from
+this rest of the five phases
+basically okay and now like we have done
+that like we got the output face
+from here and now we we have to make a
+box on the face
+and a text on the face basically
+okay so c v2 dot rectangle dot rectangle
+is a function which is used to make a
+shape
+by opencv so what we are doing is just
+we are passing a frame
+the coordinates the top left coordinates
+and the bottom right coordinates okay
+top left
+xy and bottom right are exclusively y
+plus h we are passing the coordinates
+okay and it will make a face round it
+will make a
+rectangle in these coordinates and this
+is the color
+and this is the width width of the box
+color is 255 255 this is basically bgr
+color
+okay blue green red okay like if i
+do zero here and if i do
+so bgr means b g and
+r so if my b and g are 0
+and my r is 255 it will make a
+box of a red color
+okay and if i make this like uh if i
+make this too much
+here so it will make a green color box
+okay
+this is just a color color format and
+now like
+to put a text like here like we write a
+function co2 co2.put text
+and it will just uh put a text here and
+this is the font of the text
+and this is the and this is the
+coordinates where i have to put my text
+and this is my color of the text like
+pgr format
+b is 255 so my text will be of blue
+color
+okay and this is the width okay and
+similarly like that we are just
+putting everything and now like we are
+just uh displaying our face
+okay like we are just showing our camera
+feed and
+all of that okay and after that
+everything just
+make a function like if i press a key q
+so my function will be entered
+and i can close my webcam and my webcam
+will not be closed
+by anything except pressing q okay
+and now like after all everything we
+just will just destroy the window and
+close the program that's all okay like
+this is a
+project of face cognition and i hope
+that like this is a very beginner level
+project
+in machine learning okay it's like i
+hope that this will this will be clear
+to all of you
+and just write like just give the
+comment below that how
+like like uh how much you like this
+playlist of
+this project okay and
+okay so let's end this video now okay
+bye

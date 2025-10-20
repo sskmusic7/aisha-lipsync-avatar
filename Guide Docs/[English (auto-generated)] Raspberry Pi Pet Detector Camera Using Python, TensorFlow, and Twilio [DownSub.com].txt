@@ -1,0 +1,156 @@
+[Music]
+hi everyone this video is about a
+Raspberry Pi powered pet detector I made
+that sends me a text letting me know
+when my cat or dog wants to be let
+outside my cat is a silent type
+so he'll stand at the door for hours
+patiently waiting to be let through
+without uttering a single meow because
+he's not spoiled enough already
+I made this pet detector to watch the
+door and send me a text when he wants to
+be led through that way I can be a
+better cat servant by dropping
+everything I'm doing and rushing to his
+aid the pet detector uses the tensorflow
+mobile net model for object detection
+and uses the Twilio api to send texts in
+this video I'll explain how it works so
+you can use the concepts in your own
+object detection applications the pet
+detector uses a Raspberry Pi with a PI
+camera that points at the door I setup
+the PI to run tensorflow object
+detection by following the steps from my
+tensorflow
+object detection on the Raspberry Pi
+tutorial video the pet detector uses the
+mobile net SSD model to perform object
+detection on a live PI camera video feed
+the model detects cats or dogs in each
+frame and finds their location if the
+pet is detected within the predefined
+inside box for at least 10 frames
+pet once outside is displayed on the
+screen and a text is sent to my phone
+similarly if the pet is detected on the
+outside box the program sends a text
+letting me know my pet once inside let's
+take a look at some of the code that
+makes this work I've uploaded the pet
+detector Python script to github and
+linked it in the video description below
+if you want to follow along you can use
+the code as an example to help build
+your own object detection applications
+first the program initializes tensorflow
+and loads the mobile net model into
+system memory
+then it initializes the pie camera and
+begins continuously capturing frames
+each frame from the PI camera is passed
+into this pet detector function that
+holds the bulk of the pet detection code
+inside the pet detector function the
+frame is passed into the tensorflow
+neural network the network detects
+objects in the frame and draws their
+location in the image each detected
+object has three properties location
+detection confidence and class name
+these are output into three different
+variables boxes scores in class the
+boxes variable contains the XY
+coordinates of each detection box the
+scores variable contains the detection
+confidence of each object the classes
+variable contains the class ID number of
+each object a fourth variable num shows
+how many objects were detected in the
+frame even if they have close to zero
+percent confidence the variables are all
+stored in order of the highest detection
+confidence to the lowest confidence my
+pet detector assumes that the object
+with the highest detection confidence is
+the cat or dog for each variable it
+looks at the first item in the list
+which is stored at the zero index for
+each frame the code checks whether the
+class of the top detected object is a
+cat or a dog by looking at the value
+stored in the class's zero-zero variable
+the class's variable only gives their ID
+numbers so you have to check the label
+map to see which number corresponds to
+which class string in the label map a 17
+corresponds to a cat and a 18
+corresponds to a dog my program uses an
+if statement to check if the value
+stored in class is zero zero is a 17 or
+an 18 if it isn't the program ignores
+the detection results and waits for the
+next frame once the code is confirmed
+that the detected object is a cat or dog
+it finds the location of the object in
+the image by looking at the values in
+the box's variable the box's 0 0
+variable gives XY coordinates for the
+bottom left and top right quarters of
+the detection box they are stored in the
+order Y min Y max x-min and x-max
+however the values are normalized to the
+width and height of the image they have
+to be multiplied by the image width and
+image height to get the actual cord
+it's to find the center of the object
+the program calculates the midpoint
+between y-min and y-max and the midpoint
+between x-min and x-max then the program
+uses an if statement to check if the
+center of the detected object is within
+the predefined inside box or outside box
+if it's in either box it increments the
+corresponding counter variable I've set
+the boxes to match the location or my
+cat or dog would be standing for this
+particular camera angle the box
+boundaries can be changed if the camera
+is at a different angle when the counter
+variable reaches 10 meaning the cat or
+dog has been detected inside the box for
+at least 10 frames it draws a message on
+the screen and sends the text to my
+phone
+to send a text the program uses the
+Twilio api Twilio is a service that
+allows you to send text messages to
+phones over the Internet the API is
+rather straightforward to use but it
+requires setting up a Twilio account I
+put a link to a brief tutorial on how to
+use the Python Twilio API in the video
+description below once the text has been
+sent the program pauses detection for
+the next 30 frames which is about 20
+seconds while it's paused it won't
+perform any actions I did this so the
+program wouldn't continuously spam my
+phone with text messages putting it all
+together the program can identify my pet
+determine if it wants to be let inside
+or outside and send me a text letting me
+know this way I can be a better servant
+to my cat and prevent him from ever
+having to suffer in silence I hope this
+example helps you understand how to use
+the tensorflow object detection API to
+create detection programs with cool
+functionality when combined with the
+versatility of Python and tensorflow the
+Raspberry Pi can be used for a wide
+variety of applications thanks for
+watching this video and see you next
+time
+[Music]

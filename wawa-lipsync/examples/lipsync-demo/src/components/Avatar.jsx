@@ -11,6 +11,7 @@ import { useControls } from "leva";
 import * as THREE from "three";
 import { VISEMES } from "wawa-lipsync";
 import { lipsyncManager } from "../App";
+import { AvatarTracking } from "../services/avatarTracking";
 
 let setupMode = false;
 
@@ -39,6 +40,7 @@ export function Avatar(props) {
   const animationsGLTF = useGLTF("/models/animations.glb");
   
   const group = useRef();
+  const trackingRef = useRef(null);
   
   // Check if the loaded avatar has its own animations
   const availableAnimations = scene.animations && scene.animations.length > 0 
@@ -85,6 +87,29 @@ export function Avatar(props) {
     console.log("Available animations:", availableAnimations.map(a => a.name));
     console.log("Avatar scene structure:", scene);
   }, [availableAnimations, scene]);
+
+  // Initialize eye tracking and body following
+  useEffect(() => {
+    if (!scene || trackingRef.current) return;
+
+    console.log("[Avatar] Initializing eye tracking...");
+    try {
+      trackingRef.current = new AvatarTracking(scene, {
+        wsUrl: 'ws://localhost:8765',
+        enableBlinking: false, // We handle blinking separately in the component
+        enableMicroMovements: true
+      });
+    } catch (error) {
+      console.error("[Avatar] Failed to initialize tracking:", error);
+    }
+
+    return () => {
+      if (trackingRef.current) {
+        trackingRef.current.disconnect();
+        trackingRef.current = null;
+      }
+    };
+  }, [scene]);
 
   // Handle animation changes from the control panel
   useEffect(() => {
@@ -200,6 +225,15 @@ export function Avatar(props) {
     const viseme = lipsyncManager.viseme;
     const state = lipsyncManager.state;
     const features = lipsyncManager.features;
+    
+    // Update tracking based on lipsync activity
+    if (trackingRef.current) {
+      if (features && features.volume > 0.01) {
+        trackingRef.current.onLipsyncStart();
+      } else {
+        trackingRef.current.onLipsyncEnd();
+      }
+    }
     
     // Debug: Log when we have audio activity
     if (features && features.volume > 0.01) {

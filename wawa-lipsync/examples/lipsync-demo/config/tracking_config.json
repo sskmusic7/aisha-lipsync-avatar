@@ -1,0 +1,45 @@
+{
+  "tracking": {
+    "camera_index": 0,
+    "fps": 30,
+    "detection_confidence": 0.5,
+    "smoothing": {
+      "position": 0.15,
+      "body": 0.08,
+      "head": 0.12,
+      "eyes": 0.25
+    }
+  },
+  "movements": {
+    "limits": {
+      "body_rotation": 45,
+      "head_rotation_x": 30,
+      "head_rotation_y": 25,
+      "eye_rotation_x": 20,
+      "eye_rotation_y": 15
+    },
+    "idle_animation": {
+      "enabled": true,
+      "activation_delay": 2.0,
+      "intensity": 0.5
+    }
+  },
+  "websocket": {
+    "host": "localhost",
+    "port": 8765,
+    "reconnect_delay": 3000
+  },
+  "features": {
+    "blinking": {
+      "enabled": true,
+      "frequency": 0.008,
+      "duration": 150
+    },
+    "micro_movements": {
+      "enabled": true,
+      "breathing_rate": 0.3,
+      "eye_drift": 0.3
+    }
+  }
+}
+

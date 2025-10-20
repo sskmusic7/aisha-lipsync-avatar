@@ -1,0 +1,293 @@
+I gave Chad Gibbdity a face, a voice and
+wheels to move and it turned into
+something smarter than I expected.
+Meet Sorus, my personal AI robot which
+can understand its surrounding and make
+a decision how to move and navigate
+through them. From listening to me to
+understanding what's in front of it to
+exploring spaces completely by itself.
+It has taken me months to build this
+along with my day job. A lot of 3D
+printing, wiring, debugging, and
+honestly a lot of stubborn nights. But
+finally it's ready. Hey Sarus, should we
+start the video? Always ready. Let's
+begin.
+Okay. To begin with, this is Sus. This
+has been my obsession for months. So
+Sarus stands for smart autonomous
+robotic AI system. It is also a short
+form of Sarasati, the Hindu goddess of
+wisdom. It runs on Raspberry Pi. I wired
+it from scratch, coded everything in
+Python, and added just enough AI to
+bring it to life. And honestly, it's
+pretty cheap to build. I didn't splurge.
+I just used components which were lying
+around in my house or I bought some of
+the components which were easily
+available in the market. And it's not
+just hardware though. Sus can actually
+communicate with me when I talk. So when
+I say, "Hey Saras,
+you can see it has started blinking.
+That means it's listening to me right
+now. I'll tell you in a bit how this
+works, but there was a purpose I
+designed it this way. It may look very
+minimalistic, but under the hood there
+are a lot of components. There are of
+course 3D printed parts. You have
+sensors, speakers, mic, a Raspberry Pi
+inside which I'll tell you in a bit. We
+have four DC motors, wheels and some of
+the wiring stuff which is under the
+hood. So let's talk about each of the
+components one by one.
+So let's start with the vehic. If you
+keep wondering why I keep saying hey Sus
+now it has already picked up. Let me
+mute it first and then I'll tell you in
+a bit.
+So as I was saying why I keep saying hey
+Sus. basically because it's its vague
+word. Just like Alexa or Google, Sarus
+doesn't react until we say the word hey
+sirus. I didn't wanted it to react to
+every little sound and that's why I gave
+this a vague word like hey sirus.
+Bingo.
+Now before we get into all the smart
+stuff, yes, I can control it the old
+school way too. This is just a basic
+manual mode I set up using a Xbox
+controller when I want to drive it
+around myself forward, backward, left,
+right, nothing fancy. But honestly, it
+helped me test everything early on. When
+things were still breaking and nothing
+was working, this remote control mode
+saved me more times than I can count.
+Initially, when I was building this, the
+remote controller made all the
+difference. It helped me to debug faster
+and fix those issues. So yes, Sus can be
+controlled via Xbox controller just like
+any other cool car.
+So before we move on to the next stage,
+I just wanted to quickly discuss about
+its display. So right now it's in
+neutral state and whenever I say hey
+Sarus,
+you can see it has started blinking that
+means it's listening to us right now.
+And now whatever I said just now, it's
+trying to process that. So it's in
+thinking mode right now. Blinks ready to
+assist. Please ask your question or
+topic. I'll provide a response within 20
+words. The talking mouth was just
+basically sus conversing to us and when
+we say nothing then it has been gone
+into the idle state again. So these
+aren't just random faces they have been
+configured in a way so that it can imply
+to us what it's doing at that stage and
+they are saying in the way in the back
+end so that we can understand at what
+stage it is performing what action. It's
+simple but it makes sus feel alive.
+So by now you have seen it talking but
+it's not just kind of a voice assistant
+setup it's actually running a bunch of
+AI models in the back end not just one I
+have got a local model llama I have also
+got chat GPT to run few benchmarks and
+I'm also using a local vision model
+called lava and they are all working
+together behind the scenes for different
+different purposes when I ask something
+my voice gets transcribed it goes to the
+AI in the back end gets processed a
+response is received and text to speech
+is triggered so that it can respond
+respond back to me all on the fly. So
+again, let me give you a demo. Hey
+Saras,
+what do you do?
+I'm listening, thinking, and ready to
+assist. Waiting for your next command or
+question. So this was not hardcoded. AI
+actually thinks what to respond whenever
+I ask a question. So let me give you one
+more demo. Hey Saras,
+tell me a joke.
+Why don't X tell jokes? They crack each
+other up. Well, apparently it's not good
+for fun jokes. I'll tell you in a bit
+how these responses are curated and
+respond back to me. This is realtime AI
+generated responses, not can replies.
+All right, let's move beyond just the
+conversation because it can actually
+follow spoken commands too. Hey Sus,
+move forward.
+Hey Sus,
+move backward.
+Hey Sus,
+go left.
+So yeah, it can go forward, backward,
+left, right, stop just through speech.
+Every time I say something, it listens,
+thinks about it, then moves. This is
+where it starts to feel less like
+control and more like collaboration.
+Okay, so this must be the coolest part.
+It can actually see what's around it. It
+uses a camera to take in its surrounding
+and then AI to understand what it's
+looking at. So again, let me show you
+one more example.
+Hey Sarus,
+what do you see?
+In the image, a man with a beard is
+posing for a photo. He's standing in
+front of a large screen television
+mounted on wall. The room has a modern
+decor vibe with a black speaker visible
+nearby. The man is wearing a black
+t-shirt with a graphic design and a
+baseball cap. His expression is neutral,
+suggesting he might be taking a break or
+perhaps preparing to watch something on
+the screen.
+I'll say that it's not perfect, but it
+has done a terrific job of describing me
+and the surroundings around it. So now
+that Saras can see and describe things,
+I wanted to try something a bit more
+interactive. So instead of just
+recognizing objects, I actually wanted
+it to move toward them. Hey Saras,
+go to the boxes.
+Understood. Going to the boxes,
+looking for the boxes.
+It figures out where the object is based
+on what it last saw and starts heading
+toward it.
+Box is spotted. Moving closer. And the
+best part, it knows when to stop right
+before bumping into it.
+Reach the boxes.
+It's still basic, but when that first
+worked, it honestly felt like magic. Hey
+Saras,
+go to the couch.
+Understood. Going to the couch. Looking
+for the couch.
+Couch spotted. Moving closer.
+Reached the couch.
+Okay, so now come the part I was really
+building toward. This is Sarus in full
+autonomy mode. Hey Saras,
+start exploring.
+Starting exploration.
+There is no remote, no pre-planned path.
+It's looking around and making
+decisions. And I am giving it a kind of
+memory by saving each move and feeding
+that history into every decision it
+makes. So it does not go in circles. It
+checks for obstacles. It updates its
+path and it keeps going step by step
+until it's explored the full area.
+It's not perfect. Sometime it hesitates.
+Sometimes it overreacts. But it's
+moving. It's thinking. And I didn't tell
+it where to go. Watching it explore like
+that completely on its own, that's when
+it hit me. I built something that's
+actually alive in its own little way.
+And once it's done exploring, it gives
+me a full summary of everything it saw,
+like its own little mission report.
+Exploration complete. Here's what I
+found.
+Robot discovered a residential area with
+various objects, including furniture,
+electronics, and personal belongings. It
+observed people interacting with
+devices, watching television, or
+relaxing in different rooms. The space
+appears to be cozy and wellmaintained.
+Behind the scenes, I was logging every
+move it makes. So, you can see here when
+the robot was making a move, how it
+reacted in the real world. Here we have
+which direction it went, how close
+obstacles were, and even what it saw at
+each point. All of that is saved run by
+run and it uses that information to
+decide what to do next. Eventually, I
+can even use these logs to build a 2D
+map of my home. So, Saras would actually
+know where it is and where to go when
+asked. So, how does all of this works
+actually? Well, let me show you in the
+diagram. It starts when I say, "Hey,
+Saras," a local wake word detector picks
+that up. Then, it records what I said
+and transcribes my voice into text using
+speech to text. That text is sent to an
+AI model. Sometimes llama running
+locally, sometimes chat GBD depending on
+what I'm testing. The model figures out
+what Sarah should do, whether it's
+answering a question, moving or just
+reacting, and sends that response back.
+Then its face changes, either a reply
+spoken, or it physically moves depending
+on what I asked it to do. And through
+all of that, I'm storing what I saw,
+where it went, what obstacles it found.
+So, it's never starting from zero. It's
+a bunch of small systems stitched
+together and none of it is exotic
+hardware. It's all stuff you can buy
+online. Raspberry Pi, basic sensors, a
+motor driver, and that's it.
+Honestly, I didn't build sus to be
+perfect. I built this to learn. And
+along the way, it became so much more
+than just a weekend project. It started
+with few wires and random parts. And now
+it can talk, explore, and even make
+decisions. But this is just the
+beginning. There is so much more I want
+to teach it and so much more I want to
+learn. So what's next? This is just a
+first version of Sus and there is a
+still lot to improve. I'm planning to
+build a better casing so it actually
+looks like a finished robot, not just
+wires with the screen. Right now the
+design's not perfect. I also want to
+bring down the response time. Some
+actions take a bit depending on the
+model. Right now most of the things run
+on a Raspberry Pi. It keeps things
+affordable but eventually I want
+everything to run fully offline. No
+cloud, no local server, just Sus
+thinking on its own.
+So, I have left room to upgrade to
+something more powerful later. So, if
+you are interested to learn how I build
+this and you want a step-by-step
+tutorial or a video, let me know in the
+comments. I'll be more than happy to
+make that. And if you made this far,
+thanks for watching. This project had
+meant a lot to me and I'm excited for
+everything Saras will become.

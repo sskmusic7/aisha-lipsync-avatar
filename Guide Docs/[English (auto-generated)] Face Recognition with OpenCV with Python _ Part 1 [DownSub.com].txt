@@ -1,0 +1,267 @@
+in this video we are going to do a new
+machine learning project that
+is real time facial recognition so let
+me give you a brief overview that
+what is the output of the project then
+we will move to the roadmap that what we
+are going to do step by step
+okay so the output of the project is
+like this we will open
+with laptops camera camera or webcam and
+a colored box uh will surround our face
+and our name will do that in the box so
+basically our laptop
+will recognize our face that who we are
+and what is our name
+so let me just give you an example of
+that
+yeah so i have just run my test sample
+and this is my face as you can see
+so basically our camera is recognizing
+that what is my name and what is the
+name associated with that with that face
+okay so this is a real-time face
+recognition which our system is doing
+so let us see that how we will proceed
+to this project
+so let me give you a roadblock just that
+what we are going to do step by step
+so basically first we are gonna we are
+gonna feed
+our video that like we should open with
+camera and we should record that
+what face is in front of the camera
+right so
+i have made a several a separate snippet
+of video record
+it is just to check that uh whether the
+camera is working or not
+so by this code we can check that uh our
+camera is working or not
+um don't be stressed out i will explain
+each time of the code step by step i'm
+just
+in the roadmap right now okay so this is
+about just checking
+this this codes check that whether our
+camera is working or not
+okay so this is a real test
+and after this okay so after this
+we are gonna we are gonna uh collect our
+face data
+so basically in this snippet uh
+this the function of this code is like
+this this code
+opens up a camera and uh ask ask
+ourselves to write our name
+okay so if i play this sample so
+it is asking my name so i will enter my
+name here
+and after that when i enter then camera
+will open and it will start recording my
+face
+it will start memorizing my face
+and will put each and every data in an
+array
+okay i will explain this uh entire thing
+step by step i'm just like giving an
+overview
+overview right now okay so it this code
+recognizes
+this code basically collects our facial
+data
+and stores it in an array and that area
+is used for recognition afterwards
+so after collecting our facial data we
+will
+run this code this is basically facial
+recognition
+okay so after collecting our data
+we will store that data in another area
+and we will start another live streaming
+i mean
+we will we'll start with camera again
+and it will match
+that this current phase matches with the
+previous array
+and it maps down the name of the person
+with that figure
+okay so basically first step is data
+data collection over faces and then
+after that we will do
+a face recognition and we will use
+basically k means algorithm in this
+and a classifier that is hard cascade
+classifier
+okay so this is a brief overview
+overview of the project that what we are
+going to do
+and now i'm gonna explain you okay so
+before go
+deeping uh so because before diving into
+the project
+let us first see that what is hard
+casket classifier okay after explaining
+this hardcasket classifier i will
+explain you each and every line of the
+code that what we have
+we have done step by step okay
+because of what our casket classifier do
+is it is a collection of features
+like edge features line features and
+many or other features
+so basic purpose of hard casket
+classifier is it detects
+each and every feature of our face okay
+so this is a box it moves in every
+direction
+in the in the entire image and it
+just collects the data that where is our
+eyes where is our nose
+i'll show you the animation that how it
+works uh before that list
+you can just see on this website that
+how uh what is the basic documentation
+of our casket classifier
+um after this i will show you the
+animation of this
+okay so i've done the basic of this so
+if i enter my image here and the hard
+casket classifier will
+basically uh classify that where is our
+eyes and where is
+our face located in that that entire
+image okay
+so as you can see that here is my face
+and these are my eyes
+so this simple code which uses hard
+casket classifier has just recognized
+that
+where are my eyes and where is my face
+in the entire image
+okay so now let us see that
+this hard casket animation
+okay so as you can see that this hard
+casket classifier
+is just moving in the entire image and
+it is just classifying that
+where is our face and where are the
+other components of the face
+so as you can see that uh the edge
+features the
+line features and the other features of
+the casket
+classifier just checking that where are
+the main features of our face
+okay so it is traversing the whole image
+by increasing the size
+so just see the animation
+i have increased the size of the speed
+of the video to 5.5 x
+so you can see clearly
+okay so this is how hard casket
+classifier works okay
+so i hope that you will get and you have
+got a
+basic idea of that how and hard casted
+transfer works
+so in this video in this project we are
+we will be using that hard casket
+classifier to detect our facial
+components and
+after detecting that storing that face
+into an array mapping that with the name
+of the person and just recognizing that
+again
+by our k means algorithm okay so
+before that before starting data
+collection let us check that
+whether camera is working or not okay so
+by this code we will just check that
+whether our camera is working
+yes or no okay so let me just explain
+you this code
+so this code starting with like we will
+import cv2
+like we will we are importing opencv
+library
+and by this cap is equal to cv2 let me
+just
+zoom in zoom in okay so second line that
+cap is
+cv dot video capture it means that just
+open our webcam okay so this line opens
+our webcam
+and this loop just tells that
+if a webcam is reading our image
+then just uh continue and if it is false
+then
+move out of the loop okay so
+it shows like a video frame it
+okay so let me just open the camera
+i'm playing this and
+so as you can see that our camera has
+been opened
+and after that this camera name just the
+uh the
+name of uh camera is frame as okay as
+you can see as you have just seen before
+and after this i have entered this
+logic that if i press q q as a key
+if i press the key q then it
+breaks the camera and closes the window
+and the camera will not
+not be closed by the simple closing
+function
+it will be only closed if you enter q
+okay so this is a logic which i have
+entered and i will explain to the
+purpose of that
+why i have entered this okay and this is
+a key pressed
+this line simply means that uh
+if our currently pressed key matches
+with this key
+or not this is that's it and i will
+explain this in the meaning of this line
+later in this project when we are doing
+data collection
+okay i will explain the logic behind
+this that why i have
+bit wise why i have used with bitwise
+and
+here with zero xfs okay so
+for right now you have to just
+understand that we have just opened up a
+camera and just check that
+if return is equal to false then we will
+just continue and
+if our camera is reading then we will
+just move
+move forward and just show the camera
+that and just check that whether the
+camera is open or not and we'll just
+uh close that camera by pressing the key
+q
+okay and after that we will release our
+camera
+tab dot release if when we break out of
+the loop
+then we just release a camera by this
+line
+this means closing the camera and by
+this
+it means that destroying all windows
+means uh
+disabling all the cookies that have been
+formed by opening the camera
+and deleting all the data which has been
+captioned
+in the back memory okay so this is
+basically a video read
+we are just checking that our camera is
+reading the video or not
+okay so i hope that you have got a clear
+idea that what
+is this okay so after that
+we'll do facial data collection by this

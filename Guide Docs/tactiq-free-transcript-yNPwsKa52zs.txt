@@ -1,0 +1,624 @@
+# tactiq.io free youtube transcript
+# No title found
+# https://www.youtube.com/watch/yNPwsKa52zs
+
+00:00:00.000 No text
+00:00:00.080 YOLO E is one of the most mind-blowing
+00:00:01.920 computer vision models to come out in a
+00:00:03.679 while. But to understand why that is, we
+00:00:05.839 first have to learn kind of the
+00:00:07.200 shortcomings of other models. So without
+00:00:09.760 YOLO E, you would download your computer
+00:00:11.679 vision model onto a Pi, maybe YOLO 11 or
+00:00:14.320 YOLO V8. You would fire it up and start
+00:00:16.480 detecting objects just fine. You can
+00:00:18.640 detect a person, a chair, a keyboard,
+00:00:20.640 all those things because it comes
+00:00:22.480 already trained to identify them. But
+00:00:24.880 what if I wanted it to identify, say, an
+00:00:26.960 object like this? Well, we would need to
+00:00:29.119 train it to do so. I'd start by taking
+00:00:31.279 like a hundred photos of it, then go
+00:00:33.280 through the process that's fairly
+00:00:34.800 involved of using those images to train
+00:00:37.280 YOLO to detect this new object. You
+00:00:40.239 can't do this process on a Pi. You would
+00:00:42.320 need a decently powerful computer. Even
+00:00:44.559 with a high-end gaming GPU, this will
+00:00:46.879 take hours of processing. Once it's
+00:00:49.200 finished, I would then put that model
+00:00:50.719 back onto my Pi 5 and I would start
+00:00:52.879 detecting. If I changed my mind and
+00:00:55.120 wanted to detect another object, I would
+00:00:57.120 need to repeat that entire process
+00:00:59.199 again. So, that's how you would usually
+00:01:00.960 do it. Now, let's look at how to do it
+00:01:02.399 with YOLO E. I want it to detect
+00:01:04.319 Pokeball. I change one line of code, run
+00:01:06.799 a Python script on my Raspberry Pi, and
+00:01:09.840 like 5 seconds later, the model is ready
+00:01:12.000 to go. What? What? Welcome back to Cor
+00:01:16.159 Electronics. Today we're looking at YOLO
+00:01:17.840 E, a promptable vision model, how it
+00:01:20.479 works, and how you can use it in your
+00:01:22.080 projects with a Pi 5. Even if you don't
+00:01:24.320 plan to use this in a project, it's such
+00:01:26.240 a fun thing to play around with if you
+00:01:27.920 have a Pi 5. Let's get into it. So, YOLO
+00:01:30.000 No text
+00:01:30.720 E is built upon other standard YOLO
+00:01:33.200 models. But there is one major
+00:01:34.960 difference. Instead of being trained on
+00:01:37.360 specific things, it has been trained on
+00:01:39.759 visual concepts and ideas. So, let's say
+00:01:42.320 we gave it an image of a horse, but
+00:01:44.560 instead of saying, "This is a horse.
+00:01:46.479 Learn what a horse looks like. That's
+00:01:47.920 how you would usually do it." It might
+00:01:49.600 have instead been told the visual ideas
+00:01:52.320 of that horse. What actually is that
+00:01:54.720 horse? Why does it look like a horse? It
+00:01:56.640 might have been told that it has four
+00:01:57.920 legs, it's brown, it's a little bit
+00:01:59.759 hairy, it's got a long face, it's a
+00:02:01.680 mammal, etc., etc., all of these ideas.
+00:02:04.159 And because it has these visual concepts
+00:02:06.000 and ideas, it can identify things it's
+00:02:08.720 never seen before. If you ask it nicely,
+00:02:11.840 let's say it's never seen a picture of a
+00:02:14.160 zebra in its life, but I prompt it to
+00:02:16.879 identify one anyway. It starts by
+00:02:18.959 breaking that prompt down into visual
+00:02:21.280 ideas that it knows. It might break the
+00:02:23.599 word zebra down into four-legged,
+00:02:25.760 stripey, black and white, hairy. It
+00:02:28.080 knows what all these visual concepts
+00:02:29.920 look like, and so it uses those to
+00:02:31.920 recognize the zebra. And I think you can
+00:02:33.920 see that because it's equipped with
+00:02:35.280 these visual ideas, it can identify a
+00:02:37.920 lot of things. Normal YOLO models come
+00:02:40.319 by default trained to recognize about 80
+00:02:42.640 things, give or take. Now, I am just
+00:02:44.400 guessing here, but I think YOLO E could
+00:02:46.560 be used to recognize easily 5,000,
+00:02:49.840 probably somewhere in the tens of
+00:02:51.599 thousands of things without lengthy
+00:02:53.920 retraining processes. It's also really
+00:02:56.720 flexible in that you can just say box
+00:02:58.640 and it will identify boxes just fine.
+00:03:00.560 But then you can also say blue box,
+00:03:02.319 brown box and clear box and it's able to
+00:03:04.720 identify all of those things as well. It
+00:03:06.720 understands the visual idea of what
+00:03:09.200 colors are. Now this is not a magical
+00:03:12.080 solution and the end all be all of
+00:03:14.159 computer vision. It does have its
+00:03:16.080 limits. For example, really obscure or
+00:03:18.800 uncommon words or items, chances are it
+00:03:21.440 can't break it down and figure out what
+00:03:23.440 visual concepts constitute that and it
+00:03:25.680 won't be able to identify them. I can't
+00:03:28.000 just say Mr. beast or Jeff Giling and
+00:03:30.560 magically start identifying. I'm just
+00:03:32.319 checking we got those buzzwords in.
+00:03:33.760 Yeah. Sweet. Okay. Another example is
+00:03:35.519 this little 3D printed Minecraft copper
+00:03:37.760 golem. YOLO E does not know what
+00:03:40.000 Minecraft nor a copper golem is. So, you
+00:03:42.480 would struggle to find a prompt to
+00:03:44.159 identify this. Although, it does have
+00:03:46.799 another mode that we have strategically
+00:03:48.480 emitted till now. You can prompt it with
+00:03:51.040 text or an image. You can show it a
+00:03:54.159 single image of this golem, just one
+00:03:56.319 photo, and it breaks it down into visual
+00:03:58.400 concepts, then identifies it off that.
+00:04:00.959 We'll look at this later in the video
+00:04:02.239 when we get to it, though. So, YOLO E
+00:04:04.560 can be prompted to identify nearly
+00:04:06.720 everything. That's what the E stands
+00:04:08.319 for. Fun fact, it can be prompted with
+00:04:10.560 an image and will probably meet 70 to
+00:04:13.360 maybe 80% of your custom detection
+00:04:15.599 needs. And it runs as fast as regular
+00:04:18.478 YOLO models. I think you can see why
+00:04:20.880 this is such an incredible advancement
+00:04:22.560 in vision models. All right, let's take
+00:04:23.000 No text
+00:04:24.639 a look at how to get this going. Our
+00:04:26.160 device of choice is a Pi 5 because it's
+00:04:28.240 a really good candidate for something
+00:04:29.600 that you would actually run this on in a
+00:04:31.199 maker project. And a 4 GB or larger
+00:04:33.759 model is probably the safe bet here.
+00:04:35.840 You're also going to need a camera
+00:04:36.880 module. We're just using the camera
+00:04:38.160 module 3. And of course, you'll need
+00:04:39.919 everything else to power and run your
+00:04:41.680 Pi, including a micro SD card that's at
+00:04:43.680 least 32 GB in size. You can find
+00:04:46.639 everything you need in the written
+00:04:47.759 version of this guide linked below.
+00:04:49.440 There you'll also find a zip file
+00:04:51.040 containing all the code we'll be using
+00:04:52.720 as well as some more detailed
+00:04:53.919 instructions if you get stuck on any of
+00:04:55.600 these steps. You're also going to need
+00:04:57.120 to install the YOLO Ultral Linux package
+00:04:59.440 on your Pi. This has become a little bit
+00:05:01.759 more difficult than it used to be. So,
+00:05:03.440 we have another video guide linked
+00:05:04.960 below. It's designed to complement this
+00:05:06.720 nicely. Go and watch it. You got to go
+00:05:08.639 install that first. And of course,
+00:05:10.160 ensure you've plugged in your camera.
+00:05:11.759 Once you've completed and installed
+00:05:13.120 everything from that video, head on over
+00:05:14.720 to the written guide link below and
+00:05:16.560 download that zip file. extract all the
+00:05:18.560 Python scripts into a file that is
+00:05:20.160 somewhere easy to get to by just using
+00:05:22.000 my desktop here. You're going to want
+00:05:23.600 them all inside a file because this
+00:05:25.280 process is going to create lots of
+00:05:26.800 little extra files inside of here and
+00:05:28.560 you don't want it to get messy. To begin
+00:05:30.160 with, we're going to open up yolo e run
+00:05:32.080 model. We're just going to do so in thy
+00:05:33.759 because hopefully you've already set up
+00:05:35.120 thonny to use the virtual environment
+00:05:36.800 that we created. And as you can see,
+00:05:38.400 there is not much code required to run
+00:05:40.720 all of this. So, we go ahead and import
+00:05:42.479 everything we need and then we just use
+00:05:43.840 Pyamera 2 to configure and set up the
+00:05:46.240 camera. Then we load the model that we
+00:05:48.479 want to be using for our object
+00:05:50.240 detection. And then we go ahead and get
+00:05:52.240 a frame from our camera with PI camera.
+00:05:54.960 We then take that image and run object
+00:05:56.880 detection with our model. And then what
+00:05:58.639 we're going to do is get the results of
+00:06:00.240 that and then put it in a visual thing
+00:06:02.160 that we can see. Now this line here has
+00:06:04.160 two options. Boxes and masks. Boxes is
+00:06:07.520 those identification boxes you'll see in
+00:06:09.680 all computer vision. You can turn it off
+00:06:11.199 if you want. And then mask is kind of it
+00:06:13.440 draws a silhouette around the object
+00:06:15.680 that it's detected. I like to leave this
+00:06:17.680 off because it can get messy, but you
+00:06:19.039 can also use it in your project to kind
+00:06:20.720 of figure out the area of the object if
+00:06:22.880 you want to have a play around with it.
+00:06:24.479 You'll see what I mean. And then this
+00:06:25.919 entire section here is just calculating
+00:06:27.840 the FPS and then showing it on there.
+00:06:30.319 Half the code is just this FPS, which is
+00:06:32.800 completely optional. The things you want
+00:06:34.240 to change in this code are the camera
+00:06:36.319 resolution. Note, this is not the
+00:06:38.560 resolution that YOLO processes at. it
+00:06:41.039 will not increase performance. We'll
+00:06:42.479 take a look at it later. This is just
+00:06:44.000 what resolution camera you want to use.
+00:06:46.160 And you also want to go ahead and change
+00:06:47.600 the model to whatever you're using.
+00:06:49.120 Don't change it now. We'll show you how
+00:06:50.479 to change in a bit. So, let's go ahead
+00:06:52.400 and run this code. And the first time
+00:06:54.240 you run any set of code or something new
+00:06:56.400 with the Ultralytics package, it might
+00:06:58.479 take a while as it downloads things that
+00:07:00.240 it needs or might need to download a
+00:07:02.160 model or something like that. Ah, and
+00:07:04.960 you of course need the internet to
+00:07:06.160 download a model. That's probably a very
+00:07:07.759 important thing. Let me connect it to
+00:07:08.800 the internet. We downloaded our model.
+00:07:11.599 Come on. Little bit more. And with that,
+00:07:13.759 we are up and running with our YOLO E
+00:07:15.759 detection. Hold up. Wait a minute. Where
+00:07:18.000 are my prompts at? What is this? Well,
+00:07:20.160 this is something called prompt free
+00:07:21.840 mode. It essentially just tries to
+00:07:23.440 detect everything it can in an image
+00:07:25.520 like a regular object detection model.
+00:07:27.759 Now, this FPS is pretty bad. So, let's
+00:07:30.080 see how we can speed it up. As this
+00:07:31.759 process is also how we're going to be
+00:07:33.440 able to apply our custom prompts. Just
+00:07:35.759 going to press Q to stop that from
+00:07:37.000 No text
+00:07:37.360 running. And then we're going to go
+00:07:38.400 ahead and open up the script prompt free
+00:07:40.639 onyx conversion in thonny like so. Now
+00:07:43.440 this script is going to take a model
+00:07:44.880 that we want to use and convert it to
+00:07:46.880 the onyx file format which is just a
+00:07:49.280 more efficient format for running it on
+00:07:51.120 devices like the pi. It's just going to
+00:07:52.880 give us improved FPS. Now there is
+00:07:55.120 another model format that works well on
+00:07:57.120 the Pi and that is NCNN. And
+00:07:59.919 traditionally we have used NCN but I
+00:08:02.639 didn't really see much of a difference
+00:08:04.080 between onyx and NCN performance-wise
+00:08:06.400 with Yola E. So, we're just going to be
+00:08:08.560 sticking to Onyx, but give it a go for
+00:08:10.240 yourself. See what works. It doesn't
+00:08:12.560 really matter. You can follow the guide
+00:08:13.680 using Onyx or NCNN from now on. We're
+00:08:15.759 going to keep it at Onyx, though, like
+00:08:17.599 so. The other option we can change is
+00:08:19.360 the resolution of the model, which is
+00:08:21.360 another way to increase FPS. By default,
+00:08:23.759 your model processes at 640x 640 pixels.
+00:08:27.199 The code will take whatever size the
+00:08:29.280 camera you've set to in the main script
+00:08:31.280 here. So, I've got a 800 by 800, and
+00:08:33.599 then it's going to scale it down to 640x
+00:08:35.679 640 to be processed by the vision model.
+00:08:37.919 By changing this number here, we can
+00:08:39.839 tell it to go even lower. So, let's say
+00:08:42.399 320x 320 pixels. It's always square.
+00:08:45.200 Less pixels to process per frame means
+00:08:48.160 more frames per second. So, you can drop
+00:08:50.480 this pretty low and get some really good
+00:08:52.560 FPS. Like, I could set this to 96 and
+00:08:55.519 get like 20 FPS or so. I can set it to
+00:08:58.800 128. Whatever number you want between 32
+00:09:01.760 and 640, it just needs to be a multiple
+00:09:04.880 of 32. Must be a multiple of 32. That's
+00:09:07.839 very important. Also, be aware that
+00:09:09.200 there is actually a big downside to
+00:09:11.279 this. The lower the resolution is, the
+00:09:13.600 lower your detection ranges. If I try to
+00:09:16.160 detect this phone at the full 640
+00:09:18.399 pixels, I can detect it all the way back
+00:09:20.720 here. But if I set it to 128 pixels, I
+00:09:24.160 struggle to detect it more than a couple
+00:09:25.920 of meters away. We'll look at how to
+00:09:27.600 tune these to your needs in a bit,
+00:09:29.200 though. It's also worth knowing that 320
+00:09:31.200 and 128 might not sound like a lot of
+00:09:33.760 pixels, but these models can do a lot
+00:09:35.839 with very few pixels. For now, though,
+00:09:38.160 I'm just going to set my resolution to
+00:09:40.480 192, which is going to give us a bit of
+00:09:42.240 a nice middle ground between pretty fast
+00:09:44.399 and also able to detect it some
+00:09:46.399 distance. Let's go ahead and run that
+00:09:48.399 code. And after just a few seconds, it
+00:09:51.120 that's all it takes to really convert it
+00:09:52.560 to Onyx. Let it slim down. Beautiful.
+00:09:55.440 And after it's finished, we should be
+00:09:57.120 able to open up the file that all of our
+00:09:59.040 scripts are in and see yolo e dx.
+00:10:03.200 And that is our converted model there.
+00:10:05.120 You can also see our pt model, which is
+00:10:07.440 the one that we started with and we
+00:10:09.200 downloaded with the ultr litics package.
+00:10:11.200 Now to run it, all we need to do is go
+00:10:12.720 back to our run model folder. And
+00:10:14.560 instead of pt, which is pietorch by the
+00:10:16.880 way, it's just the default kind of model
+00:10:19.120 format that all the models will come in.
+00:10:20.959 We can just delete PT and set it to do
+00:10:24.480 Onyx. Run it. And we should be able to
+00:10:28.160 let it do its thing real quick. We got
+00:10:29.600 our object detection running. And as you
+00:10:31.360 can see, way better FPS. It's struggling
+00:10:33.920 a bit to detect the things in the
+00:10:35.279 background cuz the resolution's smaller
+00:10:37.519 and it's far away, but I can pick up
+00:10:39.839 phone. It detects phone. Beautiful.
+00:10:42.399 Smartphone, iPhone, webcam, everything.
+00:10:46.240 Will it do Pokeball Moth?
+00:10:50.399 I think that's a good example of some of
+00:10:52.000 the false positives it gets. It'll
+00:10:53.600 identify one object as like 50 different
+00:10:55.600 things. Also, detect this little fella
+00:10:57.680 as iPhone. I don't think that's an
+00:11:00.320 iPhone, buddy. And that is our first
+00:11:01.000 No text
+00:11:02.320 demo done and dusted. A prompt free mode
+00:11:04.880 that identifies whatever it can see.
+00:11:07.120 Now, this mode might work well for your
+00:11:09.120 project, but chances are you're going to
+00:11:10.800 need to use a text prompt approach. A
+00:11:13.839 good example why is I'm just going to go
+00:11:15.600 ahead and look for a picture of a tiger
+00:11:18.079 on my phone. Just googling it. Google
+00:11:20.320 images. I'm just going to hold that up.
+00:11:22.560 And as you can see, it's identifying it
+00:11:25.120 as pretty much everything but a tiger.
+00:11:29.519 Oh no. Some Oh, there you go. Oh, once
+00:11:32.000 for one frame, it identified it as a
+00:11:33.760 tiger. Definitely not a philosopher.
+00:11:35.440 Definitely not a wolf. Lots of false
+00:11:36.959 positives. Let's fix this by using a
+00:11:39.120 text prompt. All righty. Go ahead and
+00:11:41.040 open up the text prompt Onyx conversion
+00:11:43.920 Python file. And this is pretty much the
+00:11:46.399 same as the other Onyx conversion file
+00:11:48.399 we had before, but before we convert it,
+00:11:50.959 we're going to feed it out prompts. Now,
+00:11:53.440 what we're doing here is a bit of a PIP
+00:11:55.040 specific thing for the Onyx file format.
+00:11:57.839 Usually, you would just use the default
+00:11:59.760 PyTorch model that it downloads by
+00:12:01.839 default. And in the main run model
+00:12:04.320 script, you would put your prompts in
+00:12:06.079 here with the code and you would just
+00:12:07.680 run it and that's it. However, when we
+00:12:10.160 convert the PyTorch model to the Onyx
+00:12:12.880 format, so we can run it on the Pi more
+00:12:14.800 efficiently, it hardens kind of like
+00:12:17.120 clay and we can no longer give it
+00:12:19.200 prompts. So, we have to put the text
+00:12:21.360 prompts into the model before we convert
+00:12:23.519 it and it hardens up. This is super
+00:12:25.760 simple, though. All we need to do is put
+00:12:27.519 in our prompt text here. And if we want
+00:12:29.920 to put in more. So let's say we identify
+00:12:31.920 uh phone hand. I'm going to copy and
+00:12:34.399 paste this. And I'm going to say uh
+00:12:37.120 please pretty please detect tiger. Uh
+00:12:39.839 let's say I also want to detect beard.
+00:12:41.600 I'm just going to put that in as well.
+00:12:43.120 And let's also put in Pokeball as well.
+00:12:45.760 Like so. You can just keep chaining
+00:12:47.519 these on for as long as you would like.
+00:12:50.079 All righty. Let's go ahead and export
+00:12:52.320 that. Let it do its thing. And once it's
+00:12:54.720 finished exporting, we should be able to
+00:12:56.079 see our new file in here. Now something
+00:12:58.399 very important is we've created two
+00:13:00.240 here. This one was - PF which is the
+00:13:02.560 prompt free mode we did just before. And
+00:13:04.880 this one here without it is the one we
+00:13:06.800 just created. Now if we use this same
+00:13:09.279 script to export another folder, it's
+00:13:11.760 going to create it with the same name
+00:13:13.360 and overwrite what we just made here. So
+00:13:15.440 to prevent this from happening, you can
+00:13:16.880 change the name of it. So I'm just going
+00:13:18.399 to go ahead and change it to tiger- seg.
+00:13:21.519 I found that you need to keep the dash
+00:13:23.040 seg on the end to keep it happy. I'm
+00:13:24.959 going to copy that name here as well. NX
+00:13:28.000 keep your file format. And then all we
+00:13:29.600 need to do is go back to this run model
+00:13:31.440 here. And I'm going to place it in there
+00:13:33.760 like so. Run that. And we should be
+00:13:35.920 running our model. As long as the model
+00:13:37.680 is in this folder here, you can say
+00:13:40.000 whatever the model name is here and run
+00:13:41.839 it. And like that, we're up and running.
+00:13:44.560 And let's get a picture of a tiger up.
+00:13:48.240 There we go. And as you can see, we're
+00:13:50.000 pretty good on those detections now.
+00:13:51.680 Even the little ones. Let's just go do a
+00:13:53.360 few pictures of a tiger. Oh, look at
+00:13:55.680 that big boy. Yeah, that's a tiger as
+00:13:58.399 well. Look at that tiger. Look at that
+00:14:01.600 boy. And that is the whole process. Have
+00:14:03.839 a play around with it and see what it
+00:14:05.279 can do. There is a bit of an art to
+00:14:06.959 understanding what prompt you'll need to
+00:14:08.959 identify something, but you can smash
+00:14:10.800 out different prompts really quickly.
+00:14:12.639 Changing one line of code and exporting
+00:14:14.399 the model in 5 seconds is far quicker
+00:14:16.480 than a few hours of retraining with a
+00:14:18.320 traditional model. Again, though, it's
+00:14:19.000 No text
+00:14:20.000 not entirely magic. If I tell it yellow
+00:14:22.720 Lego man head, it can identify the giant
+00:14:25.199 Lego head. but I don't think it actually
+00:14:27.199 understands Lego or head and is instead
+00:14:29.600 looking for something that's yellow.
+00:14:31.279 Now, if you're struggling to identify
+00:14:32.959 something or it's not giving you a
+00:14:34.480 confidence rating that you like, by the
+00:14:36.000 way, that little number in the top of
+00:14:37.519 the box is the confidence rating from 0
+00:14:39.360 to one. Then you can change the model
+00:14:41.600 size, which is the final thing that we
+00:14:43.519 can use to tune our setup. I am going to
+00:14:45.839 keep the exact same prompts and
+00:14:47.600 resolutions, but I'm going to change the
+00:14:49.920 model size from the small model to the
+00:14:52.399 large model by just replacing that S
+00:14:54.160 with an L. We're running YOLO E version
+00:14:56.959 11 large model instead of the small
+00:14:59.199 model. There's also the medium model
+00:15:00.800 which is in between large and small. And
+00:15:02.720 essentially larger model is more
+00:15:04.480 powerful in its detections but runs
+00:15:06.240 slower. Smaller model is runs faster but
+00:15:08.800 has less you know detection power behind
+00:15:11.760 it. And I'm going to go ahead and export
+00:15:13.760 that. And it's probably going to need to
+00:15:14.880 download that large model again. And
+00:15:16.720 let's run that small model. And just as
+00:15:18.800 a test I'm going to show it by hand. As
+00:15:21.279 you can see, it's a bit bit hit and miss
+00:15:23.519 here in the detections. And if I hold up
+00:15:25.360 my phone, it's about 80 60 about that
+00:15:29.920 percent confident that it's a phone.
+00:15:31.839 Let's now change it to run the large
+00:15:33.839 version of the model that we just
+00:15:35.120 exported. And if I hold my phone up, you
+00:15:37.360 can see we are pretty damn confident on
+00:15:39.680 our phone here. Hold my hand up. There
+00:15:42.160 we go. Nice and solid
+00:15:44.959 at a bit of an angle. Still detecting
+00:15:47.120 hand. As long as it's not blurry. Okay,
+00:15:49.000 No text
+00:15:49.519 we can change the resolution, model
+00:15:51.120 format, model size. How do I correctly
+00:15:53.279 pick these things though? Really easy
+00:15:55.360 rule of thumb. Keep it on onyx or NCNN
+00:15:58.160 if you want, whatever is running better
+00:15:59.279 for you. Then find the model size that
+00:16:01.279 works accurately enough for you. A cup
+00:16:04.000 is easy to identify and you can probably
+00:16:06.079 get away with the small model, but a
+00:16:07.839 more complex object might need a larger
+00:16:10.399 model. Once you figured out the model
+00:16:11.839 size that works, change the resolution
+00:16:13.759 and make it as small as you can get away
+00:16:16.000 with. If you're trying to detect
+00:16:17.199 something really close, congrats. you
+00:16:18.959 can probably use a really low resolution
+00:16:20.800 and get good FPS. If it's on the other
+00:16:23.120 side of the room or across a hallway,
+00:16:25.040 you might need to use the full 640
+00:16:26.880 pixels and just deal with the 1 to 3
+00:16:28.959 FPS. For most maker projects, though,
+00:16:31.519 that's probably enough. Now, we found
+00:16:33.360 text prompting is the best and most
+00:16:35.000 No text
+00:16:35.279 reliable method of using YOLO E. And I
+00:16:37.920 would say try to do it first. However,
+00:16:40.560 you might find an object that is very
+00:16:42.560 difficult to detect. For example, this
+00:16:44.800 3D printed Minecraft copper golem. I
+00:16:47.120 don't think it's possible to use a text
+00:16:49.040 prompt to identify this. But this is
+00:16:51.360 where image prompting comes in. It's a
+00:16:53.519 bit hit and miss. Some things work
+00:16:55.519 incredibly well and others not so much.
+00:16:58.000 So try the text prompt first. And if
+00:16:59.920 that doesn't work, give this a go and
+00:17:01.680 you might be lucky and get saved. So
+00:17:04.240 first things first, we need an image of
+00:17:05.919 our object. We're going to go ahead and
+00:17:08.079 open up where are we? Image prompt
+00:17:10.720 capture in Thonnie. I was going to close
+00:17:13.520 that old one down. And at the top you'll
+00:17:15.359 find the name of the image that it's
+00:17:16.880 going to save as. I'm just going to save
+00:17:18.319 this as golem.jpeg instead. Run that
+00:17:21.359 script. I'm going to hold up our little
+00:17:23.039 fella. It's going to make the photo a
+00:17:26.000 little bit bigger here as well, just so
+00:17:28.880 we can kind of get a good And let's get
+00:17:32.400 a good photo of him. Like so.
+00:17:36.640 And we're just going to hold him up nice
+00:17:38.080 and square like that. I'm going to press
+00:17:40.240 space to take a photo. And that will
+00:17:42.480 have saved to our file. Let's stop that
+00:17:44.559 from running. Now I'm going to go to
+00:17:46.080 image prompt draw box. Open that up in
+00:17:48.480 thy as well. Change it to the name of
+00:17:50.320 the file we just created.
+00:17:52.640 If you're going to use your own custom
+00:17:53.919 image for this, you can just drag it
+00:17:55.600 into the file here and continue on from
+00:17:57.520 here with that file name. And I'm going
+00:17:59.200 to give that a run. And what we're going
+00:18:01.039 to need to do is we're going to need to
+00:18:02.320 draw a box around the golem like so. I
+00:18:06.080 might ignore his antenna cuz we don't
+00:18:07.919 need it really for the detection. Like
+00:18:10.559 that. And if you look in our shell,
+00:18:12.320 that's going to create four numbers
+00:18:13.919 here. And we're just going to copy them
+00:18:15.679 because they are defining the box that
+00:18:18.000 we've just drawn around it. Really try
+00:18:19.840 and draw that tightly because everything
+00:18:21.440 that's going to be inside of this box is
+00:18:23.360 what the YOLO model is going to look at
+00:18:25.200 and try to break down into visual
+00:18:26.799 concepts. Once we've got the image and
+00:18:28.480 the box, we can go ahead and open up
+00:18:30.160 image prompt Onyx conversion. Now, this
+00:18:32.960 is a little bit more involved, but it's
+00:18:34.480 the exact same kind of Onyx conversion
+00:18:36.240 as before. And in here, we're going to
+00:18:37.760 be able to specify the image and then
+00:18:39.360 what box coordinates actually of is the
+00:18:42.080 thing that we're trying to identify in
+00:18:43.600 that image. So, I'm going to change this
+00:18:45.600 to go instead. column.jpeg.
+00:18:50.000 And I'm going to paste in the
+00:18:52.320 coordinates that we got from there that
+00:18:53.919 are in the shell still. Nice. And
+00:18:55.520 exactly like the text prompt, you can
+00:18:57.039 chain as many of these together if you
+00:18:58.880 want. If I copied this and pasted it
+00:19:00.720 there, we can have a third, fourth,
+00:19:02.240 fifth thing on and on and on and on. But
+00:19:03.760 we're only going to be doing one. So,
+00:19:05.200 I'm going to delete the other one like
+00:19:07.120 so because it's going to be looking for
+00:19:08.400 an image that doesn't exist there. And I
+00:19:10.400 might go down here and drop the
+00:19:12.960 resolution a bit because we don't need
+00:19:14.799 the full 640 there. I'm happy with the
+00:19:17.679 small. I might go with a large model on
+00:19:19.760 this one cuz it's a bit of a tricky
+00:19:20.960 thing to identify.
+00:19:22.960 And let's give that a run. Let it do its
+00:19:25.760 thing. This is going to save as the same
+00:19:27.760 file name as the previous one we did. So
+00:19:30.160 yolo e1 seg to use it or go ahead and
+00:19:32.559 rename it to something seg if you want
+00:19:34.160 to keep it. Very important here you can
+00:19:35.919 see gollum.jpeg has been assigned an ID
+00:19:38.799 of one. Unfortunately you can't really
+00:19:41.440 assign names to the model. It's a
+00:19:43.679 number. So the first thing you train is
+00:19:45.360 going to be ID0. The second thing is
+00:19:47.039 going to be ID 1 and on and on and on.
+00:19:49.679 Hey look at that. we are detecting our
+00:19:51.840 object which is pretty crazy because
+00:19:54.640 that was just one photo that we showed
+00:19:56.559 it and it went I kind of understand what
+00:19:59.360 composes that image what ideas make up
+00:20:01.760 that image and now it's doing the exact
+00:20:04.000 opposite to identify that object nuts
+00:20:07.039 for something that we can do in just
+00:20:08.799 seconds on a Raspberry Pi one more thing
+00:20:10.000 No text
+00:20:10.880 before we leave included in here are two
+00:20:12.960 demo codes to get you started in your
+00:20:14.960 project and actually you know using this
+00:20:16.720 they are just modified versions of this
+00:20:18.640 run model script and can serve serve as
+00:20:20.640 the starting point for your own code and
+00:20:22.480 they are demo object counter and demo
+00:20:24.559 location. Demo object counter lets you
+00:20:26.880 specify an object and how many of the
+00:20:29.200 object and how confident you want that
+00:20:31.360 reading to be. And if it detects that
+00:20:33.440 many with that confidence, it'll let you
+00:20:35.600 do something whether that is moving a
+00:20:37.360 servo, sending an email or whatever
+00:20:39.520 you're going to do with your project.
+00:20:40.880 Essentially, if object and certain
+00:20:43.039 amount is met, do something. Demo
+00:20:45.360 location, on the other hand, lets you
+00:20:47.520 specify an object and it tracks the
+00:20:49.600 location of that object on the screen.
+00:20:52.159 Super handy for figuring out where
+00:20:53.679 something is. And that about wraps us up
+00:20:56.080 for now. You are equipped with the
+00:20:57.840 ability to use Yola E on a Raspberry Pi
+00:21:00.320 5 to detect custom objects on the fly
+00:21:02.880 and with no retraining, which is a
+00:21:05.280 pretty mind-boggling thing to be able to
+00:21:07.039 do. We hope that you go out and make
+00:21:08.720 something cool with this. And if you do,
+00:21:10.080 post about it on our community forums.
+00:21:12.080 or if you need a hand with anything we
+00:21:13.600 covered in this video, feel free to head
+00:21:15.280 on over there as well. We're all makers
+00:21:16.960 and we're happy to help. Till next time
+00:21:18.559 though, happy making.
+00:21:30.320 Is this a tiger? Yes, it is.
+00:21:34.000 that I don't love
