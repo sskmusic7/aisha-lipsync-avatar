@@ -69,23 +69,25 @@ class GoogleCalendarService {
   async loadCredentials() {
     // Try environment variables first
     this.clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-    this.apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
+    this.apiKey = import.meta.env.VITE_GOOGLE_API_KEY || import.meta.env.VITE_GEMINI_API_KEY;
+    
+    console.log('🔑 Google Calendar Client ID:', this.clientId ? 'Found in environment ✅' : 'Not found ❌');
+    console.log('🔑 Google Calendar API Key:', this.apiKey ? 'Found in environment ✅' : 'Not found ❌');
 
     // If not in environment, try localStorage
     if (!this.clientId) {
       this.clientId = localStorage.getItem('google-client-id');
+      console.log('🔑 Google Calendar Client ID from localStorage:', this.clientId ? 'Found ✅' : 'Not found ❌');
     }
     if (!this.apiKey) {
       this.apiKey = localStorage.getItem('google-api-key');
+      console.log('🔑 Google Calendar API Key from localStorage:', this.apiKey ? 'Found ✅' : 'Not found ❌');
     }
 
-    // If still not found, prompt user
+    // If still not found, don't prompt - just log warning
     if (!this.clientId || !this.apiKey) {
-      const setup = await this.promptForCredentials();
-      if (setup) {
-        localStorage.setItem('google-client-id', this.clientId);
-        localStorage.setItem('google-api-key', this.apiKey);
-      }
+      console.warn('⚠️ Google Calendar not configured. Set VITE_GOOGLE_CLIENT_ID and VITE_GOOGLE_API_KEY in Netlify environment variables.');
+      console.warn('ℹ️ Calendar features will not be available until configured.');
     }
   }
 
