@@ -92,19 +92,16 @@ export class AvatarTracking {
       };
 
       this.ws.onerror = (error) => {
-        console.error('[AvatarTracking] WebSocket error:', error);
+        console.warn('[AvatarTracking] WebSocket error - Eye tracking unavailable. App will continue without it.');
+        this.isConnected = false;
       };
 
       this.ws.onclose = () => {
-        console.log('[AvatarTracking] Disconnected from tracking server');
+        console.log('[AvatarTracking] Disconnected from tracking server - App continues without eye tracking');
         this.isConnected = false;
         
-        // Attempt to reconnect after 3 seconds
-        setTimeout(() => {
-          if (!this.isConnected) {
-            this.connectWebSocket();
-          }
-        }, 3000);
+        // Don't auto-reconnect - fail gracefully
+        // User can refresh page if they want to try again
       };
     } catch (error) {
       console.error('[AvatarTracking] Failed to create WebSocket:', error);

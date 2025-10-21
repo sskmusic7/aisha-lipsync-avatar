@@ -424,6 +424,9 @@ export const ChatInterface = () => {
 
       setMessages(prev => [...prev, assistantMessage]);
 
+      // Stop loading state before speaking so user can continue interacting
+      setIsLoading(false);
+      
       // Convert to speech and play
       await textToSpeech(aiResponse);
 
@@ -436,7 +439,6 @@ export const ChatInterface = () => {
         timestamp: new Date()
       };
       setMessages(prev => [...prev, errorMessage]);
-    } finally {
       setIsLoading(false);
     }
   };
@@ -478,7 +480,15 @@ export const ChatInterface = () => {
             </div>
           )}
           {isListening && (
-            <span className="animate-pulse text-sm">🎤 Listening...</span>
+            <div className="flex items-center gap-1">
+              <span className="animate-pulse text-sm">🎤 Listening...</span>
+              <button
+                onClick={toggleSpeechRecognition}
+                className="px-2 py-1 bg-red-500 hover:bg-red-600 rounded text-xs"
+              >
+                Stop
+              </button>
+            </div>
           )}
           <button
             onClick={() => setShowPreBufferConfig(true)}

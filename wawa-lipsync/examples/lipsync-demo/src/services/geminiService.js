@@ -19,11 +19,17 @@ class GeminiService {
     // Try to get API key from environment first
     this.apiKey = import.meta.env.VITE_GEMINI_API_KEY;
     
+    console.log('🔑 Gemini API Key check:', this.apiKey ? 'Found in environment variables ✅' : 'Not found in environment ❌');
+    
     if (!this.apiKey) {
-      // If no environment variable, prompt user for API key
+      // If no environment variable, try localStorage
       this.apiKey = localStorage.getItem('gemini-api-key');
+      console.log('🔑 Gemini API Key from localStorage:', this.apiKey ? 'Found ✅' : 'Not found ❌');
       
       if (!this.apiKey) {
+        // Only prompt if not in a deployment environment
+        console.warn('⚠️ No Gemini API key found. Please set VITE_GEMINI_API_KEY in your Netlify environment variables.');
+        
         this.apiKey = prompt(
           'Please enter your Gemini API key\n\n' +
           'To get your free API key:\n' +
