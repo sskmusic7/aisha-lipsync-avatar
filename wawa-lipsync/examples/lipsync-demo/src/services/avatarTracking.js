@@ -5,7 +5,7 @@ export class AvatarTracking {
   constructor(avatarScene, config = {}) {
     this.avatar = avatarScene;
     this.config = {
-      wsUrl: config.wsUrl || 'ws://localhost:8765',
+      wsUrl: config.wsUrl || 'wss://aisha-eye-tracking-backend.onrender.com/ws',
       enableBlinking: config.enableBlinking !== false,
       enableMicroMovements: config.enableMicroMovements !== false,
       reducedMovement: false,

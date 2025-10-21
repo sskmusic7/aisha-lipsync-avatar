@@ -95,7 +95,7 @@ export function Avatar(props) {
     console.log("[Avatar] Initializing eye tracking...");
     try {
       trackingRef.current = new AvatarTracking(scene, {
-        wsUrl: 'ws://localhost:8765',
+        wsUrl: 'wss://aisha-eye-tracking-backend.onrender.com/ws',
         enableBlinking: false, // We handle blinking separately in the component
         enableMicroMovements: true
       });
