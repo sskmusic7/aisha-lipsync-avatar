@@ -7,6 +7,15 @@
     <title>Lipsync Engine Demo - Wawa Sensei</title>
     <!-- Google API for Calendar integration -->
     <script src="https://apis.google.com/js/api.js"></script>
+    <!-- MediaPipe for browser-based eye tracking -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "@mediapipe/tasks-vision": "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.js"
+        }
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

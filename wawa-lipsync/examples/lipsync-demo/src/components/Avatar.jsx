@@ -11,7 +11,7 @@ import { useControls } from "leva";
 import * as THREE from "three";
 import { VISEMES } from "wawa-lipsync";
 import { lipsyncManager } from "../App";
-import { AvatarTracking } from "../services/avatarTracking";
+import { BrowserAvatarTracking } from "../services/browserAvatarTracking";
 
 let setupMode = false;
 
@@ -88,19 +88,19 @@ export function Avatar(props) {
     console.log("Avatar scene structure:", scene);
   }, [availableAnimations, scene]);
 
-  // Initialize eye tracking and body following
+  // Initialize browser-based eye tracking (no backend needed!)
   useEffect(() => {
     if (!scene || trackingRef.current) return;
 
-    console.log("[Avatar] Initializing eye tracking...");
+    console.log("[Avatar] Initializing browser-based eye tracking...");
     try {
-      trackingRef.current = new AvatarTracking(scene, {
-        wsUrl: 'wss://aisha-eye-tracking-backend.onrender.com/ws',
+      trackingRef.current = new BrowserAvatarTracking(scene, {
         enableBlinking: false, // We handle blinking separately in the component
         enableMicroMovements: true
       });
     } catch (error) {
       console.error("[Avatar] Failed to initialize tracking:", error);
+      console.warn("[Avatar] Eye tracking unavailable - app will continue without it");
     }
 
     return () => {
