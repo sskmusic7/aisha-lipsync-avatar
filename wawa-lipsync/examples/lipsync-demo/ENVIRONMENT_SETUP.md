@@ -2,7 +2,7 @@
 # This file contains all the API keys needed for full functionality
 
 # ElevenLabs API Configuration (High-quality voice synthesis)
-VITE_ELEVENLABS_API_KEY=sk_af16cdbcdea48bf817dc0b8af3af0c985e63f32f6099515b
+VITE_ELEVENLABS_API_KEY=your_elevenlabs_key_here
 
 # Google Gemini API Configuration (AI chat functionality)
 VITE_GEMINI_API_KEY=your_gemini_key_here
