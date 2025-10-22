@@ -16,35 +16,53 @@ class GoogleCalendarService {
     if (this.isInitialized) return true;
 
     try {
+      console.log('🔄 Initializing Google Calendar service...');
+      
       // Load Google API script if not already loaded
       if (!window.gapi) {
+        console.log('📡 Google API not found, loading...');
         await this.loadGoogleAPI();
+        
+        // Wait a bit for the script to fully initialize
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
 
       // Get API credentials
       await this.loadCredentials();
 
       if (!this.clientId || !this.apiKey) {
-        console.error('Google Calendar API credentials not found');
+        console.error('❌ Google Calendar API credentials not found');
         return false;
       }
 
+      console.log('🔧 Initializing Google API client...');
+      
       // Initialize gapi client
-      await window.gapi.load('client:auth2', async () => {
-        await window.gapi.client.init({
-          apiKey: this.apiKey,
-          clientId: this.clientId,
-          discoveryDocs: [this.discoveryDoc],
-          scope: 'https://www.googleapis.com/auth/calendar.readonly'
-        });
+      await new Promise((resolve, reject) => {
+        window.gapi.load('client:auth2', async () => {
+          try {
+            console.log('🔧 Configuring Google API client...');
+            await window.gapi.client.init({
+              apiKey: this.apiKey,
+              clientId: this.clientId,
+              discoveryDocs: [this.discoveryDoc],
+              scope: 'https://www.googleapis.com/auth/calendar.readonly'
+            });
 
-        this.gapi = window.gapi;
-        this.isInitialized = true;
+            this.gapi = window.gapi;
+            this.isInitialized = true;
+            console.log('✅ Google Calendar API initialized successfully');
+            resolve();
+          } catch (error) {
+            console.error('❌ Failed to initialize Google Calendar API:', error);
+            reject(error);
+          }
+        });
       });
 
       return true;
     } catch (error) {
-      console.error('Failed to initialize Google Calendar service:', error);
+      console.error('❌ Failed to initialize Google Calendar service:', error);
       return false;
     }
   }
@@ -53,14 +71,22 @@ class GoogleCalendarService {
   loadGoogleAPI() {
     return new Promise((resolve, reject) => {
       if (window.gapi) {
+        console.log('✅ Google API already loaded');
         resolve();
         return;
       }
 
+      console.log('📡 Loading Google API script...');
       const script = document.createElement('script');
       script.src = 'https://apis.google.com/js/api.js';
-      script.onload = resolve;
-      script.onerror = reject;
+      script.onload = () => {
+        console.log('✅ Google API script loaded successfully');
+        resolve();
+      };
+      script.onerror = (error) => {
+        console.error('❌ Failed to load Google API script:', error);
+        reject(error);
+      };
       document.head.appendChild(script);
     });
   }
@@ -126,8 +152,17 @@ Enter your credentials below:
       }
     }
 
+    // Double-check that gapi and auth2 are available
+    if (!this.gapi || !this.gapi.auth2) {
+      throw new Error('Google API client not properly initialized. Please refresh the page and try again.');
+    }
+
     try {
       const authInstance = this.gapi.auth2.getAuthInstance();
+      
+      if (!authInstance) {
+        throw new Error('Google Auth instance not available. Please refresh the page and try again.');
+      }
       
       // Check if already signed in
       if (authInstance.isSignedIn.get()) {
