@@ -93,12 +93,18 @@ class GoogleCalendarService {
 
   // Load API credentials from environment or prompt user
   async loadCredentials() {
+    console.log('🔍 Debugging environment variables...');
+    console.log('All VITE_ env vars:', Object.keys(import.meta.env).filter(key => key.startsWith('VITE_')));
+    console.log('VITE_GOOGLE_CLIENT_ID:', import.meta.env.VITE_GOOGLE_CLIENT_ID);
+    console.log('VITE_GOOGLE_API_KEY:', import.meta.env.VITE_GOOGLE_API_KEY);
+    console.log('VITE_GEMINI_API_KEY:', import.meta.env.VITE_GEMINI_API_KEY);
+    
     // Try environment variables first
     this.clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
     this.apiKey = import.meta.env.VITE_GOOGLE_API_KEY || import.meta.env.VITE_GEMINI_API_KEY;
     
-    console.log('🔑 Google Calendar Client ID:', this.clientId ? 'Found in environment ✅' : 'Not found ❌');
-    console.log('🔑 Google Calendar API Key:', this.apiKey ? 'Found in environment ✅' : 'Not found ❌');
+    console.log('🔑 Google Calendar Client ID:', this.clientId ? `Found: ${this.clientId.substring(0, 20)}...` : 'Not found ❌');
+    console.log('🔑 Google Calendar API Key:', this.apiKey ? `Found: ${this.apiKey.substring(0, 20)}...` : 'Not found ❌');
 
     // If not in environment, try localStorage
     if (!this.clientId) {
@@ -114,6 +120,7 @@ class GoogleCalendarService {
     if (!this.clientId || !this.apiKey) {
       console.warn('⚠️ Google Calendar not configured. Set VITE_GOOGLE_CLIENT_ID and VITE_GOOGLE_API_KEY in Netlify environment variables.');
       console.warn('ℹ️ Calendar features will not be available until configured.');
+      console.warn('🔧 Available environment variables:', Object.keys(import.meta.env).filter(key => key.startsWith('VITE_')));
     }
   }
 

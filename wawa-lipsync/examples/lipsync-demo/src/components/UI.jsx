@@ -3,6 +3,7 @@ import { Suspense, useEffect, useState } from "react";
 import { Experience } from "./Experience";
 import { Visualizer } from "./Visualizer";
 import { ChatInterface } from "./ChatInterface";
+import { EnvDebug } from "./EnvDebug";
 
 // Camera Permission Button Component
 const CameraPermissionButton = () => {
@@ -160,6 +161,11 @@ export const UI = () => {
           </div>
         )}
         {currentHash === 'chat' && <ChatInterface />}
+        
+        {/* Debug Environment Variables */}
+        <div className="mt-8">
+          <EnvDebug />
+        </div>
       </div>
       <div className="flex-1 bg-gradient-to-b from-pink-400 to-pink-200 relative">
         <Canvas shadows camera={{ position: [12, 8, 26], fov: 30 }}>
