@@ -27,11 +27,17 @@ export class BrowserFaceTracking {
       // Create video element (hidden)
       this.video = document.createElement('video');
       this.video.style.display = 'none';
+      this.video.playsInline = true; // Important for mobile
+      this.video.muted = true; // Required for autoplay
       document.body.appendChild(this.video);
 
-      // Request webcam access
+      // Request webcam access with mobile-friendly constraints
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 640, height: 480 }
+        video: { 
+          width: { ideal: 640 }, 
+          height: { ideal: 480 },
+          facingMode: 'user' // Front camera
+        }
       });
 
       this.video.srcObject = stream;

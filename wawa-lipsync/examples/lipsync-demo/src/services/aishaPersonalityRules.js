@@ -254,6 +254,22 @@ Remember: You're speaking to someone through a 3D avatar that can speak your res
     try {
       const { googleCalendarService } = await import('./googleCalendarService.js');
       
+      // Initialize the service first
+      const initialized = await googleCalendarService.initialize();
+      if (!initialized) {
+        return "Sorry bestie, I can't access your calendar right now. The Google Calendar service isn't properly configured. Check your API keys!";
+      }
+      
+      // Check if user is signed in, if not, try to sign them in
+      if (!googleCalendarService.isUserSignedIn()) {
+        try {
+          await googleCalendarService.signIn();
+        } catch (signInError) {
+          console.error('Calendar sign-in failed:', signInError);
+          return `Sorry bestie, I can't sign you into Google Calendar. ${signInError.message}`;
+        }
+      }
+      
       if (message.toLowerCase().includes('today')) {
         const events = await googleCalendarService.getTodaysEvents();
         return googleCalendarService.formatEventsForAisha(events);
@@ -266,7 +282,17 @@ Remember: You're speaking to someone through a 3D avatar that can speak your res
       }
     } catch (error) {
       console.error('Calendar service error:', error);
-      return "Sorry bestie, I can't access your calendar right now. Make sure you've connected your Google account!";
+      
+      // Provide more specific error messages
+      if (error.message.includes('sign-in')) {
+        return `Sorry bestie, I can't sign you into Google Calendar. ${error.message}`;
+      } else if (error.message.includes('permission')) {
+        return "Sorry bestie, I don't have permission to access your calendar. Please grant calendar access when prompted!";
+      } else if (error.message.includes('popup')) {
+        return "Sorry bestie, the Google sign-in popup was closed. Please try asking about your calendar again and complete the sign-in process!";
+      } else {
+        return `Sorry bestie, I can't access your calendar right now. ${error.message || 'Make sure you\'ve connected your Google account!'}`;
+      }
     }
   }
 

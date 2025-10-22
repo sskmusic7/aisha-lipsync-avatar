@@ -18,6 +18,7 @@ let setupMode = false;
 export function Avatar(props) {
   const gltf = useGLTF("/models/wawalipavatar.glb");
   const { nodes, materials, scene } = gltf;
+  const [cameraPermission, setCameraPermission] = useState('prompt'); // 'prompt', 'granted', 'denied'
   
   // Debug: Log the loaded model structure
   useEffect(() => {
@@ -89,7 +90,38 @@ export function Avatar(props) {
   }, [availableAnimations, scene]);
 
   // Initialize browser-based eye tracking (no backend needed!)
-  useEffect(() => {
+  // Handle camera permission request
+  const requestCameraPermission = async () => {
+    try {
+      console.log("[Avatar] Requesting camera permission...");
+      setCameraPermission('prompt');
+      
+      // Test camera access
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          width: { ideal: 640 }, 
+          height: { ideal: 480 },
+          facingMode: 'user'
+        } 
+      });
+      
+      // Stop the test stream
+      stream.getTracks().forEach(track => track.stop());
+      
+      setCameraPermission('granted');
+      console.log("[Avatar] ✅ Camera permission granted");
+      
+      // Now initialize tracking
+      initializeTracking();
+      
+    } catch (error) {
+      console.error("[Avatar] ❌ Camera permission denied:", error);
+      setCameraPermission('denied');
+    }
+  };
+
+  // Initialize tracking after camera permission
+  const initializeTracking = () => {
     if (!scene || trackingRef.current) return;
 
     console.log("[Avatar] Initializing browser-based eye tracking...");
@@ -101,6 +133,30 @@ export function Avatar(props) {
     } catch (error) {
       console.error("[Avatar] Failed to initialize tracking:", error);
       console.warn("[Avatar] Eye tracking unavailable - app will continue without it");
+    }
+  };
+
+  useEffect(() => {
+    if (!scene) return;
+
+    // Auto-initialize on desktop, but require user interaction on mobile
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (!isMobile) {
+      // Desktop: try to initialize immediately
+      initializeTracking();
+    } else {
+      // Mobile: listen for camera permission event
+      const handleCameraPermissionGranted = () => {
+        console.log("[Avatar] Camera permission granted, initializing tracking...");
+        initializeTracking();
+      };
+      
+      window.addEventListener('cameraPermissionGranted', handleCameraPermissionGranted);
+      
+      return () => {
+        window.removeEventListener('cameraPermissionGranted', handleCameraPermissionGranted);
+      };
     }
 
     return () => {

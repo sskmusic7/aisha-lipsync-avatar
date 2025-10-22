@@ -4,6 +4,83 @@ import { Experience } from "./Experience";
 import { Visualizer } from "./Visualizer";
 import { ChatInterface } from "./ChatInterface";
 
+// Camera Permission Button Component
+const CameraPermissionButton = () => {
+  const [cameraPermission, setCameraPermission] = useState('prompt'); // 'prompt', 'granted', 'denied'
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    setIsMobile(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+  }, []);
+
+  const requestCameraPermission = async () => {
+    try {
+      console.log("[CameraPermission] Requesting camera permission...");
+      setCameraPermission('prompt');
+      
+      // Test camera access
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          width: { ideal: 640 }, 
+          height: { ideal: 480 },
+          facingMode: 'user'
+        } 
+      });
+      
+      // Stop the test stream
+      stream.getTracks().forEach(track => track.stop());
+      
+      setCameraPermission('granted');
+      console.log("[CameraPermission] ✅ Camera permission granted");
+      
+      // Trigger a custom event that the Avatar component can listen to
+      window.dispatchEvent(new CustomEvent('cameraPermissionGranted'));
+      
+    } catch (error) {
+      console.error("[CameraPermission] ❌ Camera permission denied:", error);
+      setCameraPermission('denied');
+    }
+  };
+
+  // Don't show on desktop
+  if (!isMobile) return null;
+
+  if (cameraPermission === 'granted') {
+    return (
+      <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+        <p className="text-sm">✅ Camera access granted! Eye tracking is now active.</p>
+      </div>
+    );
+  }
+
+  if (cameraPermission === 'denied') {
+    return (
+      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+        <p className="text-sm">❌ Camera access denied. Eye tracking unavailable.</p>
+        <button 
+          onClick={requestCameraPermission}
+          className="mt-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded text-sm"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded">
+      <p className="text-sm mb-2">📱 Enable eye tracking on mobile</p>
+      <p className="text-xs text-blue-600 mb-3">Click the button below to allow camera access for eye tracking</p>
+      <button 
+        onClick={requestCameraPermission}
+        className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded font-medium"
+      >
+        📷 Enable Camera
+      </button>
+    </div>
+  );
+};
+
 const examples = [
   {
     label: "Visualizer",
@@ -75,6 +152,11 @@ export const UI = () => {
           <div className="text-center py-8">
             <p className="text-lg">3D Model view is shown on the right panel</p>
             <p className="text-sm text-gray-600 mt-2">Switch to other tabs to see different features</p>
+            
+            {/* Camera Permission Button for Mobile */}
+            <div className="mt-6">
+              <CameraPermissionButton />
+            </div>
           </div>
         )}
         {currentHash === 'chat' && <ChatInterface />}

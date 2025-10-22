@@ -128,12 +128,32 @@ Enter your credentials below:
 
     try {
       const authInstance = this.gapi.auth2.getAuthInstance();
-      const user = await authInstance.signIn();
+      
+      // Check if already signed in
+      if (authInstance.isSignedIn.get()) {
+        this.isSignedIn = true;
+        return authInstance.currentUser.get();
+      }
+      
+      // Sign in with popup for better mobile support
+      const user = await authInstance.signIn({
+        prompt: 'consent' // Force consent screen to ensure calendar permissions
+      });
+      
       this.isSignedIn = true;
+      console.log('✅ Google Calendar: Successfully signed in');
       return user;
     } catch (error) {
-      console.error('Sign in failed:', error);
-      throw error;
+      console.error('❌ Google Calendar sign in failed:', error);
+      
+      // Provide helpful error message
+      if (error.error === 'popup_closed_by_user') {
+        throw new Error('Please complete the Google sign-in process to access your calendar.');
+      } else if (error.error === 'access_denied') {
+        throw new Error('Calendar access was denied. Please grant calendar permissions when prompted.');
+      } else {
+        throw new Error(`Calendar sign-in failed: ${error.error || error.message}`);
+      }
     }
   }
 
