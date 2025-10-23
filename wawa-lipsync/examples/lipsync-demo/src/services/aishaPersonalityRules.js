@@ -252,36 +252,49 @@ Remember: You're speaking to someone through a 3D avatar that can speak your res
    */
   async getCalendarResponse(message) {
     try {
+      console.log('📅 Calendar request received:', message);
       const { googleCalendarService } = await import('./googleCalendarService.js');
       
       // Initialize the service first
+      console.log('🔄 Initializing Google Calendar service...');
       const initialized = await googleCalendarService.initialize();
       if (!initialized) {
+        console.error('❌ Google Calendar service initialization failed');
         return "Sorry bestie, I can't access your calendar right now. The Google Calendar service isn't properly configured. Check your API keys!";
       }
+      console.log('✅ Google Calendar service initialized');
       
       // Check if user is signed in, if not, try to sign them in
-      if (!googleCalendarService.isUserSignedIn()) {
+      const isSignedIn = googleCalendarService.isUserSignedIn();
+      console.log('🔐 User signed in status:', isSignedIn);
+      
+      if (!isSignedIn) {
         try {
+          console.log('🔑 Attempting Google sign-in...');
           await googleCalendarService.signIn();
+          console.log('✅ Google sign-in successful');
         } catch (signInError) {
-          console.error('Calendar sign-in failed:', signInError);
+          console.error('❌ Calendar sign-in failed:', signInError);
           return `Sorry bestie, I can't sign you into Google Calendar. ${signInError.message}`;
         }
       }
       
+      console.log('📅 Fetching calendar events...');
       if (message.toLowerCase().includes('today')) {
         const events = await googleCalendarService.getTodaysEvents();
+        console.log('📅 Today\'s events:', events);
         return googleCalendarService.formatEventsForAisha(events);
       } else if (message.toLowerCase().includes('upcoming') || message.toLowerCase().includes('next')) {
         const events = await googleCalendarService.getUpcomingEvents(5);
+        console.log('📅 Upcoming events:', events);
         return googleCalendarService.formatEventsForAisha(events);
       } else {
         const events = await googleCalendarService.getUpcomingEvents(10);
+        console.log('📅 All upcoming events:', events);
         return googleCalendarService.formatEventsForAisha(events);
       }
     } catch (error) {
-      console.error('Calendar service error:', error);
+      console.error('❌ Calendar service error:', error);
       
       // Provide more specific error messages
       if (error.message.includes('sign-in')) {
