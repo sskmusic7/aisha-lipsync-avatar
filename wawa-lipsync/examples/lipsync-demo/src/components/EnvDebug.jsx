@@ -27,6 +27,18 @@ export const EnvDebug = () => {
         <p>VITE_GOOGLE_CLIENT_ID: {import.meta.env.VITE_GOOGLE_CLIENT_ID ? '✅' : '❌'}</p>
         <p>VITE_GOOGLE_API_KEY: {import.meta.env.VITE_GOOGLE_API_KEY ? '✅' : '❌'}</p>
         <p>VITE_GEMINI_API_KEY: {import.meta.env.VITE_GEMINI_API_KEY ? '✅' : '❌'}</p>
+        
+        <div className="mt-2 p-2 bg-blue-100 rounded">
+          <p className="font-bold text-sm">API Key Status:</p>
+          <p className="text-sm">
+            {import.meta.env.VITE_GOOGLE_API_KEY ? 
+              'Using VITE_GOOGLE_API_KEY ✅' : 
+              import.meta.env.VITE_GEMINI_API_KEY ? 
+                'Using VITE_GEMINI_API_KEY as fallback ⚠️' : 
+                'No API key available ❌'
+            }
+          </p>
+        </div>
       </div>
     </div>
   );

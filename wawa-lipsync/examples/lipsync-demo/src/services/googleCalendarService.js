@@ -103,6 +103,11 @@ class GoogleCalendarService {
     this.clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
     this.apiKey = import.meta.env.VITE_GOOGLE_API_KEY || import.meta.env.VITE_GEMINI_API_KEY;
     
+    // If we're using GEMINI_API_KEY, log a warning
+    if (!import.meta.env.VITE_GOOGLE_API_KEY && import.meta.env.VITE_GEMINI_API_KEY) {
+      console.warn('⚠️ Using VITE_GEMINI_API_KEY for Google Calendar API. This should work but VITE_GOOGLE_API_KEY is preferred.');
+    }
+    
     console.log('🔑 Google Calendar Client ID:', this.clientId ? `Found: ${this.clientId.substring(0, 20)}...` : 'Not found ❌');
     console.log('🔑 Google Calendar API Key:', this.apiKey ? `Found: ${this.apiKey.substring(0, 20)}...` : 'Not found ❌');
 
