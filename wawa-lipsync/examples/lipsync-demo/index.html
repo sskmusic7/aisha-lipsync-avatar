@@ -5,6 +5,18 @@
     <link rel="icon" type="image/favicon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Lipsync Engine Demo - Wawa Sensei</title>
+    
+    <!-- Content Security Policy to allow Google APIs -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: data: https://apis.google.com https://www.gstatic.com https://cdn.jsdelivr.net;
+      connect-src 'self' https://apis.google.com https://www.googleapis.com https://accounts.google.com https://www.gstatic.com;
+      frame-src 'self' https://accounts.google.com;
+      img-src 'self' data: https:;
+      style-src 'self' 'unsafe-inline' https:;
+      font-src 'self' data: https:;
+    ">
+    
     <!-- Google API for Calendar integration -->
     <script src="https://apis.google.com/js/api.js"></script>
     <!-- MediaPipe for browser-based eye tracking -->
