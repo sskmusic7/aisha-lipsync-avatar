@@ -38,6 +38,35 @@ export const EnvDebug = () => {
                 'No API key available ❌'
             }
           </p>
+          
+          {/* Manual OAuth Test Button */}
+          <div className="mt-3">
+            <button 
+              onClick={async () => {
+                try {
+                  console.log('🧪 Manual OAuth test starting...');
+                  const { googleCalendarService } = await import('../services/googleCalendarService.js');
+                  
+                  console.log('🔄 Initializing service...');
+                  const initialized = await googleCalendarService.initialize();
+                  console.log('Initialization result:', initialized);
+                  
+                  if (initialized) {
+                    console.log('🔑 Testing sign-in...');
+                    await googleCalendarService.signIn();
+                    console.log('✅ Sign-in successful!');
+                  } else {
+                    console.error('❌ Initialization failed');
+                  }
+                } catch (error) {
+                  console.error('❌ Manual OAuth test failed:', error);
+                }
+              }}
+              className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs"
+            >
+              🧪 Test OAuth Manually
+            </button>
+          </div>
         </div>
       </div>
     </div>
