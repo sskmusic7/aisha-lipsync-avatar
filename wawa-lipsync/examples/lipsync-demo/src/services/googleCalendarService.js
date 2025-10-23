@@ -157,7 +157,10 @@ Enter your credentials below:
 
   // Sign in to Google
   async signIn() {
+    console.log('🔑 Starting Google sign-in process...');
+    
     if (!this.isInitialized) {
+      console.log('🔄 Service not initialized, initializing now...');
       const initialized = await this.initialize();
       if (!initialized) {
         throw new Error('Failed to initialize Google Calendar service');
@@ -165,23 +168,36 @@ Enter your credentials below:
     }
 
     // Double-check that gapi and auth2 are available
+    console.log('🔍 Checking Google API availability...');
+    console.log('gapi available:', !!window.gapi);
+    console.log('this.gapi available:', !!this.gapi);
+    console.log('gapi.auth2 available:', !!(this.gapi && this.gapi.auth2));
+    
     if (!this.gapi || !this.gapi.auth2) {
+      console.error('❌ Google API client not properly initialized');
+      console.error('gapi:', window.gapi);
+      console.error('this.gapi:', this.gapi);
       throw new Error('Google API client not properly initialized. Please refresh the page and try again.');
     }
 
     try {
+      console.log('🔍 Getting auth instance...');
       const authInstance = this.gapi.auth2.getAuthInstance();
       
       if (!authInstance) {
+        console.error('❌ Auth instance not available');
         throw new Error('Google Auth instance not available. Please refresh the page and try again.');
       }
       
+      console.log('🔍 Checking if already signed in...');
       // Check if already signed in
       if (authInstance.isSignedIn.get()) {
+        console.log('✅ Already signed in');
         this.isSignedIn = true;
         return authInstance.currentUser.get();
       }
       
+      console.log('🔑 Attempting to sign in with popup...');
       // Sign in with popup for better mobile support
       const user = await authInstance.signIn({
         prompt: 'consent' // Force consent screen to ensure calendar permissions
@@ -192,6 +208,11 @@ Enter your credentials below:
       return user;
     } catch (error) {
       console.error('❌ Google Calendar sign in failed:', error);
+      console.error('Error details:', {
+        error: error.error,
+        message: error.message,
+        details: error.details
+      });
       
       // Provide helpful error message
       if (error.error === 'popup_closed_by_user') {
