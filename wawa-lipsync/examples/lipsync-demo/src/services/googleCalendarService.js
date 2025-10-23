@@ -200,7 +200,8 @@ Enter your credentials below:
       console.log('🔑 Attempting to sign in with popup...');
       // Sign in with popup for better mobile support
       const user = await authInstance.signIn({
-        prompt: 'consent' // Force consent screen to ensure calendar permissions
+        prompt: 'consent', // Force consent screen to ensure calendar permissions
+        ux_mode: 'popup' // Explicitly set popup mode
       });
       
       this.isSignedIn = true;
