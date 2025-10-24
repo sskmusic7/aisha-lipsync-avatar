@@ -151,6 +151,10 @@
     <div class="container">
         <h1>🔍 Google Calendar OAuth Test</h1>
         <p>This page tests the Google Calendar OAuth integration to debug why the popup isn't appearing.</p>
+        <div class="info">
+            <strong>⚠️ Important:</strong> Your OAuth is configured for <code>https://aishamk1.netlify.app</code>. 
+            For local testing, you may need to add <code>http://localhost:8000</code> to your Google Cloud Console OAuth settings.
+        </div>
         
         <!-- Environment Variables Section -->
         <div class="section">
@@ -236,19 +240,35 @@
                     this.log(`🔑 Client ID: ${this.clientId.substring(0, 20)}...`);
                     this.log(`🔑 API Key: ${this.apiKey.substring(0, 20)}...`);
                     
-                    // Check if gapi is loaded
+                    // Check if gapi is loaded, try to load it if not
                     if (!window.gapi) {
-                        this.log('❌ Google API not loaded');
-                        throw new Error('Google API script not loaded');
+                        this.log('❌ Google API not loaded, attempting to load...');
+                        await this.loadGoogleAPIScript();
+                        
+                        // Wait a bit for the script to load
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        
+                        if (!window.gapi) {
+                            throw new Error('Failed to load Google API script');
+                        }
                     }
                     
                     this.log('✅ Google API script loaded');
                     
-                    // Initialize gapi client
+                    // Initialize gapi client with timeout
                     await new Promise((resolve, reject) => {
+                        this.log('🔧 Loading client:auth2...');
+                        
+                        // Set a timeout to detect if gapi.load hangs
+                        const timeout = setTimeout(() => {
+                            this.log('❌ Google API load timeout - trying alternative approach');
+                            reject(new Error('Google API load timeout'));
+                        }, 10000); // 10 second timeout
+                        
                         window.gapi.load('client:auth2', async () => {
                             try {
-                                this.log('🔧 Loading client:auth2...');
+                                clearTimeout(timeout);
+                                this.log('🔧 client:auth2 loaded, initializing...');
                                 
                                 await window.gapi.client.init({
                                     apiKey: this.apiKey,
@@ -263,6 +283,7 @@
                                 this.log('✅ Google API client initialized successfully');
                                 resolve();
                             } catch (error) {
+                                clearTimeout(timeout);
                                 this.log(`❌ Failed to initialize Google API client: ${error.message}`);
                                 reject(error);
                             }
@@ -381,6 +402,28 @@
                     throw error;
                 }
             }
+            
+            async loadGoogleAPIScript() {
+                return new Promise((resolve, reject) => {
+                    if (window.gapi) {
+                        resolve();
+                        return;
+                    }
+                    
+                    this.log('📡 Loading Google API script manually...');
+                    const script = document.createElement('script');
+                    script.src = 'https://apis.google.com/js/api.js';
+                    script.onload = () => {
+                        this.log('✅ Google API script loaded manually');
+                        resolve();
+                    };
+                    script.onerror = (error) => {
+                        this.log('❌ Failed to load Google API script manually');
+                        reject(error);
+                    };
+                    document.head.appendChild(script);
+                });
+            }
         }
         
         // Global service instance
@@ -388,14 +431,16 @@
         
         // Load credentials from environment variables (if available)
         function loadFromEnv() {
-            // Use the actual credentials from your Netlify environment
+            // Use the actual credentials from your Google Cloud Console
             const clientId = '287783957820-4ovnfifi2khak78ldomnj7o7pih46nle.apps.googleusercontent.com';
             const apiKey = 'AIzaSyBt1Cj68HX_2xTJgL18YP8pJDnuZ_7OOWY';
             
             document.getElementById('clientId').value = clientId;
             document.getElementById('apiKey').value = apiKey;
             
-            calendarService.log('📋 Loaded credentials from environment');
+            calendarService.log('📋 Loaded credentials from Google Cloud Console');
+            calendarService.log(`🔑 Client ID: ${clientId}`);
+            calendarService.log(`🔑 API Key: ${apiKey.substring(0, 20)}...`);
         }
         
         // Load credentials from localStorage

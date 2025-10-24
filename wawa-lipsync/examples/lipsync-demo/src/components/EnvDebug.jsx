@@ -45,6 +45,8 @@ export const EnvDebug = () => {
               onClick={async () => {
                 try {
                   console.log('🧪 Manual OAuth test starting...');
+                  alert('🧪 Starting OAuth test... Check console for details!');
+                  
                   const { googleCalendarService } = await import('../services/googleCalendarService.js');
                   
                   console.log('🔄 Initializing service...');
@@ -53,13 +55,17 @@ export const EnvDebug = () => {
                   
                   if (initialized) {
                     console.log('🔑 Testing sign-in...');
+                    alert('🔑 Attempting OAuth sign-in... Popup should appear!');
                     await googleCalendarService.signIn();
                     console.log('✅ Sign-in successful!');
+                    alert('✅ OAuth sign-in successful!');
                   } else {
                     console.error('❌ Initialization failed');
+                    alert('❌ Initialization failed - check console for details');
                   }
                 } catch (error) {
                   console.error('❌ Manual OAuth test failed:', error);
+                  alert(`❌ OAuth test failed: ${error.message}`);
                 }
               }}
               className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs"
