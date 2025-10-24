@@ -46,7 +46,8 @@ class GoogleCalendarService {
               apiKey: this.apiKey,
               clientId: this.clientId,
               discoveryDocs: [this.discoveryDoc],
-              scope: 'https://www.googleapis.com/auth/calendar.readonly'
+              scope: 'https://www.googleapis.com/auth/calendar.readonly',
+              cookiePolicy: 'single_host_origin'
             });
 
             this.gapi = window.gapi;

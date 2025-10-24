@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Google Calendar OAuth Test</title>
+    
+    <!-- Content Security Policy -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: data: https://apis.google.com https://www.gstatic.com https://cdn.jsdelivr.net;
+      connect-src 'self' https://apis.google.com https://www.googleapis.com https://accounts.google.com https://www.gstatic.com https://generativelanguage.googleapis.com https://texttospeech.googleapis.com https://api.elevenlabs.io blob:;
+      frame-src 'self' https://accounts.google.com https://content.googleapis.com;
+      img-src 'self' data: https: blob:;
+      style-src 'self' 'unsafe-inline' https:;
+      font-src 'self' data: https:;
+      media-src 'self' blob: data:;
+    ">
+    
+    <!-- Google API -->
+    <script src="https://apis.google.com/js/api.js"></script>
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        
+        .section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .button {
+            background: #4285f4;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .button:hover {
+            background: #3367d6;
+        }
+        
+        .button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Google Calendar OAuth Test</h1>
+        <p>This page tests the Google Calendar OAuth integration to debug why the popup isn't appearing.</p>
+        
+        <!-- Environment Variables Section -->
+        <div class="section">
+            <h3>📋 Environment Variables</h3>
+            <div class="input-group">
+                <label for="clientId">Google Client ID:</label>
+                <input type="text" id="clientId" placeholder="287783957820-xxxxx.apps.googleusercontent.com" />
+            </div>
+            <div class="input-group">
+                <label for="apiKey">Google API Key:</label>
+                <input type="text" id="apiKey" placeholder="AIzaSy..." />
+            </div>
+            <button class="button" onclick="loadFromEnv()">Load from Environment</button>
+            <button class="button" onclick="loadFromLocalStorage()">Load from LocalStorage</button>
+        </div>
+        
+        <!-- Test Section -->
+        <div class="section">
+            <h3>🧪 OAuth Test</h3>
+            <div id="status"></div>
+            <button class="button" onclick="testInitialization()">1. Test Initialization</button>
+            <button class="button" onclick="testSignIn()">2. Test Sign In</button>
+            <button class="button" onclick="testCalendarAccess()">3. Test Calendar Access</button>
+            <button class="button" onclick="clearLogs()">Clear Logs</button>
+        </div>
+        
+        <!-- Results Section -->
+        <div class="section">
+            <h3>📊 Test Results</h3>
+            <div id="results"></div>
+        </div>
+        
+        <!-- Logs Section -->
+        <div class="section">
+            <h3>📝 Console Logs</h3>
+            <div id="logs" class="log"></div>
+        </div>
+    </div>
+
+    <script>
+        // Google Calendar Service (simplified version)
+        class GoogleCalendarTestService {
+            constructor() {
+                this.clientId = null;
+                this.apiKey = null;
+                this.gapi = null;
+                this.isInitialized = false;
+                this.isSignedIn = false;
+            }
+            
+            log(message, type = 'info') {
+                const timestamp = new Date().toLocaleTimeString();
+                const logElement = document.getElementById('logs');
+                const logEntry = `[${timestamp}] ${message}\n`;
+                logElement.textContent += logEntry;
+                logElement.scrollTop = logElement.scrollHeight;
+                
+                console.log(message);
+            }
+            
+            updateStatus(message, type = 'info') {
+                const statusElement = document.getElementById('status');
+                statusElement.innerHTML = `<span class="status ${type}">${message}</span>`;
+            }
+            
+            updateResults(message, type = 'info') {
+                const resultsElement = document.getElementById('results');
+                const resultDiv = document.createElement('div');
+                resultDiv.className = type;
+                resultDiv.textContent = message;
+                resultsElement.appendChild(resultDiv);
+            }
+            
+            async initialize() {
+                try {
+                    this.log('🔄 Starting Google Calendar initialization...');
+                    
+                    // Check if credentials are set
+                    if (!this.clientId || !this.apiKey) {
+                        throw new Error('Client ID or API Key not set');
+                    }
+                    
+                    this.log(`🔑 Client ID: ${this.clientId.substring(0, 20)}...`);
+                    this.log(`🔑 API Key: ${this.apiKey.substring(0, 20)}...`);
+                    
+                    // Check if gapi is loaded
+                    if (!window.gapi) {
+                        this.log('❌ Google API not loaded');
+                        throw new Error('Google API script not loaded');
+                    }
+                    
+                    this.log('✅ Google API script loaded');
+                    
+                    // Initialize gapi client
+                    await new Promise((resolve, reject) => {
+                        window.gapi.load('client:auth2', async () => {
+                            try {
+                                this.log('🔧 Loading client:auth2...');
+                                
+                                await window.gapi.client.init({
+                                    apiKey: this.apiKey,
+                                    clientId: this.clientId,
+                                    discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'],
+                                    scope: 'https://www.googleapis.com/auth/calendar.readonly',
+                                    cookiePolicy: 'single_host_origin'
+                                });
+                                
+                                this.gapi = window.gapi;
+                                this.isInitialized = true;
+                                this.log('✅ Google API client initialized successfully');
+                                resolve();
+                            } catch (error) {
+                                this.log(`❌ Failed to initialize Google API client: ${error.message}`);
+                                reject(error);
+                            }
+                        });
+                    });
+                    
+                    this.updateStatus('✅ Initialization successful', 'success');
+                    this.updateResults('Google Calendar API initialized successfully', 'success');
+                    return true;
+                    
+                } catch (error) {
+                    this.log(`❌ Initialization failed: ${error.message}`);
+                    this.updateStatus(`❌ Initialization failed: ${error.message}`, 'error');
+                    this.updateResults(`Initialization failed: ${error.message}`, 'error');
+                    return false;
+                }
+            }
+            
+            async signIn() {
+                try {
+                    this.log('🔑 Starting Google sign-in process...');
+                    
+                    if (!this.isInitialized) {
+                        throw new Error('Service not initialized');
+                    }
+                    
+                    // Check gapi availability
+                    this.log(`gapi available: ${!!window.gapi}`);
+                    this.log(`this.gapi available: ${!!this.gapi}`);
+                    this.log(`gapi.auth2 available: ${!!(this.gapi && this.gapi.auth2)}`);
+                    
+                    if (!this.gapi || !this.gapi.auth2) {
+                        throw new Error('Google API client not properly initialized');
+                    }
+                    
+                    const authInstance = this.gapi.auth2.getAuthInstance();
+                    this.log(`Auth instance available: ${!!authInstance}`);
+                    
+                    if (!authInstance) {
+                        throw new Error('Google Auth instance not available');
+                    }
+                    
+                    // Check if already signed in
+                    const isSignedIn = authInstance.isSignedIn.get();
+                    this.log(`Already signed in: ${isSignedIn}`);
+                    
+                    if (isSignedIn) {
+                        this.log('✅ Already signed in');
+                        this.isSignedIn = true;
+                        this.updateStatus('✅ Already signed in', 'success');
+                        this.updateResults('User already signed in', 'success');
+                        return authInstance.currentUser.get();
+                    }
+                    
+                    // Attempt sign in
+                    this.log('🔑 Attempting to sign in with popup...');
+                    this.updateStatus('🔄 Opening OAuth popup...', 'warning');
+                    
+                    const user = await authInstance.signIn({
+                        prompt: 'consent',
+                        ux_mode: 'popup'
+                    });
+                    
+                    this.isSignedIn = true;
+                    this.log('✅ Google Calendar: Successfully signed in');
+                    this.updateStatus('✅ Sign-in successful', 'success');
+                    this.updateResults('OAuth sign-in successful!', 'success');
+                    return user;
+                    
+                } catch (error) {
+                    this.log(`❌ Sign-in failed: ${error.message}`);
+                    this.log(`Error details: ${JSON.stringify({
+                        error: error.error,
+                        message: error.message,
+                        details: error.details
+                    })}`);
+                    
+                    this.updateStatus(`❌ Sign-in failed: ${error.message}`, 'error');
+                    this.updateResults(`Sign-in failed: ${error.message}`, 'error');
+                    throw error;
+                }
+            }
+            
+            async testCalendarAccess() {
+                try {
+                    this.log('📅 Testing calendar access...');
+                    
+                    if (!this.isSignedIn) {
+                        await this.signIn();
+                    }
+                    
+                    const response = await this.gapi.client.calendar.events.list({
+                        calendarId: 'primary',
+                        timeMin: new Date().toISOString(),
+                        maxResults: 5,
+                        singleEvents: true,
+                        orderBy: 'startTime'
+                    });
+                    
+                    const events = response.result.items || [];
+                    this.log(`📅 Found ${events.length} upcoming events`);
+                    
+                    if (events.length > 0) {
+                        events.forEach((event, index) => {
+                            this.log(`  ${index + 1}. ${event.summary || 'No title'} - ${event.start.dateTime || event.start.date}`);
+                        });
+                    }
+                    
+                    this.updateStatus('✅ Calendar access successful', 'success');
+                    this.updateResults(`Successfully accessed calendar! Found ${events.length} events.`, 'success');
+                    
+                } catch (error) {
+                    this.log(`❌ Calendar access failed: ${error.message}`);
+                    this.updateStatus(`❌ Calendar access failed: ${error.message}`, 'error');
+                    this.updateResults(`Calendar access failed: ${error.message}`, 'error');
+                    throw error;
+                }
+            }
+        }
+        
+        // Global service instance
+        const calendarService = new GoogleCalendarTestService();
+        
+        // Load credentials from environment variables (if available)
+        function loadFromEnv() {
+            // Use the actual credentials from your Netlify environment
+            const clientId = '287783957820-4ovnfifi2khak78ldomnj7o7pih46nle.apps.googleusercontent.com';
+            const apiKey = 'AIzaSyBt1Cj68HX_2xTJgL18YP8pJDnuZ_7OOWY';
+            
+            document.getElementById('clientId').value = clientId;
+            document.getElementById('apiKey').value = apiKey;
+            
+            calendarService.log('📋 Loaded credentials from environment');
+        }
+        
+        // Load credentials from localStorage
+        function loadFromLocalStorage() {
+            const clientId = localStorage.getItem('google-client-id') || '';
+            const apiKey = localStorage.getItem('google-api-key') || '';
+            
+            document.getElementById('clientId').value = clientId;
+            document.getElementById('apiKey').value = apiKey;
+            
+            calendarService.log('📋 Loaded credentials from localStorage');
+        }
+        
+        // Test initialization
+        async function testInitialization() {
+            const clientId = document.getElementById('clientId').value;
+            const apiKey = document.getElementById('apiKey').value;
+            
+            if (!clientId || !apiKey) {
+                calendarService.updateStatus('❌ Please enter Client ID and API Key', 'error');
+                return;
+            }
+            
+            calendarService.clientId = clientId;
+            calendarService.apiKey = apiKey;
+            
+            await calendarService.initialize();
+        }
+        
+        // Test sign in
+        async function testSignIn() {
+            try {
+                await calendarService.signIn();
+            } catch (error) {
+                calendarService.log(`Sign-in test failed: ${error.message}`);
+            }
+        }
+        
+        // Test calendar access
+        async function testCalendarAccess() {
+            try {
+                await calendarService.testCalendarAccess();
+            } catch (error) {
+                calendarService.log(`Calendar access test failed: ${error.message}`);
+            }
+        }
+        
+        // Clear logs
+        function clearLogs() {
+            document.getElementById('logs').textContent = '';
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('status').innerHTML = '';
+        }
+        
+        // Auto-load credentials on page load
+        window.addEventListener('load', () => {
+            calendarService.log('🚀 Google Calendar OAuth Test Page Loaded');
+            loadFromEnv();
+        });
+        
+        // Make functions globally available
+        window.loadFromEnv = loadFromEnv;
+        window.loadFromLocalStorage = loadFromLocalStorage;
+        window.testInitialization = testInitialization;
+        window.testSignIn = testSignIn;
+        window.testCalendarAccess = testCalendarAccess;
+        window.clearLogs = clearLogs;
+    </script>
+</body>
+</html>
