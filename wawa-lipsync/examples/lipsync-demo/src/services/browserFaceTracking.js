@@ -4,7 +4,7 @@
 export class BrowserFaceTracking {
   constructor() {
     this.video = null;
-    this.faceLandmarker = null;
+    this.faceMesh = null;
     this.isInitialized = false;
     this.isRunning = false;
     this.currentPosition = { x: 0.5, y: 0.5, z: 0.5 };
@@ -19,7 +19,7 @@ export class BrowserFaceTracking {
       console.log('[BrowserFaceTracking] Initializing...');
 
       // Wait for MediaPipe to be loaded
-      if (!window.FaceLandmarker) {
+      if (!window.FaceMesh) {
         console.error('[BrowserFaceTracking] MediaPipe not loaded. Make sure to include the script in index.html');
         return false;
       }
@@ -43,20 +43,20 @@ export class BrowserFaceTracking {
       this.video.srcObject = stream;
       await this.video.play();
 
-      // Initialize MediaPipe Face Landmarker
-      const { FaceLandmarker, FilesetResolver } = window;
+      // Initialize MediaPipe Face Mesh
+      const { FaceMesh } = window;
       
-      const vision = await FilesetResolver.forVisionTasks(
-        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
-      );
+      this.faceMesh = new FaceMesh({
+        locateFile: (file) => {
+          return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+        }
+      });
 
-      this.faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
-        baseOptions: {
-          modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
-          delegate: "GPU"
-        },
-        runningMode: "VIDEO",
-        numFaces: 1
+      this.faceMesh.setOptions({
+        maxNumFaces: 1,
+        refineLandmarks: false,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5
       });
 
       this.isInitialized = true;
@@ -81,16 +81,17 @@ export class BrowserFaceTracking {
   }
 
   async detectFace() {
-    if (!this.isRunning || !this.faceLandmarker || !this.video) return;
+    if (!this.isRunning || !this.faceMesh || !this.video) return;
 
     try {
-      const results = await this.faceLandmarker.detectForVideo(this.video, performance.now());
+      // Use MediaPipe FaceMesh API
+      await this.faceMesh.send({ image: this.video });
 
-      if (results.faceLandmarks && results.faceLandmarks.length > 0) {
-        const landmarks = results.faceLandmarks[0];
-        
-        // Get nose tip (landmark 1) for face center
-        const nose = landmarks[1];
+      // Get results
+      const results = this.faceMesh.multiFaceLandmarks;
+      
+      if (results && results.length > 0) {
+        const landmarks = results[0];
         
         // Get face bounding box from landmarks
         const xs = landmarks.map(l => l.x);
