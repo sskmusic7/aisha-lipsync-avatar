@@ -9,16 +9,20 @@
     <!-- Content Security Policy to allow Google APIs -->
     <meta http-equiv="Content-Security-Policy" content="
       default-src 'self';
-      script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: data: https://apis.google.com https://www.gstatic.com https://cdn.jsdelivr.net;
-      connect-src 'self' https://apis.google.com https://www.googleapis.com https://accounts.google.com https://www.gstatic.com https://generativelanguage.googleapis.com https://texttospeech.googleapis.com https://api.elevenlabs.io blob:;
-      frame-src 'self' https://accounts.google.com https://content.googleapis.com;
+      script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://accounts.google.com https://www.gstatic.com https://cdn.jsdelivr.net https://*.gstatic.com blob: data:;
+      script-src-elem 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://accounts.google.com https://www.gstatic.com https://cdn.jsdelivr.net https://*.gstatic.com blob: data:;
+      connect-src 'self' https://apis.google.com https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://www.gstatic.com https://*.gstatic.com https://generativelanguage.googleapis.com https://texttospeech.googleapis.com https://api.elevenlabs.io blob: wss:;
+      frame-src 'self' https://accounts.google.com https://accounts.google.com/gsi/ https://accounts.google.com/o/oauth2/iframe https://content.googleapis.com https://www.gstatic.com https://*.gstatic.com;
       img-src 'self' data: https: blob:;
       style-src 'self' 'unsafe-inline' https:;
       font-src 'self' data: https:;
       media-src 'self' blob: data:;
     ">
     
-    <!-- Google API for Calendar integration -->
+    <!-- NEW Google Identity Services library (REQUIRED for new OAuth clients) -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    
+    <!-- Google API for Calendar API calls -->
     <script src="https://apis.google.com/js/api.js"></script>
     <!-- MediaPipe for browser-based eye tracking -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
