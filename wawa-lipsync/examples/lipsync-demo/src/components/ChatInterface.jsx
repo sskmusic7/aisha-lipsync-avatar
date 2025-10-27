@@ -55,13 +55,14 @@ export const ChatInterface = () => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = false;
+      recognitionRef.current.continuous = false; // Changed to non-continuous for push-to-talk
       recognitionRef.current.interimResults = false;
       recognitionRef.current.lang = 'en-US';
 
       recognitionRef.current.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
         console.log('Speech recognized:', transcript);
+        setIsListening(false); // Turn off immediately after getting result
         handleSendMessage(transcript);
       };
 
@@ -106,24 +107,38 @@ export const ChatInterface = () => {
     initializeServices();
   }, []);
 
-  // Start/stop speech recognition
-  const toggleSpeechRecognition = () => {
+  // Start/stop speech recognition (push-to-talk mode)
+  const startSpeechRecognition = () => {
     if (!recognitionRef.current) {
       alert('Speech recognition not supported in this browser');
       return;
     }
 
-    if (isListening) {
-      recognitionRef.current.stop();
-      setIsListening(false);
-    } else {
-      // Stop any current speech first
-      if (isSpeaking) {
-        stopSpeaking();
-      }
-      
+    // Stop any current speech first
+    if (isSpeaking) {
+      stopSpeaking();
+    }
+    
+    try {
       recognitionRef.current.start();
       setIsListening(true);
+      console.log('🎤 Microphone activated - Push to talk');
+    } catch (error) {
+      console.error('Failed to start recognition:', error);
+      setIsListening(false);
+    }
+  };
+
+  const stopSpeechRecognition = () => {
+    if (recognitionRef.current && isListening) {
+      try {
+        recognitionRef.current.stop();
+        setIsListening(false);
+        console.log('🎤 Microphone deactivated');
+      } catch (error) {
+        console.error('Error stopping recognition:', error);
+        setIsListening(false);
+      }
     }
   };
 
@@ -564,15 +579,19 @@ export const ChatInterface = () => {
           />
           <button
             type="button"
-            onClick={toggleSpeechRecognition}
+            onMouseDown={startSpeechRecognition}
+            onMouseUp={stopSpeechRecognition}
+            onTouchStart={startSpeechRecognition}
+            onTouchEnd={stopSpeechRecognition}
             disabled={isLoading || !isInitialized}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               isListening
-                ? 'bg-red-500 hover:bg-red-600 text-white'
+                ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse'
                 : 'bg-green-500 hover:bg-green-600 text-white'
             } ${(!isInitialized || isLoading) ? 'opacity-50 cursor-not-allowed' : ''}`}
+            title="Hold down to speak (Push to Talk)"
           >
-            {isListening ? '🛑' : '🎤'}
+            {isListening ? '🎤' : '🎤'}
           </button>
           <button
             type="submit"

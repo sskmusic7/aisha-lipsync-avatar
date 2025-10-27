@@ -4,6 +4,7 @@ import { Experience } from "./Experience";
 import { Visualizer } from "./Visualizer";
 import { ChatInterface } from "./ChatInterface";
 import { EnvDebug } from "./EnvDebug";
+import { FaceTrackingTester } from "./FaceTrackingTester";
 
 // Camera Permission Button Component
 const CameraPermissionButton = () => {
@@ -101,6 +102,7 @@ export const UI = () => {
   const [currentHash, setCurrentHash] = useState(
     window.location.hash.replace("#", "")
   );
+  const [showFaceTrackingTester, setShowFaceTrackingTester] = useState(false);
 
   useEffect(() => {
     // When hash in the url changes, update the href state
@@ -145,6 +147,19 @@ export const UI = () => {
               {example.label}
             </a>
           ))}
+          
+          {/* Face Tracking Tester Toggle */}
+          <button
+            onClick={() => setShowFaceTrackingTester(!showFaceTrackingTester)}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              showFaceTrackingTester
+                ? 'bg-green-500 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+            title="Open face tracking tester to see what the camera detects"
+          >
+            {showFaceTrackingTester ? '🎯 Tester On' : '🎯 Tester'}
+          </button>
         </div>
 
         {/* Content based on current hash */}
@@ -185,6 +200,9 @@ export const UI = () => {
           </div>
         </div>
       </div>
+      
+      {/* Face Tracking Tester Window */}
+      <FaceTrackingTester isVisible={showFaceTrackingTester} />
     </section>
   );
 };

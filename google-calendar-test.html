@@ -274,8 +274,7 @@
                                     apiKey: this.apiKey,
                                     clientId: this.clientId,
                                     discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'],
-                                    scope: 'https://www.googleapis.com/auth/calendar.readonly',
-                                    cookiePolicy: 'single_host_origin'
+                                    scope: 'https://www.googleapis.com/auth/calendar.readonly'
                                 });
                                 
                                 this.gapi = window.gapi;
@@ -437,6 +436,9 @@
             
             document.getElementById('clientId').value = clientId;
             document.getElementById('apiKey').value = apiKey;
+            
+            calendarService.clientId = clientId;
+            calendarService.apiKey = apiKey;
             
             calendarService.log('📋 Loaded credentials from Google Cloud Console');
             calendarService.log(`🔑 Client ID: ${clientId}`);

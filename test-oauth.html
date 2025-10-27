@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick OAuth Test</title>
+    <script src="https://apis.google.com/js/api.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        button {
+            background: #4285f4;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #3367d6;
+        }
+        .status {
+            margin: 20px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        #log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Quick OAuth Test</h1>
+    
+    <div id="status" class="status info">
+        Ready to test. Click "Test OAuth Connection" to begin.
+    </div>
+    
+    <button onclick="testOAuth()">Test OAuth Connection</button>
+    <button onclick="clearLogs()">Clear Logs</button>
+    
+    <h3>Console Logs:</h3>
+    <div id="log"></div>
+
+    <script>
+        const CLIENT_ID = '287783957820-4ovnfifi2khak78ldomnj7o7pih46nle.apps.googleusercontent.com';
+        const API_KEY = 'AIzaSyBt1Cj68HX_2xTJgL18YP8pJDnuZ_7OOWY';
+        
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.textContent += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+        
+        async function testOAuth() {
+            try {
+                log('🚀 Starting OAuth test...');
+                updateStatus('Testing OAuth connection...', 'info');
+                
+                // Check if gapi is loaded
+                if (!window.gapi) {
+                    log('❌ Google API not loaded yet');
+                    updateStatus('Waiting for Google API to load...', 'info');
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    if (!window.gapi) {
+                        throw new Error('Google API failed to load');
+                    }
+                }
+                
+                log('✅ Google API loaded');
+                
+                // Load auth2
+                log('📡 Loading auth2...');
+                await new Promise((resolve, reject) => {
+                    window.gapi.load('client:auth2', async () => {
+                        try {
+                            log('✅ Auth2 loaded');
+                            resolve();
+                        } catch (error) {
+                            reject(error);
+                        }
+                    });
+                });
+                
+                // Initialize client
+                log('🔧 Initializing Google client...');
+                await window.gapi.client.init({
+                    apiKey: API_KEY,
+                    clientId: CLIENT_ID,
+                    discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'],
+                    scope: 'https://www.googleapis.com/auth/calendar.readonly'
+                });
+                
+                log('✅ Client initialized');
+                
+                // Get auth instance
+                const authInstance = window.gapi.auth2.getAuthInstance();
+                
+                // Check if signed in
+                if (authInstance.isSignedIn.get()) {
+                    log('✅ Already signed in!');
+                    updateStatus('Already signed in! Testing calendar access...', 'success');
+                } else {
+                    log('🔑 Not signed in, attempting sign-in...');
+                    updateStatus('Opening OAuth popup...', 'info');
+                    
+                    const user = await authInstance.signIn({
+                        prompt: 'consent',
+                        ux_mode: 'popup'
+                    });
+                    
+                    log('✅ Sign-in successful!');
+                    updateStatus('Sign-in successful! Fetching calendar...', 'success');
+                }
+                
+                // Test calendar access
+                log('📅 Fetching calendar events...');
+                const response = await window.gapi.client.calendar.events.list({
+                    calendarId: 'primary',
+                    timeMin: new Date().toISOString(),
+                    maxResults: 5,
+                    singleEvents: true,
+                    orderBy: 'startTime'
+                });
+                
+                const events = response.result.items || [];
+                log(`📅 Found ${events.length} events`);
+                
+                if (events.length > 0) {
+                    events.forEach((event, i) => {
+                        log(`  ${i + 1}. ${event.summary || 'No title'}`);
+                    });
+                }
+                
+                updateStatus('✅ OAuth test successful! Calendar access working.', 'success');
+                log('✅ OAuth test complete!');
+                
+            } catch (error) {
+                log(`❌ Error: ${error.message}`);
+                log(`Details: ${JSON.stringify(error)}`);
+                updateStatus(`❌ OAuth test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        function clearLogs() {
+            document.getElementById('log').textContent = '';
+        }
+        
+        // Auto-load on page load
+        window.addEventListener('load', () => {
+            log('🚀 OAuth test page loaded');
+            log(`Client ID: ${CLIENT_ID.substring(0, 20)}...`);
+            log(`API Key: ${API_KEY.substring(0, 20)}...`);
+        });
+    </script>
+</body>
+</html>
+
