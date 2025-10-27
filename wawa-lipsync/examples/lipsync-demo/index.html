@@ -11,7 +11,7 @@
       default-src 'self';
       script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://accounts.google.com https://www.gstatic.com https://cdn.jsdelivr.net https://*.gstatic.com blob: data:;
       script-src-elem 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://accounts.google.com https://www.gstatic.com https://cdn.jsdelivr.net https://*.gstatic.com blob: data:;
-      connect-src 'self' https://apis.google.com https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://www.gstatic.com https://*.gstatic.com https://generativelanguage.googleapis.com https://texttospeech.googleapis.com https://api.elevenlabs.io blob: wss:;
+      connect-src 'self' ws://localhost:* wss://localhost:* https://apis.google.com https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://www.gstatic.com https://*.gstatic.com https://generativelanguage.googleapis.com https://texttospeech.googleapis.com https://api.elevenlabs.io blob: wss:;
       frame-src 'self' https://accounts.google.com https://accounts.google.com/gsi/ https://accounts.google.com/o/oauth2/iframe https://content.googleapis.com https://www.gstatic.com https://*.gstatic.com;
       img-src 'self' data: https: blob:;
       style-src 'self' 'unsafe-inline' https:;
