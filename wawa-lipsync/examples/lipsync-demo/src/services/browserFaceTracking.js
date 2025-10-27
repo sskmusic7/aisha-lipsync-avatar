@@ -1,5 +1,6 @@
 // Browser-based face tracking using MediaPipe.js
 // Runs entirely in the browser - no backend needed!
+import { FaceMesh } from '@mediapipe/face_mesh';
 
 export class BrowserFaceTracking {
   constructor() {
@@ -17,12 +18,6 @@ export class BrowserFaceTracking {
 
     try {
       console.log('[BrowserFaceTracking] Initializing...');
-
-      // Wait for MediaPipe to be loaded
-      if (!window.FaceMesh) {
-        console.error('[BrowserFaceTracking] MediaPipe not loaded. Make sure to include the script in index.html');
-        return false;
-      }
 
       // Create video element (hidden)
       this.video = document.createElement('video');
@@ -43,9 +38,7 @@ export class BrowserFaceTracking {
       this.video.srcObject = stream;
       await this.video.play();
 
-      // Initialize MediaPipe Face Mesh
-      const { FaceMesh } = window;
-      
+      // Initialize MediaPipe Face Mesh using npm package
       this.faceMesh = new FaceMesh({
         locateFile: (file) => {
           return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
@@ -54,9 +47,13 @@ export class BrowserFaceTracking {
 
       this.faceMesh.setOptions({
         maxNumFaces: 1,
-        refineLandmarks: false,
         minDetectionConfidence: 0.5,
         minTrackingConfidence: 0.5
+      });
+
+      // Set up onResults callback
+      this.faceMesh.onResults((results) => {
+        this.handleFaceResults(results);
       });
 
       this.isInitialized = true;
@@ -80,57 +77,57 @@ export class BrowserFaceTracking {
     return true;
   }
 
+  handleFaceResults(results) {
+    if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+      // No face detected
+      this.notifyCallbacks({
+        detected: false,
+        confidence: 0.0
+      });
+      return;
+    }
+
+    const landmarks = results.multiFaceLandmarks[0];
+    
+    // Get face bounding box from landmarks
+    const xs = landmarks.map(l => l.x);
+    const ys = landmarks.map(l => l.y);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+    
+    // Calculate center and size
+    const centerX = (minX + maxX) / 2;
+    const centerY = (minY + maxY) / 2;
+    const faceWidth = maxX - minX;
+    const faceHeight = maxY - minY;
+    const faceSize = faceWidth * faceHeight;
+    
+    // Estimate depth from face size (larger = closer)
+    const centerZ = Math.min(1.0, faceSize * 3);
+    
+    // Apply smoothing
+    this.currentPosition.x += (centerX - this.currentPosition.x) * this.smoothFactor;
+    this.currentPosition.y += (centerY - this.currentPosition.y) * this.smoothFactor;
+    this.currentPosition.z += (centerZ - this.currentPosition.z) * this.smoothFactor;
+
+    // Notify callbacks
+    this.notifyCallbacks({
+      x: this.currentPosition.x,
+      y: this.currentPosition.y,
+      z: this.currentPosition.z,
+      detected: true,
+      confidence: 0.9
+    });
+  }
+
   async detectFace() {
     if (!this.isRunning || !this.faceMesh || !this.video) return;
 
     try {
-      // Use MediaPipe FaceMesh API
+      // Send frame to FaceMesh - results will come via onResults callback
       await this.faceMesh.send({ image: this.video });
-
-      // Get results
-      const results = this.faceMesh.multiFaceLandmarks;
-      
-      if (results && results.length > 0) {
-        const landmarks = results[0];
-        
-        // Get face bounding box from landmarks
-        const xs = landmarks.map(l => l.x);
-        const ys = landmarks.map(l => l.y);
-        const minX = Math.min(...xs);
-        const maxX = Math.max(...xs);
-        const minY = Math.min(...ys);
-        const maxY = Math.max(...ys);
-        
-        // Calculate center and size
-        const centerX = (minX + maxX) / 2;
-        const centerY = (minY + maxY) / 2;
-        const faceWidth = maxX - minX;
-        const faceHeight = maxY - minY;
-        const faceSize = faceWidth * faceHeight;
-        
-        // Estimate depth from face size (larger = closer)
-        const centerZ = Math.min(1.0, faceSize * 3);
-        
-        // Apply smoothing
-        this.currentPosition.x += (centerX - this.currentPosition.x) * this.smoothFactor;
-        this.currentPosition.y += (centerY - this.currentPosition.y) * this.smoothFactor;
-        this.currentPosition.z += (centerZ - this.currentPosition.z) * this.smoothFactor;
-
-        // Notify callbacks
-        this.notifyCallbacks({
-          x: this.currentPosition.x,
-          y: this.currentPosition.y,
-          z: this.currentPosition.z,
-          detected: true,
-          confidence: 0.9
-        });
-      } else {
-        // No face detected
-        this.notifyCallbacks({
-          detected: false,
-          confidence: 0.0
-        });
-      }
 
       // Continue detection loop (30 FPS)
       if (this.isRunning) {
