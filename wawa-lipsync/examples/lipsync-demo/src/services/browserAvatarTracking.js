@@ -10,6 +10,7 @@ export class BrowserAvatarTracking {
       enableBlinking: config.enableBlinking !== false,
       enableMicroMovements: config.enableMicroMovements !== false,
       reducedMovement: false,
+      invertX: true,  // Invert horizontal (fix mirror effect)
       ...config
     };
 
@@ -18,11 +19,37 @@ export class BrowserAvatarTracking {
     this.morphTargets = {};
     this.controller = null;
     this.isTracking = false;
-
-    this.initialize();
+    this.lastMovements = null; // Store movements to apply each frame
+    
+    // Calibration offsets (neutral position)
+    this.calibrationOffset = { x: 0, y: 0 };
+    
+    // Don't call initialize() here - let the caller await it
+  }
+  
+  // Calibrate - set current position as neutral/center
+  calibrate() {
+    if (this.lastMovements && this.lastMovements.head) {
+      this.calibrationOffset = {
+        x: this.lastMovements.head.x,
+        y: this.lastMovements.head.y
+      };
+      console.log('[BrowserAvatarTracking] 🎯 Calibrated! Neutral position set to:', this.calibrationOffset);
+    }
+  }
+  
+  // Reset calibration to defaults
+  resetCalibration() {
+    this.calibrationOffset = { x: 0, y: 0 };
+    console.log('[BrowserAvatarTracking] 🔄 Calibration reset to defaults');
   }
 
   async initialize() {
+    if (this.isTracking) {
+      console.log('[BrowserAvatarTracking] Already initialized, skipping...');
+      return true;
+    }
+    
     console.log('[BrowserAvatarTracking] Initializing browser-based eye tracking...');
     
     // Find and store bone references
@@ -45,9 +72,13 @@ export class BrowserAvatarTracking {
       
       // Start tracking
       await this.faceTracker.start();
+      this.isTracking = true;
       console.log('[BrowserAvatarTracking] ✅ Eye tracking started successfully!');
+      console.log('[BrowserAvatarTracking] Bones available:', Object.keys(this.bones));
+      return true;
     } else {
       console.warn('[BrowserAvatarTracking] ⚠️ Could not start eye tracking. App will continue without it.');
+      return false;
     }
   }
 
@@ -66,7 +97,9 @@ export class BrowserAvatarTracking {
         const bone = this.avatar.getObjectByName(name);
         if (bone) {
           this.bones[key] = bone;
-          console.log(`[BrowserAvatarTracking] Found bone: ${key} -> ${name}`);
+          // Ensure bone can be updated
+          bone.matrixAutoUpdate = true;
+          console.log(`[BrowserAvatarTracking] Found bone: ${key} -> ${name} (matrixAutoUpdate: ${bone.matrixAutoUpdate})`);
           break;
         }
       }
@@ -91,21 +124,67 @@ export class BrowserAvatarTracking {
   onFaceDetected(faceData) {
     if (!faceData.detected) {
       // Use idle animation when no face detected
-      this.applyIdleAnimation();
+      this.lastMovements = this.getIdleMovements();
       return;
     }
 
     // Calculate movements from face position
     const movements = this.controller.calculateMovements(faceData);
     
-    // Apply movements to avatar
-    this.updateAvatar(movements);
+    // Store movements to be applied in the render loop
+    this.lastMovements = movements;
+    
+    // Debug: Log tracking data occasionally
+    if (Math.random() < 0.02) { // Log ~2% of frames to avoid spam
+      console.log('[BrowserAvatarTracking] Face detected:', {
+        position: { x: faceData.x.toFixed(2), y: faceData.y.toFixed(2) },
+        movements: {
+          head: { x: movements.head.x.toFixed(1), y: movements.head.y.toFixed(1) },
+          eyes: { x: movements.eyes.x.toFixed(1), y: movements.eyes.y.toFixed(1) }
+        }
+      });
+    }
+  }
+  
+  // Get idle movements
+  getIdleMovements() {
+    const t = performance.now() * 0.001;
+    return {
+      body: { y: Math.sin(t * 0.1) * 5 },
+      head: {
+        x: Math.sin(t * 0.15) * 8,
+        y: Math.cos(t * 0.2) * 5
+      },
+      eyes: {
+        x: Math.sin(t * 0.3) * 10,
+        y: Math.cos(t * 0.25) * 5
+      }
+    };
+  }
+  
+  // Apply stored movements - call this from useFrame AFTER animations update
+  applyTracking() {
+    if (this.lastMovements) {
+      this.updateAvatar(this.lastMovements);
+    }
   }
 
   updateAvatar(trackingData) {
     if (!trackingData) return;
 
     const movementScale = this.config.reducedMovement ? 0.4 : 1.0;
+
+    // Debug: Log occasionally to verify updates are happening
+    if (Math.random() < 0.02) { // Reduced to 2% to avoid spam
+      console.log('[BrowserAvatarTracking] 🎯 Applying movements:', {
+        body: this.bones.body ? 'found ✅' : 'missing ❌',
+        head: this.bones.head ? 'found ✅' : 'missing ❌',
+        headRotation: trackingData.head,
+        headRotationDeg: trackingData.head ? `x:${trackingData.head.x.toFixed(1)}° y:${trackingData.head.y.toFixed(1)}°` : 'none',
+        calibrationOffset: `x:${this.calibrationOffset.x.toFixed(1)}° y:${this.calibrationOffset.y.toFixed(1)}°`,
+        bonesAvailable: Object.keys(this.bones)
+      });
+    }
 
     // Update body rotation
     if (this.bones.body && trackingData.body) {
@@ -117,16 +196,31 @@ export class BrowserAvatarTracking {
       this.bones.spine.rotation.y = this.degToRad(trackingData.body.y * 0.3 * movementScale);
     }
 
-    // Update head rotation
+    // Update head rotation with calibration and axis inversion
     if (this.bones.head && trackingData.head) {
-      this.bones.head.rotation.x = this.degToRad(trackingData.head.y * movementScale);
-      this.bones.head.rotation.y = this.degToRad(trackingData.head.x * movementScale);
+      // Apply calibration offset (SUBTRACT offset to recenter)
+      let headX = trackingData.head.x - this.calibrationOffset.x;
+      let headY = trackingData.head.y - this.calibrationOffset.y;
+      
+      // Apply axis inversion (MIRROR X, keep Y natural)
+      if (this.config.invertX) headX = -headX;
+      // Don't invert Y - just use offset for centering
+      
+      // Apply to bones (1.5x multiplier for good responsiveness)
+      this.bones.head.rotation.x = this.degToRad(-headY * movementScale * 1.5); // Negative Y for correct up/down
+      this.bones.head.rotation.y = this.degToRad(headX * movementScale * 1.5);
     }
 
-    // Update neck for smoother transition
+    // Update neck for smoother transition (with same calibration)
     if (this.bones.neck && trackingData.head) {
-      this.bones.neck.rotation.x = this.degToRad(trackingData.head.y * 0.3 * movementScale);
-      this.bones.neck.rotation.y = this.degToRad(trackingData.head.x * 0.3 * movementScale);
+      let neckX = trackingData.head.x - this.calibrationOffset.x;
+      let neckY = trackingData.head.y - this.calibrationOffset.y;
+      
+      if (this.config.invertX) neckX = -neckX;
+      // Match head rotation direction
+      
+      this.bones.neck.rotation.x = this.degToRad(-neckY * 0.3 * movementScale); // Negative Y to match head
+      this.bones.neck.rotation.y = this.degToRad(neckX * 0.3 * movementScale);
     }
 
     // Update eye rotation

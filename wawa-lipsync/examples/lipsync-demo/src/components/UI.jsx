@@ -75,9 +75,9 @@ const CameraPermissionButton = () => {
       <p className="text-xs text-blue-600 mb-3">Click the button below to allow camera access for eye tracking</p>
       <button 
         onClick={requestCameraPermission}
-        className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded font-medium"
+        className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-sm"
       >
-        📷 Enable Camera
+        Enable Camera
       </button>
     </div>
   );
@@ -96,13 +96,16 @@ const examples = [
     label: "AI Chat",
     href: "#chat",
   },
+  {
+    label: "Face Tracking",
+    href: "#tracking",
+  },
 ];
 
 export const UI = () => {
   const [currentHash, setCurrentHash] = useState(
     window.location.hash.replace("#", "")
   );
-  const [showFaceTrackingTester, setShowFaceTrackingTester] = useState(false);
 
   useEffect(() => {
     // When hash in the url changes, update the href state
@@ -147,19 +150,11 @@ export const UI = () => {
               {example.label}
             </a>
           ))}
-          
-          {/* Face Tracking Tester Toggle */}
-          <button
-            onClick={() => setShowFaceTrackingTester(!showFaceTrackingTester)}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              showFaceTrackingTester
-                ? 'bg-green-500 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-            title="Open face tracking tester to see what the camera detects"
-          >
-            {showFaceTrackingTester ? '🎯 Tester On' : '🎯 Tester'}
-          </button>
+        </div>
+
+        {/* Camera Permission Button (mobile only) */}
+        <div className="mb-4">
+          <CameraPermissionButton />
         </div>
 
         {/* Content based on current hash */}
@@ -168,19 +163,10 @@ export const UI = () => {
           <div className="text-center py-8">
             <p className="text-lg">3D Model view is shown on the right panel</p>
             <p className="text-sm text-gray-600 mt-2">Switch to other tabs to see different features</p>
-            
-            {/* Camera Permission Button for Mobile */}
-            <div className="mt-6">
-              <CameraPermissionButton />
-            </div>
           </div>
         )}
         {currentHash === 'chat' && <ChatInterface />}
-        
-        {/* Debug Environment Variables */}
-        <div className="mt-8">
-          <EnvDebug />
-        </div>
+        {currentHash === 'tracking' && <FaceTrackingTester isVisible={true} />}
       </div>
       <div className="flex-1 bg-gradient-to-b from-pink-400 to-pink-200 relative">
         <Canvas shadows camera={{ position: [12, 8, 26], fov: 30 }}>
@@ -200,9 +186,6 @@ export const UI = () => {
           </div>
         </div>
       </div>
-      
-      {/* Face Tracking Tester Window */}
-      <FaceTrackingTester isVisible={showFaceTrackingTester} />
     </section>
   );
 };

@@ -7,6 +7,7 @@ import { ApiKeyManager } from "./ApiKeyManager";
 import { VoiceSelector } from "./VoiceSelector";
 import { aishaRules } from "../services/aishaPersonalityRules";
 import { syllableAnalyzer } from "../services/syllableAnalyzer";
+import { useTTSStore } from "../stores/ttsStore";
 
 export const ChatInterface = () => {
   const [messages, setMessages] = useState([
@@ -40,6 +41,10 @@ export const ChatInterface = () => {
   const messagesEndRef = useRef(null);
   const recognitionRef = useRef(null);
   const currentAudioRef = useRef(null);
+  
+  // TTS Store for automatic animation switching
+  const startSpeaking = useTTSStore((state) => state.startSpeaking);
+  const stopSpeaking = useTTSStore((state) => state.stopSpeaking);
 
   // Auto-scroll to bottom of messages
   const scrollToBottom = () => {
@@ -116,7 +121,7 @@ export const ChatInterface = () => {
 
     // Stop any current speech first
     if (isSpeaking) {
-      stopSpeaking();
+      stopSpeakingLocal();
     }
     
     try {
@@ -143,12 +148,38 @@ export const ChatInterface = () => {
   };
 
   // Stop current speech
-  const stopSpeaking = () => {
+  const stopSpeakingLocal = () => {
     if (currentAudioRef.current) {
       currentAudioRef.current.pause();
       currentAudioRef.current = null;
     }
     setIsSpeaking(false);
+    stopSpeaking(); // 🎬 Restore previous animation
+  };
+
+  // Clean text before TTS so she doesn't read punctuation/emojis/etc.
+  const sanitizeForSpeech = (rawText) => {
+    if (!rawText) return "";
+    let text = String(rawText);
+    // Replace URLs with a short placeholder
+    text = text.replace(/https?:\/\/\S+/gi, "link");
+    // Replace & with 'and'
+    text = text.replace(/&/g, " and ");
+    // Remove markdown and excessive punctuation
+    text = text
+      .replace(/[*_~`>#|\\]/g, " ")
+      .replace(/[\(\)\[\]\{\}]/g, " ")
+      .replace(/\.{3,}/g, ".")
+      .replace(/[!?.]{2,}/g, (m) => m[0]);
+    // Remove emojis and non-speech unicode symbols
+    text = text.replace(/[\p{Extended_Pictographic}\p{Emoji_Presentation}\p{Emoji}\u200d]+/gu, "");
+    // Remove bullets and decorative characters
+    text = text.replace(/[•·►▪︎➤➔➜–—]/g, " ");
+    // Remove stray punctuation tokens
+    text = text.replace(/\s+[,:;]\s+/g, ", ");
+    // Collapse whitespace
+    text = text.replace(/\s{2,}/g, " ").trim();
+    return text;
   };
 
   // Send message to Gemini API
@@ -180,7 +211,7 @@ export const ChatInterface = () => {
         return;
       }
 
-      const utterance = new SpeechSynthesisUtterance(text);
+      const utterance = new SpeechSynthesisUtterance(sanitizeForSpeech(text));
       utterance.rate = 0.9;
       utterance.pitch = 1;
       utterance.volume = 1;
@@ -201,7 +232,7 @@ export const ChatInterface = () => {
         console.log('🎭 Starting syllable-based lip-sync analysis...');
         
         // Analyze text into syllable movements
-        const movements = syllableAnalyzer.analyzeText(text);
+        const movements = syllableAnalyzer.analyzeText(sanitizeForSpeech(text));
         console.log('📝 Generated', movements.length, 'syllable movements');
         
         let movementIndex = 0;
@@ -273,6 +304,7 @@ export const ChatInterface = () => {
         console.log('🎤 Web Speech API ended');
         if (cleanupLipSync) cleanupLipSync();
         setIsSpeaking(false);
+        stopSpeaking(); // 🎬 Restore previous animation
         resolve();
       };
       
@@ -280,6 +312,7 @@ export const ChatInterface = () => {
         console.error('Web Speech API error:', error);
         if (cleanupLipSync) cleanupLipSync();
         setIsSpeaking(false);
+        stopSpeaking(); // 🎬 Restore previous animation
         reject(error);
       };
       
@@ -291,6 +324,7 @@ export const ChatInterface = () => {
   const textToSpeech = async (text) => {
     try {
       setIsSpeaking(true);
+      startSpeaking(); // 🎬 Trigger animation switch to "armature.001"
       
       // Stop any current microphone input
       if (isListening) {
@@ -299,12 +333,15 @@ export const ChatInterface = () => {
       
       console.log('🎤 Starting TTS with ElevenLabs (preferred) or fallback...');
       
+      // Sanitize content so she doesn't read punctuation/emojis
+      const speakText = sanitizeForSpeech(text);
+
       // Priority 1: ElevenLabs (high-quality voices)
       if (apiStatus.elevenlabs) {
         try {
           console.log('🎵 Using ElevenLabs TTS with voice:', selectedVoiceId);
           
-          const audioBlob = await elevenLabsService.textToSpeechCached(text, {
+          const audioBlob = await elevenLabsService.textToSpeechCached(speakText, {
             voiceId: selectedVoiceId
           });
           
@@ -325,12 +362,14 @@ export const ChatInterface = () => {
           audio.onended = () => {
             URL.revokeObjectURL(audioUrl);
             setIsSpeaking(false);
+            stopSpeaking(); // 🎬 Restore previous animation
           };
           
           audio.onerror = (error) => {
             console.error('ElevenLabs audio playback error:', error);
             URL.revokeObjectURL(audioUrl);
             setIsSpeaking(false);
+            stopSpeaking(); // 🎬 Restore previous animation
           };
           
           await audio.play();
@@ -346,7 +385,7 @@ export const ChatInterface = () => {
       if (apiStatus.tts) {
         try {
           console.log('🎵 Using Google Cloud TTS with pre-buffered lip-sync...');
-          await ttsService.synthesizeSpeech(text, {}, false, lipsyncManager);
+          await ttsService.synthesizeSpeech(speakText, {}, false, lipsyncManager);
           console.log('✅ Google Cloud TTS completed successfully');
           return;
         } catch (gcpError) {
@@ -356,11 +395,12 @@ export const ChatInterface = () => {
       
       // Priority 3: Web Speech API (fallback with simulated lip-sync)
       console.log('🎵 Using Web Speech API fallback with simulated lip-sync...');
-      await fallbackTextToSpeech(text);
+      await fallbackTextToSpeech(speakText);
       
     } catch (error) {
       console.error('All TTS methods failed:', error);
       setIsSpeaking(false);
+      stopSpeaking(); // 🎬 Restore previous animation
     }
   };
   // Helper functions for realistic audio feature generation
@@ -487,7 +527,7 @@ export const ChatInterface = () => {
             <div className="flex items-center gap-1">
               <span className="animate-pulse text-sm">🗣️ Speaking</span>
               <button
-                onClick={stopSpeaking}
+                onClick={stopSpeakingLocal}
                 className="px-2 py-1 bg-red-500 hover:bg-red-600 rounded text-xs"
               >
                 Stop
@@ -498,7 +538,7 @@ export const ChatInterface = () => {
             <div className="flex items-center gap-1">
               <span className="animate-pulse text-sm">🎤 Listening...</span>
               <button
-                onClick={toggleSpeechRecognition}
+                onClick={stopSpeechRecognition}
                 className="px-2 py-1 bg-red-500 hover:bg-red-600 rounded text-xs"
               >
                 Stop

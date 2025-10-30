@@ -11,10 +11,16 @@ export function FaceTrackingTester({ onTrackingData, isVisible }) {
   const canvasRef = useRef(null);
   const faceTrackerRef = useRef(null);
   const animationFrameRef = useRef(null);
+  const windowRef = useRef(null);
   
   const [isTracking, setIsTracking] = useState(false);
   const [trackingData, setTrackingData] = useState(null);
   const [error, setError] = useState(null);
+  
+  // Draggable window state
+  const [position, setPosition] = useState({ x: 20, y: 20 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     if (!isVisible) return;
@@ -30,6 +36,14 @@ export function FaceTrackingTester({ onTrackingData, isVisible }) {
         if (!initialized) {
           setError('Failed to initialize MediaPipe face tracking');
           return;
+        }
+
+        // Get the video element from the tracker and connect it to our videoRef
+        if (tracker.video && videoRef.current) {
+          // Copy the stream from tracker's video to our display video
+          videoRef.current.srcObject = tracker.video.srcObject;
+          await videoRef.current.play();
+          console.log('[FaceTrackingTester] Video element connected!');
         }
 
         // Setup callback for face detection
@@ -167,28 +181,69 @@ export function FaceTrackingTester({ onTrackingData, isVisible }) {
     };
   }, [isVisible]);
 
+  // Drag handlers
+  const handleMouseDown = (e) => {
+    if (e.target.closest('.drag-handle')) {
+      setIsDragging(true);
+      setDragStart({
+        x: e.clientX - position.x,
+        y: e.clientY - position.y
+      });
+    }
+  };
+
+  const handleMouseMove = (e) => {
+    if (isDragging) {
+      setPosition({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y
+      });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  // Add global mouse event listeners for dragging
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging, dragStart, position]);
+
   if (!isVisible) return null;
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: '20px',
-      right: '20px',
-      width: '640px',
-      backgroundColor: '#1a1a1a',
-      borderRadius: '12px',
-      boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-      zIndex: 10000,
-      overflow: 'hidden'
-    }}>
+    <div 
+      ref={windowRef}
+      onMouseDown={handleMouseDown}
+      style={{
+        position: 'fixed',
+        top: `${position.y}px`,
+        left: `${position.x}px`,
+        width: '640px',
+        backgroundColor: '#1a1a1a',
+        borderRadius: '12px',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+        zIndex: 10000,
+        overflow: 'hidden',
+        userSelect: isDragging ? 'none' : 'auto'
+      }}>
       {/* Header */}
-      <div style={{
+      <div className="drag-handle" style={{
         padding: '15px 20px',
         backgroundColor: '#2a2a2a',
         borderBottom: '1px solid #404040',
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        cursor: isDragging ? 'grabbing' : 'grab'
       }}>
         <div>
           <h3 style={{ 
@@ -280,6 +335,66 @@ export function FaceTrackingTester({ onTrackingData, isVisible }) {
             )}
           </div>
         )}
+        
+        {/* Calibration Controls */}
+        <div style={{ 
+          marginTop: '15px',
+          padding: '15px',
+          backgroundColor: '#252525',
+          borderRadius: '8px',
+          border: '1px solid #444'
+        }}>
+          <div style={{ color: '#fff', fontWeight: 'bold', marginBottom: '10px', fontSize: '13px' }}>
+            🎯 Calibration
+          </div>
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '8px' }}>
+            <button
+              onClick={() => {
+                if (window.calibrateAisha) {
+                  window.calibrateAisha();
+                  alert('✅ Calibrated! Aisha should now look straight ahead when you\'re in this position.');
+                } else {
+                  alert('❌ Calibration not available. Make sure face tracking is active.');
+                }
+              }}
+              style={{
+                flex: 1,
+                padding: '12px',
+                backgroundColor: '#4CAF50',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                fontSize: '13px'
+              }}
+            >
+              Set as Neutral
+            </button>
+            <button
+              onClick={() => {
+                if (window.resetCalibration) {
+                  window.resetCalibration();
+                  alert('🔄 Calibration reset!');
+                }
+              }}
+              style={{
+                padding: '12px 20px',
+                backgroundColor: '#555',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '13px'
+              }}
+            >
+              Reset
+            </button>
+          </div>
+          <div style={{ color: '#aaa', fontSize: '11px', lineHeight: '1.4' }}>
+            💡 Look straight at camera, then click "Set as Neutral"
+          </div>
+        </div>
       </div>
     </div>
   );

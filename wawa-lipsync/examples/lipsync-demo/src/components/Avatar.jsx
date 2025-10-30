@@ -12,6 +12,7 @@ import * as THREE from "three";
 import { VISEMES } from "wawa-lipsync";
 import { lipsyncManager } from "../App";
 import { BrowserAvatarTracking } from "../services/browserAvatarTracking";
+import { useTTSStore } from "../stores/ttsStore";
 
 let setupMode = false;
 
@@ -59,7 +60,12 @@ export function Avatar(props) {
       : availableAnimations[0]?.name || null;
   });
 
-  const { smoothMovements, responsiveness, selectedAnimation } = useControls("Avatar", {
+  // TTS state - automatically switch to "armature.001" when speaking
+  const isSpeaking = useTTSStore((state) => state.isSpeaking);
+  const savedAnimationRef = useRef(null); // Store the animation to return to after speaking
+  const hasStartedTalking = useRef(false); // Track if we've actually started the talking animation
+
+  const { smoothMovements, responsiveness, selectedAnimation, transitionDuration } = useControls("Avatar", {
     smoothMovements: {
       value: false, // Changed to false for snappier default
       label: "Smooth Movements",
@@ -70,6 +76,13 @@ export function Avatar(props) {
       max: 1.0,
       step: 0.1,
       label: "Animation Speed",
+    },
+    transitionDuration: {
+      value: 1.0,
+      min: 0.1,
+      max: 3.0,
+      step: 0.1,
+      label: "Transition Smoothness (s)",
     },
     selectedAnimation: {
       value: animation || "None",
@@ -121,15 +134,21 @@ export function Avatar(props) {
   };
 
   // Initialize tracking after camera permission
-  const initializeTracking = () => {
+  const initializeTracking = async () => {
     if (!scene || trackingRef.current) return;
 
     console.log("[Avatar] Initializing browser-based eye tracking...");
     try {
-      trackingRef.current = new BrowserAvatarTracking(scene, {
+      const tracker = new BrowserAvatarTracking(scene, {
         enableBlinking: false, // We handle blinking separately in the component
         enableMicroMovements: true
       });
+      
+      // Wait for initialization to complete
+      await tracker.initialize();
+      trackingRef.current = tracker;
+      
+      console.log("[Avatar] ✅ Tracking initialized and ready!");
     } catch (error) {
       console.error("[Avatar] Failed to initialize tracking:", error);
       console.warn("[Avatar] Eye tracking unavailable - app will continue without it");
@@ -158,14 +177,20 @@ export function Avatar(props) {
         window.removeEventListener('cameraPermissionGranted', handleCameraPermissionGranted);
       };
     }
+  }, [scene]);
 
+  // Cleanup tracking on unmount
+  useEffect(() => {
     return () => {
       if (trackingRef.current) {
-        trackingRef.current.disconnect();
+        console.log("[Avatar] Cleaning up tracking...");
+        if (typeof trackingRef.current.disconnect === 'function') {
+          trackingRef.current.disconnect();
+        }
         trackingRef.current = null;
       }
     };
-  }, [scene]);
+  }, []);
 
   // Handle animation changes from the control panel
   useEffect(() => {
@@ -174,24 +199,89 @@ export function Avatar(props) {
     }
   }, [selectedAnimation]);
   
+  // AUTO-SWITCH ANIMATION WHEN SPEAKING
+  // Save current animation when TTS starts, but DON'T switch yet
+  // Switch only when lipsync actually begins (in useFrame)
+  useEffect(() => {
+    if (isSpeaking && !savedAnimationRef.current) {
+      // TTS started - save current animation but DON'T switch yet
+      savedAnimationRef.current = animation;
+      hasStartedTalking.current = false; // Reset flag
+      console.log('[Avatar] 🎤 TTS started - saved animation:', animation, '(waiting for lipsync to begin...)');
+    } else if (!isSpeaking && savedAnimationRef.current) {
+      // TTS ended - switch back to saved animation
+      const previousAnim = savedAnimationRef.current;
+      console.log('[Avatar] ✅ TTS ended - restoring:', previousAnim);
+      savedAnimationRef.current = null; // Clear first to prevent re-triggering
+      hasStartedTalking.current = false; // Reset flag
+      setAnimation(previousAnim);
+    }
+  }, [isSpeaking, animation]);
+  
+  // Expose calibration function to window for easy access
+  useEffect(() => {
+    if (trackingRef.current) {
+      window.calibrateAisha = () => {
+        if (trackingRef.current && typeof trackingRef.current.calibrate === 'function') {
+          trackingRef.current.calibrate();
+          console.log('[Avatar] ✅ Calibration applied! Aisha should now look straight ahead.');
+        }
+      };
+      window.resetCalibration = () => {
+        if (trackingRef.current && typeof trackingRef.current.resetCalibration === 'function') {
+          trackingRef.current.resetCalibration();
+          console.log('[Avatar] 🔄 Calibration reset to defaults.');
+        }
+      };
+    }
+    return () => {
+      delete window.calibrateAisha;
+      delete window.resetCalibration;
+    };
+  }, [trackingRef.current]);
+  
+  // Store the current playing action for smooth crossfades
+  const currentActionRef = useRef(null);
+  
   useEffect(() => {
     if (animation && actions[animation]) {
-      // Simple animation playback like it was working before
       try {
-        // Stop all other animations first  
-        Object.keys(actions).forEach(actionName => {
-          if (actionName !== animation && actions[actionName]) {
-            actions[actionName].stop();
-          }
-        });
+        const newAction = actions[animation];
         
-        // Play the selected animation normally (like before)
-        actions[animation]
-          ?.reset()
-          .fadeIn(mixer.stats.actions.inUse === 0 ? 0 : 0.5)
-          .play();
+        // CRITICAL: Disable morph target tracks in animation to allow lipsync to work
+        // Morph targets should be controlled by lipsync, not by animation
+        if (newAction && newAction._clip && newAction._clip.tracks) {
+          newAction._clip.tracks.forEach(track => {
+            // Disable any morph target influence tracks (these override lipsync)
+            if (track.name && track.name.includes('.morphTargetInfluences[')) {
+              track.enabled = false;
+            }
+          });
+        }
+        
+        // Smooth crossfade between animations using Three.js built-in crossfade
+        if (currentActionRef.current && currentActionRef.current !== newAction) {
+          // Crossfade from current to new animation with configurable duration
+          const fadeDuration = transitionDuration || 1.0;
           
-        return () => actions[animation]?.fadeOut(0.5);
+          // Prepare the new action
+          newAction.reset();
+          newAction.setEffectiveTimeScale(1);
+          newAction.setEffectiveWeight(1);
+          newAction.play();
+          
+          // Crossfade from old to new (smooth bone-level blending)
+          currentActionRef.current.crossFadeTo(newAction, fadeDuration, true);
+          
+          console.log(`[Avatar] 🎬 Smooth crossfade (${fadeDuration.toFixed(1)}s):`, currentActionRef.current._clip.name, '→', newAction._clip.name);
+        } else if (!currentActionRef.current) {
+          // First time playing - just start the animation
+          newAction.reset().fadeIn(transitionDuration * 0.5 || 0.5).play();
+          console.log('[Avatar] ▶️ Starting animation:', newAction._clip.name);
+        }
+        
+        currentActionRef.current = newAction;
+          
       } catch (error) {
         console.warn(`Animation ${animation} failed to play:`, error);
       }
@@ -282,18 +372,21 @@ export function Avatar(props) {
     const state = lipsyncManager.state;
     const features = lipsyncManager.features;
     
-    // Update tracking based on lipsync activity
-    if (trackingRef.current) {
-      if (features && features.volume > 0.01) {
-        trackingRef.current.onLipsyncStart();
-      } else {
-        trackingRef.current.onLipsyncEnd();
+    // 🎬 REALISTIC ANIMATION SWITCH: Switch to talking animation ONLY when lipsync actually starts
+    if (isSpeaking && !hasStartedTalking.current && savedAnimationRef.current) {
+      // Check if lipsync has actually started (volume above threshold)
+      if (features && features.volume > 0.05) {
+        // Find talking animation (look for "Armature.001" in the name)
+        const talkingAnimation = availableAnimations.find(a => 
+          a.name.toLowerCase().includes("armature.001")
+        );
+        
+        if (talkingAnimation) {
+          hasStartedTalking.current = true; // Mark as switched
+          console.log('[Avatar] 🎬 Lipsync detected! Switching to talking animation:', talkingAnimation.name);
+          setAnimation(talkingAnimation.name);
+        }
       }
-    }
-    
-    // Debug: Log when we have audio activity
-    if (features && features.volume > 0.01) {
-      console.log('Avatar useFrame - Volume:', features.volume.toFixed(3), 'Viseme:', viseme, 'State:', state);
     }
     
     // Use the responsiveness slider for animation speed - optimized for TTS
@@ -310,6 +403,11 @@ export function Avatar(props) {
       }
       lerpMorphTarget(value, 0, deactiveSpeed);
     });
+    
+    // Apply face tracking AFTER animations (so it overrides animation bone rotations)
+    if (trackingRef.current && typeof trackingRef.current.applyTracking === 'function') {
+      trackingRef.current.applyTracking();
+    }
   });
 
   useEffect(() => {

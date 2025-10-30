@@ -54,8 +54,6 @@ export class Lipsync {
   private bands: Band[];
   private audioSource?: HTMLMediaElement;
   private state: FSMStates = FSMStates.silence;
-  private currentMicSource: any = null;
-  private currentMicStream: MediaStream | null = null;
   constructor(
     params = {
       fftSize: 2048,
@@ -111,24 +109,10 @@ export class Lipsync {
       const source = this.audioContext.createMediaStreamSource(stream);
       source.connect(this.analyser);
       this.analyser.connect(this.audioContext.destination);
-      this.currentMicSource = source;
-      this.currentMicStream = stream;
       return source;
     } catch (err) {
       console.error("Error accessing microphone:", err);
       throw err;
-    }
-  }
-
-  // Disconnect microphone
-  disconnectMicrophone() {
-    if (this.currentMicSource) {
-      this.currentMicSource.disconnect();
-      this.currentMicSource = null;
-    }
-    if (this.currentMicStream) {
-      this.currentMicStream.getTracks().forEach(track => track.stop());
-      this.currentMicStream = null;
     }
   }
 

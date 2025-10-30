@@ -193,15 +193,13 @@ export const Visualizer = () => {
   // Microphone control functions
   const toggleMicrophone = async () => {
     if (isMicActive) {
-      // Stop microphone properly
-      lipsyncManager.disconnectMicrophone();
+      // Stop microphone
       if (micStream) {
         micStream.getTracks().forEach(track => track.stop());
         setMicStream(null);
       }
       setIsMicActive(false);
       setDetectedVisemes([]);
-      console.log('🛑 Microphone stopped');
     } else {
       // Start microphone
       try {
@@ -211,16 +209,13 @@ export const Visualizer = () => {
           setAudioFile("");
         }
         
-        console.log('🎤 Starting microphone...');
         const source = await lipsyncManager.connectMicrophone();
         setMicStream(source);
         setIsMicActive(true);
         setDetectedVisemes([]);
-        console.log('✅ Microphone started');
       } catch (error) {
         console.error("Failed to access microphone:", error);
         alert("Could not access microphone. Please check your browser permissions.");
-        setIsMicActive(false);
       }
     }
   };

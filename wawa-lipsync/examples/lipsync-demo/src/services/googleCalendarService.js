@@ -312,7 +312,7 @@ class GoogleCalendarService {
     }
   }
 
-  // Format events for Aisha to read
+  // Format events for Aisha to read (UK date format: DD/MM/YYYY)
   formatEventsForAisha(events) {
     if (!events || events.length === 0) {
       return "You have no upcoming events, bestie!";
@@ -321,11 +321,18 @@ class GoogleCalendarService {
     const formattedEvents = events.map(event => {
       const start = event.start.dateTime || event.start.date;
       const startDate = new Date(start);
+      
+      // UK format: 24-hour time
       const timeStr = event.start.dateTime ? 
-        startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) :
+        startDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false }) :
         'All day';
       
-      const dateStr = startDate.toLocaleDateString();
+      // UK format: DD/MM/YYYY
+      const dateStr = startDate.toLocaleDateString('en-GB', { 
+        day: '2-digit', 
+        month: '2-digit', 
+        year: 'numeric' 
+      });
       
       return `• ${event.summary || 'No title'} - ${dateStr} at ${timeStr}`;
     }).join('\n');
