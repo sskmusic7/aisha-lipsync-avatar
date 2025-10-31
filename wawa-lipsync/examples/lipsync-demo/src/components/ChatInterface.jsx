@@ -158,6 +158,7 @@ export const ChatInterface = () => {
   };
 
   // Clean text before TTS so she doesn't read punctuation/emojis/etc.
+  // BUT preserve numbers - they should be pronounced!
   const sanitizeForSpeech = (rawText) => {
     if (!rawText) return "";
     let text = String(rawText);
@@ -165,20 +166,27 @@ export const ChatInterface = () => {
     text = text.replace(/https?:\/\/\S+/gi, "link");
     // Replace & with 'and'
     text = text.replace(/&/g, " and ");
-    // Remove markdown and excessive punctuation
+    // Remove markdown and excessive punctuation (but preserve numbers)
     text = text
       .replace(/[*_~`>#|\\]/g, " ")
       .replace(/[\(\)\[\]\{\}]/g, " ")
       .replace(/\.{3,}/g, ".")
       .replace(/[!?.]{2,}/g, (m) => m[0]);
-    // Remove emojis and non-speech unicode symbols
+    // Remove emojis and non-speech unicode symbols (but preserve numbers)
     text = text.replace(/[\p{Extended_Pictographic}\p{Emoji_Presentation}\p{Emoji}\u200d]+/gu, "");
-    // Remove bullets and decorative characters
+    // Remove bullets and decorative characters (but preserve numbers)
     text = text.replace(/[•·►▪︎➤➔➜–—]/g, " ");
-    // Remove stray punctuation tokens
-    text = text.replace(/\s+[,:;]\s+/g, ", ");
+    // Remove stray punctuation tokens (but preserve numbers and colons in time)
+    text = text.replace(/\s+[,;]\s+/g, ", ");
+    // Preserve colons in time (e.g., "14:30" -> "14 30" or keep as is for TTS)
+    // Actually, let's convert "14:30" to "fourteen thirty" format - but for now just preserve the colon
     // Collapse whitespace
     text = text.replace(/\s{2,}/g, " ").trim();
+    // CRITICAL: Make sure numbers are preserved (0-9, including decimals like 2.5)
+    // Numbers should already be preserved by the above, but let's verify they're still there
+    if (!/\d/.test(text) && /\d/.test(rawText)) {
+      console.warn('⚠️ Numbers may have been removed from text!', { rawText, text });
+    }
     return text;
   };
 

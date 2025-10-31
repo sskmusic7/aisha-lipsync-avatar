@@ -73,33 +73,65 @@ class GoogleCalendarService {
   // Initialize Google Identity Services (GIS) for OAuth
   async initializeGis() {
     return new Promise((resolve, reject) => {
-      if (!window.google || !window.google.accounts || !window.google.accounts.oauth2) {
-        console.error('❌ Google Identity Services not loaded');
-        reject(new Error('Google Identity Services not loaded. Make sure the GSI script is included in your HTML.'));
-        return;
-      }
+      // Check if GSI script is loaded - wait a bit if not ready
+      let attempts = 0;
+      const maxAttempts = 10;
+      
+      const checkAndInit = () => {
+        if (!window.google) {
+          attempts++;
+          if (attempts < maxAttempts) {
+            console.log(`⏳ Waiting for Google Identity Services to load... (attempt ${attempts}/${maxAttempts})`);
+            setTimeout(checkAndInit, 500);
+            return;
+          }
+          console.error('❌ Google Identity Services not loaded after', maxAttempts, 'attempts');
+          console.error('🔍 Check that this script is in index.html:', '<script src="https://accounts.google.com/gsi/client" async defer></script>');
+          reject(new Error('Google Identity Services not loaded. Make sure the GSI script is included in your HTML.'));
+          return;
+        }
 
-      try {
-        this.tokenClient = window.google.accounts.oauth2.initTokenClient({
-          client_id: this.clientId,
-          scope: 'https://www.googleapis.com/auth/calendar.readonly',
-          callback: (response) => {
-            if (response.error !== undefined) {
-              console.error('❌ Token error:', response);
-              throw new Error(response.error);
-            }
-            this.accessToken = response.access_token;
-            console.log('✅ Access token received');
-          },
-        });
+        if (!window.google.accounts || !window.google.accounts.oauth2) {
+          console.error('❌ Google Identity Services loaded but oauth2 is missing');
+          console.error('🔍 window.google:', window.google);
+          console.error('🔍 window.google.accounts:', window.google.accounts);
+          reject(new Error('Google Identity Services oauth2 not available. Check GSI script version.'));
+          return;
+        }
 
-        this.gisInited = true;
-        console.log('✅ Google Identity Services initialized');
-        resolve();
-      } catch (error) {
-        console.error('❌ Failed to initialize GIS:', error);
-        reject(error);
-      }
+        console.log('✅ Google Identity Services detected, initializing token client...');
+        console.log('🔑 Client ID:', this.clientId ? `${this.clientId.substring(0, 30)}...` : 'MISSING ❌');
+
+        if (!this.clientId) {
+          reject(new Error('Client ID is required for OAuth initialization'));
+          return;
+        }
+
+        try {
+          this.tokenClient = window.google.accounts.oauth2.initTokenClient({
+            client_id: this.clientId,
+            scope: 'https://www.googleapis.com/auth/calendar.readonly',
+            callback: (response) => {
+              if (response.error !== undefined) {
+                console.error('❌ Token error in callback:', response);
+                throw new Error(response.error);
+              }
+              this.accessToken = response.access_token;
+              console.log('✅ Access token received');
+            },
+          });
+
+          this.gisInited = true;
+          console.log('✅ Google Identity Services initialized successfully');
+          resolve();
+        } catch (error) {
+          console.error('❌ Failed to initialize GIS:', error);
+          console.error('Error details:', error.message, error.stack);
+          reject(error);
+        }
+      };
+
+      checkAndInit();
     });
   }
 
@@ -184,10 +216,18 @@ class GoogleCalendarService {
         }
 
         console.log('🚀 Requesting access token...');
+        console.log('🔍 Token client:', this.tokenClient ? 'Found ✅' : 'Missing ❌');
+        console.log('🔍 Client ID:', this.clientId ? `${this.clientId.substring(0, 30)}...` : 'Missing ❌');
         
         // Request an access token
         // For first-time sign in, use 'consent' to force account selection
-        this.tokenClient.requestAccessToken({ prompt: 'consent' });
+        try {
+          this.tokenClient.requestAccessToken({ prompt: 'consent' });
+          console.log('✅ OAuth popup requested - check for popup blocker if it doesn\'t appear!');
+        } catch (error) {
+          console.error('❌ Error requesting access token:', error);
+          reject(new Error(`Failed to request OAuth token: ${error.message}`));
+        }
         
       } catch (error) {
         console.error('❌ Sign-in failed:', error);
