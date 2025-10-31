@@ -26,7 +26,7 @@ export const ChatInterface = () => {
   const [showApiManager, setShowApiManager] = useState(false);
   const [showPreBufferConfig, setShowPreBufferConfig] = useState(false);
   const [showVoiceSelector, setShowVoiceSelector] = useState(false);
-  const [selectedVoiceId, setSelectedVoiceId] = useState('vzb1D7zjti0h5u8StSra'); // Default: A.Isha's custom voice
+  const [selectedVoiceId, setSelectedVoiceId] = useState('TfVjIROhkRShQb9pCFfK'); // Default: Keke voice
   const [apiStatus, setApiStatus] = useState({
     gemini: false,
     tts: false,
@@ -157,36 +157,61 @@ export const ChatInterface = () => {
     stopSpeaking(); // 🎬 Restore previous animation
   };
 
-  // Clean text before TTS so she doesn't read punctuation/emojis/etc.
-  // BUT preserve numbers - they should be pronounced!
+  // Clean text before TTS: PRESERVE NUMBERS, remove punctuation/emojis/etc.
   const sanitizeForSpeech = (rawText) => {
     if (!rawText) return "";
     let text = String(rawText);
+    
+    // FIRST: Protect numbers by replacing them with placeholders
+    const numberPlaceholders = [];
+    let placeholderIndex = 0;
+    
+    // Store all numbers (including decimals, times like 14:30, dates, etc.)
+    text = text.replace(/\d+(?:\.\d+)?(?::\d+)?/g, (match) => {
+      const placeholder = `__NUMBER_${placeholderIndex}__`;
+      numberPlaceholders.push(match);
+      placeholderIndex++;
+      return placeholder;
+    });
+    
     // Replace URLs with a short placeholder
     text = text.replace(/https?:\/\/\S+/gi, "link");
+    
     // Replace & with 'and'
     text = text.replace(/&/g, " and ");
-    // Remove markdown and excessive punctuation (but preserve numbers)
-    text = text
-      .replace(/[*_~`>#|\\]/g, " ")
-      .replace(/[\(\)\[\]\{\}]/g, " ")
-      .replace(/\.{3,}/g, ".")
-      .replace(/[!?.]{2,}/g, (m) => m[0]);
-    // Remove emojis and non-speech unicode symbols (but preserve numbers)
+    
+    // Remove markdown characters (but keep numbers safe in placeholders)
+    text = text.replace(/[*_~`>#|\\]/g, " ");
+    
+    // Remove brackets (but keep numbers safe)
+    text = text.replace(/[\(\)\[\]\{\}]/g, " ");
+    
+    // Remove excessive dots (but keep numbers safe - placeholders don't have dots)
+    text = text.replace(/\.{3,}/g, ".");
+    
+    // Remove excessive punctuation (but keep numbers safe)
+    text = text.replace(/[!?.]{2,}/g, (m) => m[0]);
+    
+    // Remove emojis and non-speech unicode symbols
     text = text.replace(/[\p{Extended_Pictographic}\p{Emoji_Presentation}\p{Emoji}\u200d]+/gu, "");
-    // Remove bullets and decorative characters (but preserve numbers)
+    
+    // Remove bullets and decorative characters
     text = text.replace(/[•·►▪︎➤➔➜–—]/g, " ");
-    // Remove stray punctuation tokens (but preserve numbers and colons in time)
+    
+    // Remove stray punctuation tokens (but preserve colons in time - already in placeholders)
     text = text.replace(/\s+[,;]\s+/g, ", ");
-    // Preserve colons in time (e.g., "14:30" -> "14 30" or keep as is for TTS)
-    // Actually, let's convert "14:30" to "fourteen thirty" format - but for now just preserve the colon
+    
+    // Remove other punctuation marks that shouldn't be read
+    text = text.replace(/[,;:!?\-–—]/g, " ");
+    
     // Collapse whitespace
     text = text.replace(/\s{2,}/g, " ").trim();
-    // CRITICAL: Make sure numbers are preserved (0-9, including decimals like 2.5)
-    // Numbers should already be preserved by the above, but let's verify they're still there
-    if (!/\d/.test(text) && /\d/.test(rawText)) {
-      console.warn('⚠️ Numbers may have been removed from text!', { rawText, text });
-    }
+    
+    // RESTORE NUMBERS from placeholders
+    numberPlaceholders.forEach((number, index) => {
+      text = text.replace(`__NUMBER_${index}__`, number);
+    });
+    
     return text;
   };
 
@@ -224,15 +249,18 @@ export const ChatInterface = () => {
       utterance.pitch = 1;
       utterance.volume = 1;
       
-      // Find a good voice
+      // Use consistent voice (prefer Google US English, then Samantha, then any Google voice)
       const voices = speechSynthesis.getVoices();
       const preferredVoice = voices.find(voice => 
-        voice.name.includes('Google') || 
-        voice.name.includes('Samantha') ||
-        voice.name.includes('Karen')
+        voice.name === 'Google US English' && voice.lang.startsWith('en')
+      ) || voices.find(voice => 
+        voice.name === 'Samantha' && voice.lang.startsWith('en')
+      ) || voices.find(voice => 
+        voice.name.includes('Google') && voice.lang.startsWith('en')
       );
       if (preferredVoice) {
         utterance.voice = preferredVoice;
+        console.log('🎤 Using consistent Web Speech API voice:', preferredVoice.name);
       }
 
       // Simulate lip-sync movement based on text content

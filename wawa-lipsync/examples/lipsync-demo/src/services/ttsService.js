@@ -220,7 +220,7 @@ class TTSService {
         input: { text: text },
         voice: {
           languageCode: voiceConfig.languageCode || 'en-US',
-          name: voiceConfig.name || 'en-US-Journey-F', // High quality neural voice
+          name: voiceConfig.name || 'en-US-Neural2-F', // Consistent female voice (matches Keke style)
           ssmlGender: voiceConfig.ssmlGender || 'FEMALE'
         },
         audioConfig: {
@@ -293,37 +293,19 @@ class TTSService {
       utterance.pitch = voiceConfig.pitch || 1.0;
       utterance.volume = voiceConfig.volume || 1.0;
       
-      // Find a good voice
+      // Use consistent voice (prefer Google US English, then Samantha, then any Google voice)
       const voices = speechSynthesis.getVoices();
-      let selectedVoice = null;
-
-      // Prefer high-quality voices
-      const preferredVoices = [
-        'Google US English',
-        'Samantha',
-        'Karen',
-        'Moira',
-        'Tessa',
-        'Ava',
-        'Allison'
-      ];
-
-      for (const preferredName of preferredVoices) {
-        selectedVoice = voices.find(voice => 
-          voice.name.includes(preferredName) && voice.lang.startsWith('en')
-        );
-        if (selectedVoice) break;
-      }
-
-      // If no preferred voice found, use any English voice
-      if (!selectedVoice) {
-        selectedVoice = voices.find(voice => 
-          voice.lang.startsWith('en') && voice.localService
-        );
-      }
+      const selectedVoice = voices.find(voice => 
+        voice.name === 'Google US English' && voice.lang.startsWith('en')
+      ) || voices.find(voice => 
+        voice.name === 'Samantha' && voice.lang.startsWith('en')
+      ) || voices.find(voice => 
+        voice.name.includes('Google') && voice.lang.startsWith('en')
+      );
 
       if (selectedVoice) {
         utterance.voice = selectedVoice;
+        console.log('🎤 Using consistent TTS service voice:', selectedVoice.name);
       }
 
       utterance.onend = () => {
