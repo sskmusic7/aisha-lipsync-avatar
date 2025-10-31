@@ -52,8 +52,10 @@ class ElevenLabsService {
     return false;
   }
 
-  // Basic text-to-speech conversion
-  async textToSpeech(text, options = {}) {
+  // Basic text-to-speech conversion with retry logic
+  async textToSpeech(text, options = {}, retryCount = 0) {
+    const maxRetries = 2; // Retry up to 2 times on transient failures
+    
     // Ensure API key is available
     if (!this.apiKey) {
       // Try to get API key from environment or localStorage
@@ -68,25 +70,35 @@ class ElevenLabsService {
     const url = `${this.apiUrl}/text-to-speech/${voiceId}`;
     
     try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Accept': 'audio/mpeg',
-          'Content-Type': 'application/json',
-          'xi-api-key': this.apiKey,
-        },
-        body: JSON.stringify({
-          text: text.substring(0, 1000), // Limit for free tier
-          model_id: options.modelId || 'eleven_monolingual_v1',
-          voice_settings: options.voiceSettings || this.voiceSettings
-        })
-      });
+      // Create timeout abort controller (polyfill for AbortSignal.timeout)
+      const abortController = new AbortController();
+      const timeoutId = setTimeout(() => abortController.abort(), 10000); // 10 second timeout
+      
+      let response;
+      try {
+        response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Accept': 'audio/mpeg',
+            'Content-Type': 'application/json',
+            'xi-api-key': this.apiKey,
+          },
+          body: JSON.stringify({
+            text: text.substring(0, 1000), // Limit for free tier
+            model_id: options.modelId || 'eleven_monolingual_v1',
+            voice_settings: options.voiceSettings || this.voiceSettings
+          }),
+          signal: abortController.signal
+        });
+      } finally {
+        clearTimeout(timeoutId); // Always clear timeout
+      }
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({}));
         console.error('ElevenLabs API Error:', error);
         
-        // Specific error handling
+        // Specific error handling - don't retry on auth/validation errors
         if (response.status === 401) {
           throw new Error('Invalid API key. Please check your ElevenLabs API key.');
         } else if (response.status === 422) {
@@ -95,12 +107,27 @@ class ElevenLabsService {
           throw new Error('Monthly character limit exceeded. Please upgrade your ElevenLabs plan.');
         }
         
+        // Retry on 429 (rate limit) or 500+ (server errors)
+        if ((response.status === 429 || response.status >= 500) && retryCount < maxRetries) {
+          console.log(`🔄 ElevenLabs API error (${response.status}), retrying... (${retryCount + 1}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1))); // Exponential backoff
+          return this.textToSpeech(text, options, retryCount + 1);
+        }
+        
         throw new Error(`ElevenLabs API error: ${error.detail?.message || response.statusText}`);
       }
 
       const audioBlob = await response.blob();
       return audioBlob;
     } catch (error) {
+      // Retry on network errors/timeouts (transient failures)
+      if ((error.name === 'AbortError' || error.message.includes('fetch') || error.message.includes('network')) 
+          && retryCount < maxRetries) {
+        console.log(`🔄 ElevenLabs network error, retrying... (${retryCount + 1}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1))); // Exponential backoff
+        return this.textToSpeech(text, options, retryCount + 1);
+      }
+      
       console.error('ElevenLabs TTS error:', error);
       throw error;
     }

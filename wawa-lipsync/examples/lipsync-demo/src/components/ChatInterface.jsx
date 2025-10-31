@@ -372,10 +372,13 @@ export const ChatInterface = () => {
       // Sanitize content so she doesn't read punctuation/emojis
       const speakText = sanitizeForSpeech(text);
 
-      // Priority 1: ElevenLabs (high-quality voices)
-      if (apiStatus.elevenlabs) {
+      // Priority 1: ElevenLabs (high-quality voices) - ALWAYS try if API key is available
+      // Check if API key exists (even if status says false, it might just be initialization issue)
+      const hasElevenLabsKey = import.meta.env.VITE_ELEVENLABS_API_KEY || localStorage.getItem('elevenlabs-api-key');
+      
+      if (apiStatus.elevenlabs || hasElevenLabsKey) {
         try {
-          console.log('🎵 Using ElevenLabs TTS with voice:', selectedVoiceId);
+          console.log('🎵 Using ElevenLabs TTS with Keke voice:', selectedVoiceId);
           
           const audioBlob = await elevenLabsService.textToSpeechCached(speakText, {
             voiceId: selectedVoiceId
@@ -409,11 +412,14 @@ export const ChatInterface = () => {
           };
           
           await audio.play();
-          console.log('✅ ElevenLabs TTS completed successfully');
+          console.log('✅ ElevenLabs TTS (Keke voice) completed successfully');
           return;
           
         } catch (elevenlabsError) {
-          console.warn('ElevenLabs TTS failed, falling back to Google Cloud TTS:', elevenlabsError);
+          // Only log warning, but don't immediately fallback - ElevenLabs has retry logic now
+          console.warn('⚠️ ElevenLabs TTS failed after retries:', elevenlabsError.message || elevenlabsError);
+          // Still fallback, but log that we're losing Keke's voice
+          console.warn('⚠️ Falling back to alternative TTS (not Keke voice)');
         }
       }
       
