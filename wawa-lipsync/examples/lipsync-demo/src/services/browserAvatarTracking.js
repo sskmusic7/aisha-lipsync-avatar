@@ -11,6 +11,7 @@ export class BrowserAvatarTracking {
       enableMicroMovements: config.enableMicroMovements !== false,
       reducedMovement: false,
       invertX: true,  // Invert horizontal (fix mirror effect)
+      motionMode: config.motionMode || 'option1', // 'option1' = cascading (eyes→head→body), 'option2' = body-only
       ...config
     };
 
@@ -20,6 +21,7 @@ export class BrowserAvatarTracking {
     this.controller = null;
     this.isTracking = false;
     this.lastMovements = null; // Store movements to apply each frame
+    this.lastFacePosition = null; // Store raw face position for option 2 body tracking
     
     // Calibration offsets (neutral position)
     this.calibrationOffset = { x: 0, y: 0 };
@@ -122,22 +124,26 @@ export class BrowserAvatarTracking {
   }
 
   onFaceDetected(faceData) {
-    if (!faceData.detected) {
-      // Use idle animation when no face detected
-      this.lastMovements = this.getIdleMovements();
-      return;
-    }
+    // Swap left/right at the source (mirror X coordinate)
+    const mirroredFaceData = {
+      ...faceData,
+      x: 1 - faceData.x // Mirror: left becomes right, right becomes left
+    };
 
-    // Calculate movements from face position
-    const movements = this.controller.calculateMovements(faceData);
+    // Store raw face position for option 2 body tracking
+    this.lastFacePosition = mirroredFaceData;
+
+    // Always calculate movements (even when face lost, to get smooth decay)
+    const movements = this.controller.calculateMovements(mirroredFaceData);
     
-    // Store movements to be applied in the render loop
+    // Store movements to be applied in the render loop (always update for smooth decay)
     this.lastMovements = movements;
     
     // Debug: Log tracking data occasionally
     if (Math.random() < 0.02) { // Log ~2% of frames to avoid spam
       console.log('[BrowserAvatarTracking] Face detected:', {
-        position: { x: faceData.x.toFixed(2), y: faceData.y.toFixed(2) },
+        original: { x: faceData.x.toFixed(2), y: faceData.y.toFixed(2) },
+        mirrored: { x: mirroredFaceData.x.toFixed(2), y: mirroredFaceData.y.toFixed(2) },
         movements: {
           head: { x: movements.head.x.toFixed(1), y: movements.head.y.toFixed(1) },
           eyes: { x: movements.eyes.x.toFixed(1), y: movements.eyes.y.toFixed(1) }
@@ -146,104 +152,394 @@ export class BrowserAvatarTracking {
     }
   }
   
-  // Get idle movements
+  // Get idle movements (smooth transition target when losing tracking)
   getIdleMovements() {
-    const t = performance.now() * 0.001;
+    // Return center/idle position for smooth transition
     return {
-      body: { y: Math.sin(t * 0.1) * 5 },
-      head: {
-        x: Math.sin(t * 0.15) * 8,
-        y: Math.cos(t * 0.2) * 5
-      },
-      eyes: {
-        x: Math.sin(t * 0.3) * 10,
-        y: Math.cos(t * 0.25) * 5
-      }
+      body: { y: 0 },
+      head: { x: 0, y: 0 },
+      eyes: { x: 0, y: 0 }
     };
   }
   
   // Apply stored movements - call this from useFrame AFTER animations update
   applyTracking() {
+    // Debug: Log occasionally to verify applyTracking is being called
+    if (Math.random() < 0.01) { // Log 1% of frames
+      console.log('[BrowserAvatarTracking] applyTracking called:', {
+        hasLastMovements: !!this.lastMovements,
+        lastMovements: this.lastMovements,
+        hasCurrentRotations: !!this.currentRotations,
+        bonesFound: Object.keys(this.bones || {})
+      });
+    }
+    
     if (this.lastMovements) {
       this.updateAvatar(this.lastMovements);
+    } else if (this.currentRotations) {
+      // When tracking is lost, smoothly transition to center
+      // Continue applying current rotations but they'll smoothly decay
+      const decaySpeed = 0.15; // Smooth decay speed
+      
+      // Smoothly return all rotations to zero
+      if (this.currentRotations.body) {
+        this.currentRotations.body.y += (0 - this.currentRotations.body.y) * decaySpeed;
+      }
+      if (this.currentRotations.head) {
+        this.currentRotations.head.x += (0 - this.currentRotations.head.x) * decaySpeed;
+        this.currentRotations.head.y += (0 - this.currentRotations.head.y) * decaySpeed;
+      }
+      if (this.currentRotations.eyes) {
+        this.currentRotations.eyes.x += (0 - this.currentRotations.eyes.x) * decaySpeed;
+        this.currentRotations.eyes.y += (0 - this.currentRotations.eyes.y) * decaySpeed;
+      }
+      if (this.currentRotations.neck) {
+        this.currentRotations.neck.x += (0 - this.currentRotations.neck.x) * decaySpeed;
+        this.currentRotations.neck.y += (0 - this.currentRotations.neck.y) * decaySpeed;
+      }
+      if (this.currentRotations.spine) {
+        this.currentRotations.spine.y += (0 - this.currentRotations.spine.y) * decaySpeed;
+      }
+      
+      // Apply the decaying rotations
+      this.updateAvatarFromCurrentRotations();
+    }
+  }
+
+  updateAvatarFromCurrentRotations() {
+    // Apply current rotations directly (for smooth decay when tracking lost)
+    if (this.currentRotations.eyes) {
+      this.updateEyesFromCurrent();
+    }
+    
+    if (this.bones.head && this.currentRotations.head) {
+      this.bones.head.rotation.x = this.currentRotations.head.y;
+      this.bones.head.rotation.y = this.currentRotations.head.x;
+    }
+    
+    if (this.bones.neck && this.currentRotations.neck) {
+      this.bones.neck.rotation.x = this.currentRotations.neck.y;
+      this.bones.neck.rotation.y = this.currentRotations.neck.x;
+    }
+    
+    if (this.bones.body && this.currentRotations.body) {
+      this.bones.body.rotation.y = this.currentRotations.body.y;
+    }
+    
+    if (this.bones.spine && this.currentRotations.spine) {
+      this.bones.spine.rotation.y = this.currentRotations.spine.y;
     }
   }
 
   updateAvatar(trackingData) {
-    if (!trackingData) return;
+    if (!trackingData) {
+      console.warn('[BrowserAvatarTracking] updateAvatar called with no tracking data!');
+      return;
+    }
 
     const movementScale = this.config.reducedMovement ? 0.4 : 1.0;
 
-    // Debug: Log occasionally to verify updates are happening
-    if (Math.random() < 0.02) { // Reduced to 2% to avoid spam
-      console.log('[BrowserAvatarTracking] 🎯 Applying movements:', {
-        body: this.bones.body ? 'found ✅' : 'missing ❌',
-        head: this.bones.head ? 'found ✅' : 'missing ❌',
-        headRotation: trackingData.head,
-        headRotationDeg: trackingData.head ? `x:${trackingData.head.x.toFixed(1)}° y:${trackingData.head.y.toFixed(1)}°` : 'none',
-        calibrationOffset: `x:${this.calibrationOffset.x.toFixed(1)}° y:${this.calibrationOffset.y.toFixed(1)}°`,
-        bonesAvailable: Object.keys(this.bones)
+    // Store current rotations for smooth transitions
+    if (!this.currentRotations) {
+      this.currentRotations = {
+        body: { y: 0 },
+        head: { x: 0, y: 0 },
+        eyes: { x: 0, y: 0 }
+      };
+    }
+    
+    // Debug: Log occasionally to verify updateAvatar is working
+    if (Math.random() < 0.01) { // Log 1% of frames
+      console.log('[BrowserAvatarTracking] updateAvatar called:', {
+        trackingData,
+        bonesAvailable: Object.keys(this.bones || {}),
+        movementScale,
+        motionMode: this.config.motionMode
       });
     }
 
-    // Update body rotation
-    if (this.bones.body && trackingData.body) {
-      this.bones.body.rotation.y = this.degToRad(trackingData.body.y * movementScale);
+    // MOTION MODE OPTION 2: Eyes and head stay CENTERED, body turns naturally
+    if (this.config.motionMode === 'option2') {
+      // Eyes MUST stay CENTERED - locked to zero
+      if (!this.currentRotations.eyes) {
+        this.currentRotations.eyes = { x: 0, y: 0 };
+      }
+      // Force eyes to ZERO immediately (LOCKED - no movement)
+      this.currentRotations.eyes.x = 0;
+      this.currentRotations.eyes.y = 0;
+      this.updateEyesFromCurrent();
+
+      // Head MUST stay CENTERED (LOCKED - not turning with body)
+      // If head is a child of body, we need to compensate for body rotation
+      if (this.bones.head) {
+        // Force head to ZERO in LOCAL space (compensates for parent body rotation)
+        this.bones.head.rotation.x = 0;
+        this.bones.head.rotation.y = 0;
+        this.bones.head.rotation.z = 0;
+        // Reset rotation state
+        if (this.currentRotations.head) {
+          this.currentRotations.head.x = 0;
+          this.currentRotations.head.y = 0;
+        }
+        
+        // If body is parent, compensate head rotation for body rotation
+        // Head should stay forward in WORLD space, so counter-rotate in LOCAL space
+        if (this.bones.body && this.currentRotations.body) {
+          // Full compensation: if body rotates +10°, head rotates -10° in local space
+          // This keeps head facing forward in world space
+          this.bones.head.rotation.y = -this.currentRotations.body.y; // Full counter-rotation
+        }
+      }
+
+      // Neck MUST stay CENTERED (LOCKED - not turning with body)
+      if (this.bones.neck) {
+        // Force neck to ZERO in LOCAL space
+        this.bones.neck.rotation.x = 0;
+        this.bones.neck.rotation.y = 0;
+        this.bones.neck.rotation.z = 0;
+        // Reset rotation state
+        if (this.currentRotations.neck) {
+          this.currentRotations.neck.x = 0;
+          this.currentRotations.neck.y = 0;
+        }
+        
+        // If body is parent, compensate neck rotation for body rotation
+        // Neck should stay forward in WORLD space, so counter-rotate in LOCAL space
+        if (this.bones.body && this.currentRotations.body) {
+          // Full compensation for neck too
+          this.bones.neck.rotation.y = -this.currentRotations.body.y * 0.9; // Strong counter-rotation
+        }
+      }
+
+      // BODY follows naturally (organic, smooth movement - NOT robotic)
+      // Use raw face position for body rotation (more reliable than trackingData.head)
+      if (this.bones.body && this.lastFacePosition && this.lastFacePosition.detected) {
+        // Use face X position directly (already mirrored in onFaceDetected)
+        let faceX = this.lastFacePosition.x - 0.5; // Convert to -0.5 to 0.5 range
+        faceX = faceX - (this.calibrationOffset.x * 0.5); // Apply calibration offset
+        
+        // Natural, organic body movement
+        // Use smooth easing curve (ease-out cubic for natural deceleration)
+        const maxBodyDegrees = 20; // Max 20 degrees - enough range but not excessive
+        const normalizedX = faceX * 2; // Convert to -1 to 1 range
+        const easedInput = normalizedX * (1 - Math.abs(normalizedX) * 0.3); // Ease-out curve
+        const targetBodyY = this.degToRad(easedInput * movementScale * maxBodyDegrees);
+        
+        // Soft clamp (smooth falloff instead of hard limit)
+        const maxBodyRad = this.degToRad(maxBodyDegrees);
+        let clampedBodyY = Math.max(-maxBodyRad, Math.min(maxBodyRad, targetBodyY));
+        
+        // Apply soft edge smoothing (gentle resistance near limits)
+        if (Math.abs(clampedBodyY) > maxBodyRad * 0.8) {
+          const resistance = 0.85; // Slight resistance near edges
+          clampedBodyY *= resistance;
+        }
+        
+        if (!this.currentRotations.body) {
+          this.currentRotations.body = { y: 0 };
+        }
+        
+        // Natural, smooth body follow with momentum feel
+        const bodyLerp = 0.6; // Slower = more natural momentum
+        this.currentRotations.body.y += (clampedBodyY - this.currentRotations.body.y) * bodyLerp;
+        this.bones.body.rotation.y = this.currentRotations.body.y;
+        
+        // Debug occasionally
+        if (Math.random() < 0.01) {
+          console.log('[BrowserAvatarTracking] Option 2 Body tracking:', {
+            faceX: faceX.toFixed(3),
+            normalizedX: normalizedX.toFixed(3),
+            targetBodyDeg: (clampedBodyY * 180 / Math.PI).toFixed(1),
+            currentBodyDeg: (this.currentRotations.body.y * 180 / Math.PI).toFixed(1)
+          });
+        }
+      } else if (this.bones.body && trackingData.head) {
+        // Fallback: use head position from movements
+        let headX = trackingData.head.x - this.calibrationOffset.x;
+        const maxBodyDegrees = 20;
+        const easedInput = headX * (1 - Math.abs(headX) * 0.3);
+        const targetBodyY = this.degToRad(easedInput * movementScale * maxBodyDegrees);
+        const maxBodyRad = this.degToRad(maxBodyDegrees);
+        let clampedBodyY = Math.max(-maxBodyRad, Math.min(maxBodyRad, targetBodyY));
+        
+        if (Math.abs(clampedBodyY) > maxBodyRad * 0.8) {
+          clampedBodyY *= 0.85;
+        }
+        
+        if (!this.currentRotations.body) {
+          this.currentRotations.body = { y: 0 };
+        }
+        const bodyLerp = 0.6;
+        this.currentRotations.body.y += (clampedBodyY - this.currentRotations.body.y) * bodyLerp;
+        this.bones.body.rotation.y = this.currentRotations.body.y;
+      } else if (this.bones.body && trackingData.body) {
+        // Final fallback: use body data if available
+        const maxBodyDegrees = 20;
+        const easedInput = (trackingData.body.y || 0) * (1 - Math.abs(trackingData.body.y || 0) * 0.3);
+        const targetBodyY = this.degToRad(easedInput * movementScale * maxBodyDegrees);
+        const maxBodyRad = this.degToRad(maxBodyDegrees);
+        let clampedBodyY = Math.max(-maxBodyRad, Math.min(maxBodyRad, targetBodyY));
+        
+        if (Math.abs(clampedBodyY) > maxBodyRad * 0.8) {
+          clampedBodyY *= 0.85;
+        }
+        
+        if (!this.currentRotations.body) {
+          this.currentRotations.body = { y: 0 };
+        }
+        const bodyLerp = 0.6;
+        this.currentRotations.body.y += (clampedBodyY - this.currentRotations.body.y) * bodyLerp;
+        this.bones.body.rotation.y = this.currentRotations.body.y;
+      } else if (this.bones.body) {
+        // No tracking data - smoothly return body to center
+        if (!this.currentRotations.body) {
+          this.currentRotations.body = { y: 0 };
+        }
+        this.currentRotations.body.y *= 0.95; // Decay to center
+        this.bones.body.rotation.y = this.currentRotations.body.y;
+      }
+
+      // Spine follows body naturally
+      if (this.bones.spine) {
+        if (!this.currentRotations.spine) {
+          this.currentRotations.spine = { y: 0 };
+        }
+        // Spine follows body with natural lag
+        const targetSpineY = this.currentRotations.body ? this.currentRotations.body.y * 0.4 : 0;
+        this.currentRotations.spine.y += (targetSpineY - this.currentRotations.spine.y) * 0.65;
+        this.bones.spine.rotation.y = this.currentRotations.spine.y;
+      }
+
+      return; // Early return for option2
     }
 
-    // Update spine for more natural movement
-    if (this.bones.spine && trackingData.body) {
-      this.bones.spine.rotation.y = this.degToRad(trackingData.body.y * 0.3 * movementScale);
+    // MOTION MODE OPTION 1: Cascading movement (default - eyes→head→body)
+    // Cascading delays: Eyes respond instantly, head follows (150ms), body follows (300ms)
+    const eyeDelay = 0;      // Eyes: instant (0ms)
+    const headDelay = 0.15;   // Head: 150ms delay
+    const bodyDelay = 0.3;    // Body: 300ms delay
+    
+    // Smooth interpolation factor (higher = smoother but slower)
+    const eyeLerp = 0.9;      // Eyes: fast response
+    const headLerp = 0.85;    // Head: smooth follow
+    const bodyLerp = 0.75;    // Body: subtle, delayed movement
+
+    // Update eyes FIRST (instant response, no delay) - REALISTIC, SMALL INCREMENTS
+    if (trackingData.eyes) {
+      if (!this.currentRotations.eyes) {
+        this.currentRotations.eyes = { x: 0, y: 0 };
+      }
+      
+      // REDUCED: More realistic eye movement limits
+      const maxEyeRotationDegrees = 15; // Max 15 degrees eye rotation
+      const eyeMultiplier = 0.6; // Reduce sensitivity
+      const targetEyeX = this.degToRad(trackingData.eyes.x * movementScale * maxEyeRotationDegrees * eyeMultiplier);
+      const targetEyeY = this.degToRad(trackingData.eyes.y * movementScale * maxEyeRotationDegrees * eyeMultiplier);
+      
+      // Clamp to max rotation
+      const maxEyeRad = this.degToRad(maxEyeRotationDegrees);
+      const clampedEyeX = Math.max(-maxEyeRad, Math.min(maxEyeRad, targetEyeX));
+      const clampedEyeY = Math.max(-maxEyeRad, Math.min(maxEyeRad, targetEyeY));
+      
+      // Smooth interpolation for eyes
+      this.currentRotations.eyes.x += (clampedEyeX - this.currentRotations.eyes.x) * eyeLerp;
+      this.currentRotations.eyes.y += (clampedEyeY - this.currentRotations.eyes.y) * eyeLerp;
+      
+      this.updateEyesFromCurrent();
+    } else if (this.bones.leftEye || this.bones.rightEye) {
+      // Initialize eyes to center if tracking data doesn't have eyes
+      if (!this.currentRotations.eyes) {
+        this.currentRotations.eyes = { x: 0, y: 0 };
+      }
+      this.updateEyesFromCurrent();
     }
 
-    // Update head rotation with calibration and axis inversion
+    // Update head SECOND (150ms delay simulation via slower lerp) - REALISTIC, SMALL INCREMENTS
     if (this.bones.head && trackingData.head) {
-      // Apply calibration offset (SUBTRACT offset to recenter)
       let headX = trackingData.head.x - this.calibrationOffset.x;
       let headY = trackingData.head.y - this.calibrationOffset.y;
       
-      // Apply axis inversion (MIRROR X, keep Y natural)
-      if (this.config.invertX) headX = -headX;
-      // Don't invert Y - just use offset for centering
+      // REDUCED: 1.5 -> 0.8 for realistic small increments
+      const maxHeadRotationDegrees = 12; // Max 12 degrees head rotation
+      const targetHeadX = this.degToRad(headX * movementScale * maxHeadRotationDegrees * 0.8);
+      const targetHeadY = this.degToRad(-headY * movementScale * maxHeadRotationDegrees * 0.8); // Negative Y for correct up/down
       
-      // Apply to bones (1.5x multiplier for good responsiveness)
-      this.bones.head.rotation.x = this.degToRad(-headY * movementScale * 1.5); // Negative Y for correct up/down
-      this.bones.head.rotation.y = this.degToRad(headX * movementScale * 1.5);
+      // Clamp to max rotation
+      const maxHeadRadX = this.degToRad(maxHeadRotationDegrees);
+      const maxHeadRadY = this.degToRad(maxHeadRotationDegrees);
+      const clampedHeadX = Math.max(-maxHeadRadX, Math.min(maxHeadRadX, targetHeadX));
+      const clampedHeadY = Math.max(-maxHeadRadY, Math.min(maxHeadRadY, targetHeadY));
+      
+      // Smooth interpolation with delay effect
+      this.currentRotations.head.x += (clampedHeadX - this.currentRotations.head.x) * headLerp;
+      this.currentRotations.head.y += (clampedHeadY - this.currentRotations.head.y) * headLerp;
+      
+      this.bones.head.rotation.x = this.currentRotations.head.y;
+      this.bones.head.rotation.y = this.currentRotations.head.x;
     }
 
-    // Update neck for smoother transition (with same calibration)
+    // Update neck to follow head (but even smoother)
     if (this.bones.neck && trackingData.head) {
       let neckX = trackingData.head.x - this.calibrationOffset.x;
       let neckY = trackingData.head.y - this.calibrationOffset.y;
       
-      if (this.config.invertX) neckX = -neckX;
-      // Match head rotation direction
+      const targetNeckX = this.degToRad(neckX * 0.3 * movementScale);
+      const targetNeckY = this.degToRad(-neckY * 0.3 * movementScale);
       
-      this.bones.neck.rotation.x = this.degToRad(-neckY * 0.3 * movementScale); // Negative Y to match head
-      this.bones.neck.rotation.y = this.degToRad(neckX * 0.3 * movementScale);
+      if (!this.currentRotations.neck) {
+        this.currentRotations.neck = { x: 0, y: 0 };
+      }
+      
+      this.currentRotations.neck.x += (targetNeckX - this.currentRotations.neck.x) * headLerp;
+      this.currentRotations.neck.y += (targetNeckY - this.currentRotations.neck.y) * headLerp;
+      
+      this.bones.neck.rotation.x = this.currentRotations.neck.y;
+      this.bones.neck.rotation.y = this.currentRotations.neck.x;
     }
 
-    // Update eye rotation
-    if (trackingData.eyes) {
-      this.updateEyes(trackingData.eyes, movementScale);
+    // Update body LAST (300ms delay - only for larger movements) - REALISTIC, SMALL INCREMENTS
+    if (this.bones.body && trackingData.body) {
+      const maxBodyRotationDegrees = 8; // Max 8 degrees for realistic movement
+      const targetBodyY = this.degToRad(trackingData.body.y * movementScale * maxBodyRotationDegrees * 0.15); // Subtle body rotation
+      
+      // Clamp to max rotation
+      const maxBodyRad = this.degToRad(maxBodyRotationDegrees);
+      const clampedBodyY = Math.max(-maxBodyRad, Math.min(maxBodyRad, targetBodyY));
+      
+      // Smooth interpolation with strongest delay effect
+      this.currentRotations.body.y += (clampedBodyY - this.currentRotations.body.y) * bodyLerp;
+      
+      this.bones.body.rotation.y = this.currentRotations.body.y;
+    }
+
+    // Update spine to follow body
+    if (this.bones.spine && trackingData.body) {
+      const targetSpineY = this.degToRad(trackingData.body.y * 0.3 * movementScale);
+      
+      if (!this.currentRotations.spine) {
+        this.currentRotations.spine = { y: 0 };
+      }
+      
+      this.currentRotations.spine.y += (targetSpineY - this.currentRotations.spine.y) * bodyLerp;
+      this.bones.spine.rotation.y = this.currentRotations.spine.y;
+    }
+  }
+
+  updateEyesFromCurrent() {
+    if (this.bones.leftEye) {
+      this.bones.leftEye.rotation.x = this.currentRotations.eyes.y;
+      this.bones.leftEye.rotation.y = this.currentRotations.eyes.x;
+    }
+
+    if (this.bones.rightEye) {
+      this.bones.rightEye.rotation.x = this.currentRotations.eyes.y;
+      this.bones.rightEye.rotation.y = this.currentRotations.eyes.x + this.degToRad(2);
     }
   }
 
   updateEyes(eyeData, movementScale = 1.0) {
-    if (!eyeData) return;
-
-    const eyeX = this.degToRad(eyeData.x * movementScale);
-    const eyeY = this.degToRad(eyeData.y * movementScale);
-
-    if (this.bones.leftEye) {
-      this.bones.leftEye.rotation.x = eyeY;
-      this.bones.leftEye.rotation.y = eyeX;
-    }
-
-    if (this.bones.rightEye) {
-      this.bones.rightEye.rotation.x = eyeY;
-      this.bones.rightEye.rotation.y = eyeX + this.degToRad(2);
-    }
+    // Eyes are now updated via updateEyesFromCurrent() using currentRotations
+    // This method is kept for compatibility but the actual update happens in updateAvatar
   }
 
   applyIdleAnimation() {
@@ -410,15 +706,22 @@ class AvatarMovementController {
   }
 
   returnToCenter() {
-    const decay = 0.05;
+    // Smooth, quick transition back to center when losing tracking
+    const returnSpeed = 0.12; // Higher = faster return (was 0.05, now 0.12 for quicker but still smooth)
     
-    this.bodyRotation.y *= (1 - decay);
-    this.headRotation.x *= (1 - decay);
-    this.headRotation.y *= (1 - decay);
-    this.eyeRotation.x *= (1 - decay);
-    this.eyeRotation.y *= (1 - decay);
+    // Smoothly interpolate to zero
+    this.bodyRotation.y += (0 - this.bodyRotation.y) * returnSpeed;
+    this.headRotation.x += (0 - this.headRotation.x) * returnSpeed;
+    this.headRotation.y += (0 - this.headRotation.y) * returnSpeed;
+    this.eyeRotation.x += (0 - this.eyeRotation.x) * returnSpeed;
+    this.eyeRotation.y += (0 - this.eyeRotation.y) * returnSpeed;
 
     return this.formatOutput();
+  }
+
+  onFaceLost() {
+    // Called when face detection is lost - ensures smooth return happens
+    // The returnToCenter() will be called automatically in calculateMovements
   }
 
   formatOutput() {

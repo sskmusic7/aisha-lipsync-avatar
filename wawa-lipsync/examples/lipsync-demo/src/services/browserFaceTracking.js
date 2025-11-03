@@ -39,9 +39,15 @@ export class BrowserFaceTracking {
       await this.video.play();
 
       // Initialize MediaPipe Face Mesh using npm package
+      // Use unpkg CDN which is more reliable for MediaPipe assets
       this.faceMesh = new FaceMesh({
         locateFile: (file) => {
-          return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+          // Use unpkg CDN for better reliability with MediaPipe assets
+          // Unpkg serves the files exactly as they are in the npm package
+          const baseUrl = `https://unpkg.com/@mediapipe/face_mesh@0.4.1633559619`;
+          const fileUrl = `${baseUrl}/${file}`;
+          console.log('[BrowserFaceTracking] Loading MediaPipe file:', file, 'from:', fileUrl);
+          return fileUrl;
         }
       });
 
@@ -73,19 +79,26 @@ export class BrowserFaceTracking {
     }
 
     this.isRunning = true;
+    
+    // Start detection loop (with error recovery built into detectFace)
     this.detectFace();
     return true;
   }
 
   handleFaceResults(results) {
     if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
-      // No face detected
+      // No face detected - only log occasionally to avoid spam
+      if (Math.random() < 0.01) { // Log 1% of the time
+        console.log('[BrowserFaceTracking] No face detected in frame');
+      }
       this.notifyCallbacks({
         detected: false,
         confidence: 0.0
       });
       return;
     }
+
+    console.log('[BrowserFaceTracking] ✅ Face detected! Landmarks:', results.multiFaceLandmarks[0].length);
 
     const landmarks = results.multiFaceLandmarks[0];
     
@@ -123,7 +136,23 @@ export class BrowserFaceTracking {
   }
 
   async detectFace() {
-    if (!this.isRunning || !this.faceMesh || !this.video) return;
+    if (!this.isRunning || !this.faceMesh || !this.video) {
+      console.log('[BrowserFaceTracking] Detection stopped:', {
+        isRunning: this.isRunning,
+        hasFaceMesh: !!this.faceMesh,
+        hasVideo: !!this.video
+      });
+      return;
+    }
+
+    // Check if video has valid frames
+    if (this.video.readyState < 2 || this.video.videoWidth === 0) {
+      // Continue loop even if video not ready yet
+      if (this.isRunning) {
+        setTimeout(() => this.detectFace(), 1000 / 30);
+      }
+      return;
+    }
 
     try {
       // Send frame to FaceMesh - results will come via onResults callback
@@ -135,9 +164,22 @@ export class BrowserFaceTracking {
       }
 
     } catch (error) {
-      console.error('[BrowserFaceTracking] Detection error:', error);
-      if (this.isRunning) {
-        setTimeout(() => this.detectFace(), 1000 / 30);
+      // Silently handle MediaPipe errors to prevent console spam
+      // MediaPipe can throw errors during initialization or if assets are still loading
+      if (error.message && error.message.includes('abort')) {
+        // MediaPipe WASM error - might be temporary, retry after a short delay
+        if (this.isRunning) {
+          setTimeout(() => this.detectFace(), 1000 / 15); // Slower retry rate on error
+        }
+      } else {
+        // Other errors - log occasionally but don't spam
+        if (Math.random() < 0.1) { // Log 10% of errors
+          console.warn('[BrowserFaceTracking] Detection error (retrying):', error.message || error);
+        }
+        // Continue loop
+        if (this.isRunning) {
+          setTimeout(() => this.detectFace(), 1000 / 30);
+        }
       }
     }
   }

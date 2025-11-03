@@ -141,7 +141,8 @@ export function Avatar(props) {
     try {
       const tracker = new BrowserAvatarTracking(scene, {
         enableBlinking: false, // We handle blinking separately in the component
-        enableMicroMovements: true
+        enableMicroMovements: true,
+        motionMode: 'option2' // 'option1' = cascading (eyes→head→body), 'option2' = eyes/head centered, body turns
       });
       
       // Wait for initialization to complete
@@ -218,7 +219,7 @@ export function Avatar(props) {
     }
   }, [isSpeaking, animation]);
   
-  // Expose calibration function to window for easy access
+  // Expose calibration and motion mode functions to window for easy access
   useEffect(() => {
     if (trackingRef.current) {
       window.calibrateAisha = () => {
@@ -233,10 +234,24 @@ export function Avatar(props) {
           console.log('[Avatar] 🔄 Calibration reset to defaults.');
         }
       };
+      // Motion mode switcher for testing
+      window.setMotionMode = (mode) => {
+        if (trackingRef.current && trackingRef.current.config) {
+          if (mode === 'option1' || mode === 'option2') {
+            trackingRef.current.config.motionMode = mode;
+            console.log(`[Avatar] ✅ Motion mode changed to: ${mode}`);
+            console.log(`  Option 1: Cascading (eyes→head→body)`);
+            console.log(`  Option 2: Body-only (eyes/head stay forward, body turns)`);
+          } else {
+            console.warn('[Avatar] ❌ Invalid motion mode. Use "option1" or "option2"');
+          }
+        }
+      };
     }
     return () => {
       delete window.calibrateAisha;
       delete window.resetCalibration;
+      delete window.setMotionMode;
     };
   }, [trackingRef.current]);
   
@@ -355,13 +370,16 @@ export function Avatar(props) {
   };
 
   const [blink, setBlink] = useState(false);
+  const [blinkLeft, setBlinkLeft] = useState(false);
+  const [blinkRight, setBlinkRight] = useState(false);
   const [winkLeft, setWinkLeft] = useState(false);
   const [winkRight, setWinkRight] = useState(false);
 
   useFrame(() => {
-    // Eye blinking
-    lerpMorphTarget("eyeBlinkLeft", blink || winkLeft ? 1 : 0, 0.5);
-    lerpMorphTarget("eyeBlinkRight", blink || winkRight ? 1 : 0, 0.5);
+    // Eye blinking with tiny delay between eyes for realism
+    // Left eye blinks slightly before right (or vice versa, random)
+    lerpMorphTarget("eyeBlinkLeft", blinkLeft || blink || winkLeft ? 1 : 0, 0.5);
+    lerpMorphTarget("eyeBlinkRight", blinkRight || blink || winkRight ? 1 : 0, 0.5);
 
     // LIPSYNC - exactly like it was working before
     if (setupMode) {
@@ -412,17 +430,45 @@ export function Avatar(props) {
 
   useEffect(() => {
     let blinkTimeout;
+    let leftTimeout;
+    let rightTimeout;
+    
     const nextBlink = () => {
       blinkTimeout = setTimeout(() => {
-        setBlink(true);
+        // Randomly choose which eye blinks first (tiny delay: 10-30ms)
+        const firstEye = Math.random() < 0.5 ? 'left' : 'right';
+        const delay = THREE.MathUtils.randFloat(10, 30); // Fractional delay (10-30ms)
+        
+        if (firstEye === 'left') {
+          // Left eye blinks first, right follows
+          setBlinkLeft(true);
+          rightTimeout = setTimeout(() => {
+            setBlinkRight(true);
+          }, delay);
+        } else {
+          // Right eye blinks first, left follows
+          setBlinkRight(true);
+          leftTimeout = setTimeout(() => {
+            setBlinkLeft(true);
+          }, delay);
+        }
+        
+        // Open both eyes after blink duration
         setTimeout(() => {
-          setBlink(false);
+          setBlinkLeft(false);
+          setBlinkRight(false);
           nextBlink();
         }, 200);
       }, THREE.MathUtils.randInt(1000, 5000));
     };
+    
     nextBlink();
-    return () => clearTimeout(blinkTimeout);
+    
+    return () => {
+      clearTimeout(blinkTimeout);
+      clearTimeout(leftTimeout);
+      clearTimeout(rightTimeout);
+    };
   }, []);
 
   // Function to safely render mesh if it exists

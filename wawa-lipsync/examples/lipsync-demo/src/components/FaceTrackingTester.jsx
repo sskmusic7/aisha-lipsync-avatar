@@ -79,7 +79,29 @@ export function FaceTrackingTester({ onTrackingData, isVisible }) {
             try {
               await videoRef.current.play();
               console.log('[FaceTrackingTester] ✅ Video element connected and playing!');
-              console.log('[FaceTrackingTester] Video dimensions:', videoRef.current.videoWidth, 'x', videoRef.current.videoHeight);
+              
+              // Wait a bit for video to start and get dimensions
+              await new Promise(resolve => setTimeout(resolve, 100));
+              
+              console.log('[FaceTrackingTester] Video state:', {
+                readyState: videoRef.current.readyState,
+                paused: videoRef.current.paused,
+                width: videoRef.current.videoWidth,
+                height: videoRef.current.videoHeight,
+                srcObject: !!videoRef.current.srcObject
+              });
+              
+              if (videoRef.current.videoWidth > 0 && videoRef.current.videoHeight > 0) {
+                console.log('[FaceTrackingTester] ✅ Video dimensions:', videoRef.current.videoWidth, 'x', videoRef.current.videoHeight);
+              } else {
+                console.warn('[FaceTrackingTester] ⚠️ Video dimensions not available yet');
+                // Try setting dimensions after another short delay
+                setTimeout(() => {
+                  if (videoRef.current.videoWidth > 0) {
+                    console.log('[FaceTrackingTester] ✅ Video dimensions available:', videoRef.current.videoWidth, 'x', videoRef.current.videoHeight);
+                  }
+                }, 500);
+              }
             } catch (playError) {
               console.error('[FaceTrackingTester] Play error:', playError);
               setError(`Video play error: ${playError.message}`);
@@ -96,8 +118,30 @@ export function FaceTrackingTester({ onTrackingData, isVisible }) {
           setError('Failed to connect video stream');
         }
 
+        // Verify tracker's video is ready before starting
+        if (tracker.video) {
+          console.log('[FaceTrackingTester] Tracker video state:', {
+            paused: tracker.video.paused,
+            readyState: tracker.video.readyState,
+            videoWidth: tracker.video.videoWidth,
+            videoHeight: tracker.video.videoHeight,
+            hasStream: !!tracker.video.srcObject
+          });
+          
+          // Ensure tracker video is playing
+          if (tracker.video.paused) {
+            try {
+              await tracker.video.play();
+              console.log('[FaceTrackingTester] ✅ Tracker video now playing');
+            } catch (e) {
+              console.error('[FaceTrackingTester] Failed to play tracker video:', e);
+            }
+          }
+        }
+
         // Setup callback for face detection
         tracker.onFaceDetected((faceData) => {
+          console.log('[FaceTrackingTester] Face detected callback:', faceData);
           setTrackingData(faceData);
           drawTracking(faceData);
           
@@ -107,10 +151,25 @@ export function FaceTrackingTester({ onTrackingData, isVisible }) {
         });
 
         // Start tracking
-        await tracker.start();
-        faceTrackerRef.current = tracker;
-        setIsTracking(true);
-        console.log('[FaceTrackingTester] ✅ Face tracking started!');
+        const started = await tracker.start();
+        if (started) {
+          faceTrackerRef.current = tracker;
+          setIsTracking(true);
+          console.log('[FaceTrackingTester] ✅ Face tracking started!');
+          
+          // Log detection status periodically
+          setTimeout(() => {
+            console.log('[FaceTrackingTester] Detection check:', {
+              isRunning: tracker.isRunning,
+              hasFaceMesh: !!tracker.faceMesh,
+              hasVideo: !!tracker.video,
+              videoPlaying: tracker.video && !tracker.video.paused
+            });
+          }, 1000);
+        } else {
+          setError('Failed to start face tracking');
+          console.error('[FaceTrackingTester] Failed to start tracking');
+        }
 
       } catch (err) {
         console.error('[FaceTrackingTester] Failed to start tracking:', err);
@@ -148,39 +207,28 @@ export function FaceTrackingTester({ onTrackingData, isVisible }) {
 
   const drawTracking = (data) => {
     const canvas = canvasRef.current;
-    const video = videoRef.current;
     
-    if (!canvas || !video || !data) return;
+    if (!canvas || !data) return;
 
     const ctx = canvas.getContext('2d');
     
-    // Set canvas size to match video
-    if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-    }
+    // Note: Video is already drawn by the continuous drawLoop
+    // This function only draws the tracking overlay
     
-    // Clear previous frame
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    // Draw video frame
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    
-    // Draw face position visualization
-    if (data.detected && data.x && data.y) {
+    // Draw face position visualization (yellow box like on mobile)
+    if (data.detected && data.x !== undefined && data.y !== undefined) {
       const x = data.x * canvas.width;
       const y = data.y * canvas.height;
-      const size = (data.z || 0.5) * 100;
       
-      // Draw center point
-      ctx.fillStyle = '#00ff00';
-      ctx.beginPath();
-      ctx.arc(x, y, 5, 0, 2 * Math.PI);
-      ctx.fill();
+      // Calculate box size based on depth (z) or use a default
+      // z is typically 0-1, where larger = closer = bigger box
+      const baseSize = Math.min(canvas.width, canvas.height) * 0.2; // 20% of smaller dimension
+      const depthMultiplier = data.z || 0.5;
+      const size = baseSize * (0.5 + depthMultiplier);
       
-      // Draw face bounding area
-      ctx.strokeStyle = '#00ff00';
-      ctx.lineWidth = 2;
+      // Draw yellow bounding box (like mobile)
+      ctx.strokeStyle = '#FFD700'; // Yellow/Gold
+      ctx.lineWidth = 3;
       ctx.strokeRect(
         x - size, 
         y - size, 
@@ -188,10 +236,19 @@ export function FaceTrackingTester({ onTrackingData, isVisible }) {
         size * 2
       );
       
-      // Label
-      ctx.fillStyle = '#00ff00';
-      ctx.font = 'bold 14px sans-serif';
-      ctx.fillText('Face', x - size, y - size - 5);
+      // Draw center point
+      ctx.fillStyle = '#FFD700';
+      ctx.beginPath();
+      ctx.arc(x, y, 5, 0, 2 * Math.PI);
+      ctx.fill();
+      
+      // Label with yellow text
+      ctx.fillStyle = '#FFD700';
+      ctx.font = 'bold 16px sans-serif';
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 2;
+      ctx.strokeText('Face', x - size, y - size - 10);
+      ctx.fillText('Face', x - size, y - size - 10);
     }
     
     // Draw tracking data overlay
@@ -218,7 +275,7 @@ export function FaceTrackingTester({ onTrackingData, isVisible }) {
     }
   };
 
-  // Draw loop
+  // Continuous drawing loop (draws video continuously)
   useEffect(() => {
     if (!isVisible) return;
 
@@ -226,8 +283,26 @@ export function FaceTrackingTester({ onTrackingData, isVisible }) {
       const canvas = canvasRef.current;
       const video = videoRef.current;
       
-      if (canvas && video && video.readyState === video.HAVE_ENOUGH_DATA) {
-        // Canvas will be updated when tracking data arrives
+      if (canvas && video && video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
+        const ctx = canvas.getContext('2d');
+        
+        // Set canvas size if needed
+        if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+        }
+        
+        // Draw the current video frame (base layer)
+        try {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        } catch (e) {
+          // Silently handle drawing errors
+        }
+        
+        // Draw tracking overlay if we have data (OUTSIDE try-catch so errors show)
+        if (trackingData) {
+          drawTracking(trackingData);
+        }
       }
       
       animationFrameRef.current = requestAnimationFrame(drawLoop);
@@ -240,7 +315,7 @@ export function FaceTrackingTester({ onTrackingData, isVisible }) {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [isVisible]);
+  }, [isVisible, trackingData]);
 
   // Drag handlers
   const handleMouseDown = (e) => {
