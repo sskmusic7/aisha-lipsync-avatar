@@ -29,6 +29,13 @@ export function FaceTrackingTester({ onTrackingData, isVisible }) {
       try {
         console.log('[FaceTrackingTester] Starting browser-based face tracking...');
         
+        // Wait for video element to be ready
+        if (!videoRef.current) {
+          console.warn('[FaceTrackingTester] Video ref not ready, retrying...');
+          setTimeout(startTracking, 100);
+          return;
+        }
+
         // Initialize MediaPipe face tracking (no WebSocket needed!)
         const tracker = new BrowserFaceTracking();
         
@@ -39,11 +46,54 @@ export function FaceTrackingTester({ onTrackingData, isVisible }) {
         }
 
         // Get the video element from the tracker and connect it to our videoRef
-        if (tracker.video && videoRef.current) {
-          // Copy the stream from tracker's video to our display video
-          videoRef.current.srcObject = tracker.video.srcObject;
-          await videoRef.current.play();
-          console.log('[FaceTrackingTester] Video element connected!');
+        if (tracker.video && tracker.video.srcObject && videoRef.current) {
+          const stream = tracker.video.srcObject;
+          
+          // Clone the stream tracks for the display video (required for desktop browsers)
+          const videoTracks = stream.getVideoTracks();
+          if (videoTracks.length > 0) {
+            const newStream = new MediaStream([videoTracks[0]]);
+            videoRef.current.srcObject = newStream;
+            
+            // Ensure proper attributes for desktop browsers
+            videoRef.current.autoplay = true;
+            videoRef.current.muted = true;
+            videoRef.current.playsInline = true;
+            
+            // Wait for video metadata to load
+            await new Promise((resolve, reject) => {
+              const onLoadedMetadata = () => {
+                videoRef.current.removeEventListener('loadedmetadata', onLoadedMetadata);
+                resolve();
+              };
+              videoRef.current.addEventListener('loadedmetadata', onLoadedMetadata);
+              
+              // Timeout after 5 seconds
+              setTimeout(() => {
+                videoRef.current.removeEventListener('loadedmetadata', onLoadedMetadata);
+                reject(new Error('Video metadata timeout'));
+              }, 5000);
+            });
+            
+            // Play the video
+            try {
+              await videoRef.current.play();
+              console.log('[FaceTrackingTester] ✅ Video element connected and playing!');
+              console.log('[FaceTrackingTester] Video dimensions:', videoRef.current.videoWidth, 'x', videoRef.current.videoHeight);
+            } catch (playError) {
+              console.error('[FaceTrackingTester] Play error:', playError);
+              setError(`Video play error: ${playError.message}`);
+            }
+          } else {
+            console.error('[FaceTrackingTester] No video tracks in stream');
+            setError('No video tracks available');
+          }
+        } else {
+          console.error('[FaceTrackingTester] Tracker video or stream not available');
+          console.log('tracker.video:', tracker.video);
+          console.log('tracker.video?.srcObject:', tracker.video?.srcObject);
+          console.log('videoRef.current:', videoRef.current);
+          setError('Failed to connect video stream');
         }
 
         // Setup callback for face detection
@@ -68,9 +118,13 @@ export function FaceTrackingTester({ onTrackingData, isVisible }) {
       }
     };
 
-    startTracking();
-
+    // Small delay to ensure video element is mounted
+    const timer = setTimeout(startTracking, 50);
+    
     return () => {
+      // Clear the start timer
+      clearTimeout(timer);
+      
       // Cleanup
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
@@ -79,6 +133,13 @@ export function FaceTrackingTester({ onTrackingData, isVisible }) {
       if (faceTrackerRef.current) {
         faceTrackerRef.current.stop();
         faceTrackerRef.current = null;
+      }
+      
+      // Stop video stream if present
+      if (videoRef.current && videoRef.current.srcObject) {
+        const stream = videoRef.current.srcObject;
+        stream.getTracks().forEach(track => track.stop());
+        videoRef.current.srcObject = null;
       }
       
       console.log('[FaceTrackingTester] Cleanup complete');
@@ -265,6 +326,7 @@ export function FaceTrackingTester({ onTrackingData, isVisible }) {
         <video 
           ref={videoRef} 
           autoPlay 
+          muted
           playsInline 
           style={{ 
             width: '100%', 
