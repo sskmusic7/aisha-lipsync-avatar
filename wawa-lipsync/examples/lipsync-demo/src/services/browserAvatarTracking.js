@@ -11,7 +11,7 @@ export class BrowserAvatarTracking {
       enableMicroMovements: config.enableMicroMovements !== false,
       reducedMovement: false,
       invertX: true,  // Invert horizontal (fix mirror effect)
-      motionMode: config.motionMode || 'option1', // 'option1' = cascading (eyes→head→body), 'option2' = body-only
+      motionMode: config.motionMode || 'option1', // 'option1' = cascading (eyes→head→body), 'option2' = body-only, 'option3' = normalized algorithm
       ...config
     };
 
@@ -46,6 +46,16 @@ export class BrowserAvatarTracking {
     console.log('[BrowserAvatarTracking] 🔄 Calibration reset to defaults');
   }
 
+  // Recreate controller when motion mode changes
+  recreateController() {
+    if (this.config.motionMode === 'option3') {
+      this.controller = new NormalizedFaceTrackerController();
+    } else {
+      this.controller = new AvatarMovementController();
+    }
+    console.log('[BrowserAvatarTracking] 🔄 Controller recreated for mode:', this.config.motionMode);
+  }
+
   async initialize() {
     if (this.isTracking) {
       console.log('[BrowserAvatarTracking] Already initialized, skipping...');
@@ -60,8 +70,12 @@ export class BrowserAvatarTracking {
     // Find morph targets for blinking
     this.findMorphTargets();
     
-    // Initialize movement controller
-    this.controller = new AvatarMovementController();
+    // Initialize movement controller based on motion mode
+    if (this.config.motionMode === 'option3') {
+      this.controller = new NormalizedFaceTrackerController();
+    } else {
+      this.controller = new AvatarMovementController();
+    }
     
     // Start face tracking
     const initialized = await this.faceTracker.initialize();
@@ -413,6 +427,62 @@ export class BrowserAvatarTracking {
       return; // Early return for option2
     }
 
+    // MOTION MODE OPTION 3: Normalized algorithm with deadzone and natural tracking
+    if (this.config.motionMode === 'option3') {
+      // Option 3 uses the controller's normalized algorithm directly
+      // The controller already handles all the calculations
+      // Just apply the rotations from trackingData
+      
+      // Apply head rotation (yaw and pitch)
+      if (this.bones.head && trackingData.head) {
+        if (!this.currentRotations.head) {
+          this.currentRotations.head = { x: 0, y: 0 };
+        }
+        // trackingData.head already contains smoothed yaw/pitch in degrees
+        const headYaw = this.degToRad(trackingData.head.x || 0);
+        const headPitch = this.degToRad(trackingData.head.y || 0);
+        this.bones.head.rotation.x = headPitch;
+        this.bones.head.rotation.y = headYaw;
+        // Store for reference
+        this.currentRotations.head.x = headYaw;
+        this.currentRotations.head.y = headPitch;
+      }
+
+      // Apply eye rotation (with offset for lead effect)
+      if (trackingData.eyes) {
+        if (!this.currentRotations.eyes) {
+          this.currentRotations.eyes = { x: 0, y: 0 };
+        }
+        const eyeX = this.degToRad(trackingData.eyes.x || 0);
+        const eyeY = this.degToRad(trackingData.eyes.y || 0);
+        this.currentRotations.eyes.x = eyeX;
+        this.currentRotations.eyes.y = eyeY;
+        this.updateEyesFromCurrent();
+      }
+
+      // Apply body rotation (follows head with factor)
+      if (this.bones.body && trackingData.body) {
+        if (!this.currentRotations.body) {
+          this.currentRotations.body = { y: 0 };
+        }
+        const bodyYaw = this.degToRad(trackingData.body.y || 0);
+        this.currentRotations.body.y = bodyYaw;
+        this.bones.body.rotation.y = bodyYaw;
+      }
+
+      // Spine follows body
+      if (this.bones.spine && this.currentRotations.body) {
+        if (!this.currentRotations.spine) {
+          this.currentRotations.spine = { y: 0 };
+        }
+        const targetSpineY = this.currentRotations.body.y * 0.4;
+        this.currentRotations.spine.y += (targetSpineY - this.currentRotations.spine.y) * 0.65;
+        this.bones.spine.rotation.y = this.currentRotations.spine.y;
+      }
+
+      return; // Early return for option3
+    }
+
     // MOTION MODE OPTION 1: Cascading movement (default - eyes→head→body)
     // Cascading delays: Eyes respond instantly, head follows (150ms), body follows (300ms)
     const eyeDelay = 0;      // Eyes: instant (0ms)
@@ -734,6 +804,130 @@ class AvatarMovementController {
       eyes: {
         x: this.eyeRotation.x - this.headRotation.x * 0.5,
         y: this.eyeRotation.y - this.headRotation.y * 0.5
+      }
+    };
+  }
+}
+
+// Normalized Face Tracker Controller - Alternative algorithm with deadzone and natural tracking
+class NormalizedFaceTrackerController {
+  constructor() {
+    // Key Parameters from algorithm
+    this.maxHeadYaw = 55;      // 45-60° range (how far head turns horizontally)
+    this.maxHeadPitch = 35;     // 30-40° range (how far head tilts up/down)
+    this.maxBodyYaw = 25;       // 20-30° range (body rotation range)
+    this.bodyFollowFactor = 0.4; // 0.3-0.5 (body follows 30-50% of head movement)
+    this.smoothingFactor = 0.2;  // 0.15-0.25 (lower = smoother but more lag)
+    this.deadzone = 0.05;        // Reduces micro-jitter in center
+    
+    // Eye gaze offset (eyes lead the head slightly)
+    this.eyeOffsetX = 5;  // 5° additional rotation
+    this.eyeOffsetY = 3;  // 3° additional rotation
+    
+    // Current smoothed values (in degrees)
+    this.currentHeadYaw = 0;
+    this.currentHeadPitch = 0;
+    this.currentBodyYaw = 0;
+    this.currentEyeX = 0;
+    this.currentEyeY = 0;
+    
+    this.lastDetectionTime = performance.now();
+  }
+
+  lerp(current, target, factor) {
+    return current + (target - current) * factor;
+  }
+
+  calculateMovements(faceData) {
+    const currentTime = performance.now();
+
+    if (!faceData.detected) {
+      if (currentTime - this.lastDetectionTime > 2000) {
+        return this.getIdleAnimation(currentTime);
+      }
+      return this.returnToCenter();
+    }
+
+    this.lastDetectionTime = currentTime;
+
+    // 1. Normalize face position to viewport space (-1 to 1)
+    // faceData.x and faceData.y are already in 0-1 range, convert to -1 to 1
+    let normX = (faceData.x - 0.5) * 2;  // Convert from 0-1 to -1 to 1
+    let normY = (faceData.y - 0.5) * 2;
+    
+    // Apply deadzone in center (reduces micro-jitter)
+    if (Math.abs(normX) < this.deadzone) {
+      normX = 0;
+    }
+    if (Math.abs(normY) < this.deadzone) {
+      normY = 0;
+    }
+
+    // 2. Calculate target head rotation angles
+    const targetHeadYaw = normX * this.maxHeadYaw;      // Left/right rotation
+    const targetHeadPitch = -normY * this.maxHeadPitch;  // Up/down rotation (negative for correct mapping)
+
+    // 3. Calculate body rotation (more subtle, follows head)
+    const targetBodyYaw = normX * this.maxBodyYaw * this.bodyFollowFactor;
+
+    // 4. Calculate eye gaze (eyes lead the head slightly)
+    // Eyes should be slightly ahead of head movement
+    const eyeLeadFactor = 1.1; // Eyes move 10% more than head
+    const targetEyeX = normX * this.maxHeadYaw * eyeLeadFactor;
+    const targetEyeY = -normY * this.maxHeadPitch * eyeLeadFactor;
+
+    // 5. Smooth the transitions using exponential smoothing
+    this.currentHeadYaw = this.lerp(this.currentHeadYaw, targetHeadYaw, this.smoothingFactor);
+    this.currentHeadPitch = this.lerp(this.currentHeadPitch, targetHeadPitch, this.smoothingFactor);
+    this.currentBodyYaw = this.lerp(this.currentBodyYaw, targetBodyYaw, this.smoothingFactor);
+    this.currentEyeX = this.lerp(this.currentEyeX, targetEyeX, this.smoothingFactor * 1.2); // Eyes slightly faster
+    this.currentEyeY = this.lerp(this.currentEyeY, targetEyeY, this.smoothingFactor * 1.2);
+
+    return this.formatOutput();
+  }
+
+  getIdleAnimation(currentTime) {
+    const t = currentTime * 0.001;
+    
+    // Gentle idle animation
+    return {
+      body: { y: Math.sin(t * 0.1) * 3 },
+      head: {
+        x: Math.sin(t * 0.15) * 5,
+        y: Math.cos(t * 0.2) * 3
+      },
+      eyes: {
+        x: Math.sin(t * 0.3) * 8,
+        y: Math.cos(t * 0.25) * 4
+      }
+    };
+  }
+
+  returnToCenter() {
+    // Smooth, quick transition back to center when losing tracking
+    const returnSpeed = 0.15;
+    
+    // Smoothly interpolate to zero
+    this.currentHeadYaw = this.lerp(this.currentHeadYaw, 0, returnSpeed);
+    this.currentHeadPitch = this.lerp(this.currentHeadPitch, 0, returnSpeed);
+    this.currentBodyYaw = this.lerp(this.currentBodyYaw, 0, returnSpeed);
+    this.currentEyeX = this.lerp(this.currentEyeX, 0, returnSpeed);
+    this.currentEyeY = this.lerp(this.currentEyeY, 0, returnSpeed);
+
+    return this.formatOutput();
+  }
+
+  formatOutput() {
+    // Return in degrees (will be converted to radians in updateAvatar)
+    return {
+      body: { y: this.currentBodyYaw },
+      head: {
+        x: this.currentHeadYaw,
+        y: this.currentHeadPitch
+      },
+      eyes: {
+        x: this.currentEyeX,
+        y: this.currentEyeY
       }
     };
   }

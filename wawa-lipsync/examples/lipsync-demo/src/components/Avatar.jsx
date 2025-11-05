@@ -236,14 +236,24 @@ export function Avatar(props) {
       };
       // Motion mode switcher for testing
       window.setMotionMode = (mode) => {
-        if (trackingRef.current && trackingRef.current.config) {
-          if (mode === 'option1' || mode === 'option2') {
-            trackingRef.current.config.motionMode = mode;
+        if (trackingRef.current) {
+          if (mode === 'option1' || mode === 'option2' || mode === 'option3') {
+            // Update config
+            if (trackingRef.current.config) {
+              trackingRef.current.config.motionMode = mode;
+            }
+            
+            // Recreate controller with new mode (controllers are mode-specific)
+            if (typeof trackingRef.current.recreateController === 'function') {
+              trackingRef.current.recreateController();
+            }
+            
             console.log(`[Avatar] ✅ Motion mode changed to: ${mode}`);
             console.log(`  Option 1: Cascading (eyes→head→body)`);
             console.log(`  Option 2: Body-only (eyes/head stay forward, body turns)`);
+            console.log(`  Option 3: Normalized algorithm (deadzone, natural tracking)`);
           } else {
-            console.warn('[Avatar] ❌ Invalid motion mode. Use "option1" or "option2"');
+            console.warn('[Avatar] ❌ Invalid motion mode. Use "option1", "option2", or "option3"');
           }
         }
       };
