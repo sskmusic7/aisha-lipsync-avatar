@@ -142,7 +142,7 @@ export function Avatar(props) {
       const tracker = new BrowserAvatarTracking(scene, {
         enableBlinking: false, // We handle blinking separately in the component
         enableMicroMovements: true,
-        motionMode: 'option2' // 'option1' = cascading (eyes→head→body), 'option2' = eyes/head centered, body turns
+        motionMode: 'option3' // 'option1' = cascading, 'option2' = body-only, 'option3' = normalized algorithm (default)
       });
       
       // Wait for initialization to complete
