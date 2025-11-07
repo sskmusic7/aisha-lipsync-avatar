@@ -429,6 +429,16 @@ export class BrowserAvatarTracking {
 
     // MOTION MODE OPTION 3: Normalized algorithm with deadzone and natural tracking
     if (this.config.motionMode === 'option3') {
+      // Debug: Log option3 data frequently for troubleshooting
+      if (Math.random() < 0.05) { // Log 5% of frames
+        console.log('[BrowserAvatarTracking] Option3 tracking data:', {
+          head: trackingData.head,
+          eyes: trackingData.eyes,
+          body: trackingData.body,
+          bonesAvailable: Object.keys(this.bones || {})
+        });
+      }
+      
       // Option 3 uses the controller's normalized algorithm directly
       // The controller already handles all the calculations
       // Just apply the rotations from trackingData
