@@ -272,7 +272,7 @@ export class BrowserAvatarTracking {
       });
     }
 
-    // MOTION MODE OPTION 2: Eyes and head stay CENTERED, body turns naturally
+    // MOTION MODE OPTION 2: EYES stay centered, HEAD and BODY move
     if (this.config.motionMode === 'option2') {
       // Eyes MUST stay CENTERED - locked to zero
       if (!this.currentRotations.eyes) {
@@ -283,46 +283,46 @@ export class BrowserAvatarTracking {
       this.currentRotations.eyes.y = 0;
       this.updateEyesFromCurrent();
 
-      // Head MUST stay CENTERED (LOCKED - not turning with body)
-      // If head is a child of body, we need to compensate for body rotation
-      if (this.bones.head) {
-        // Force head to ZERO in LOCAL space (compensates for parent body rotation)
-        this.bones.head.rotation.x = 0;
-        this.bones.head.rotation.y = 0;
-        this.bones.head.rotation.z = 0;
-        // Reset rotation state
-        if (this.currentRotations.head) {
-          this.currentRotations.head.x = 0;
-          this.currentRotations.head.y = 0;
+      // Head MOVES (follows tracking)
+      if (this.bones.head && trackingData.head) {
+        let headX = trackingData.head.x - this.calibrationOffset.x;
+        let headY = trackingData.head.y - this.calibrationOffset.y;
+        
+        // Moderate head movement
+        const maxHeadRotationDegrees = 15; // Max 15 degrees
+        const targetHeadX = this.degToRad(headX * movementScale * maxHeadRotationDegrees);
+        const targetHeadY = this.degToRad(-headY * movementScale * maxHeadRotationDegrees);
+        
+        // Clamp head rotation
+        const maxHeadRad = this.degToRad(maxHeadRotationDegrees);
+        const clampedHeadX = Math.max(-maxHeadRad, Math.min(maxHeadRad, targetHeadX));
+        const clampedHeadY = Math.max(-maxHeadRad, Math.min(maxHeadRad, targetHeadY));
+        
+        if (!this.currentRotations.head) {
+          this.currentRotations.head = { x: 0, y: 0 };
         }
         
-        // If body is parent, compensate head rotation for body rotation
-        // Head should stay forward in WORLD space, so counter-rotate in LOCAL space
-        if (this.bones.body && this.currentRotations.body) {
-          // Full compensation: if body rotates +10°, head rotates -10° in local space
-          // This keeps head facing forward in world space
-          this.bones.head.rotation.y = -this.currentRotations.body.y; // Full counter-rotation
-        }
+        // Smooth interpolation
+        const headLerp = 0.75;
+        this.currentRotations.head.x += (clampedHeadX - this.currentRotations.head.x) * headLerp;
+        this.currentRotations.head.y += (clampedHeadY - this.currentRotations.head.y) * headLerp;
+        
+        this.bones.head.rotation.x = this.currentRotations.head.y;
+        this.bones.head.rotation.y = this.currentRotations.head.x;
       }
 
-      // Neck MUST stay CENTERED (LOCKED - not turning with body)
-      if (this.bones.neck) {
-        // Force neck to ZERO in LOCAL space
-        this.bones.neck.rotation.x = 0;
-        this.bones.neck.rotation.y = 0;
-        this.bones.neck.rotation.z = 0;
-        // Reset rotation state
-        if (this.currentRotations.neck) {
-          this.currentRotations.neck.x = 0;
-          this.currentRotations.neck.y = 0;
+      // Neck follows head movement
+      if (this.bones.neck && this.currentRotations.head) {
+        if (!this.currentRotations.neck) {
+          this.currentRotations.neck = { x: 0, y: 0 };
         }
-        
-        // If body is parent, compensate neck rotation for body rotation
-        // Neck should stay forward in WORLD space, so counter-rotate in LOCAL space
-        if (this.bones.body && this.currentRotations.body) {
-          // Full compensation for neck too
-          this.bones.neck.rotation.y = -this.currentRotations.body.y * 0.9; // Strong counter-rotation
-        }
+        // Neck follows head with slight delay
+        const targetNeckX = this.currentRotations.head.x * 0.5;
+        const targetNeckY = this.currentRotations.head.y * 0.5;
+        this.currentRotations.neck.x += (targetNeckX - this.currentRotations.neck.x) * 0.7;
+        this.currentRotations.neck.y += (targetNeckY - this.currentRotations.neck.y) * 0.7;
+        this.bones.neck.rotation.x = this.currentRotations.neck.y;
+        this.bones.neck.rotation.y = this.currentRotations.neck.x;
       }
 
       // BODY follows naturally (organic, smooth movement - NOT robotic)
