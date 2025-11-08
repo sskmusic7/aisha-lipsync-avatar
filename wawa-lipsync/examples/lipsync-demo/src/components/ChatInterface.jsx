@@ -8,6 +8,7 @@ import { VoiceSelector } from "./VoiceSelector";
 import { aishaRules } from "../services/aishaPersonalityRules";
 import { syllableAnalyzer } from "../services/syllableAnalyzer";
 import { useTTSStore } from "../stores/ttsStore";
+import micIcon from "../assets/mic.png";
 
 export const ChatInterface = () => {
   const [messages, setMessages] = useState([
@@ -37,6 +38,7 @@ export const ChatInterface = () => {
     delayMs: 200,
     silentAnalysisDuration: 100
   });
+  const [motionMode, setMotionMode] = useState('option4');
   
   const messagesEndRef = useRef(null);
   const recognitionRef = useRef(null);
@@ -54,6 +56,31 @@ export const ChatInterface = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const storedMode = window.localStorage?.getItem('aishaMotionMode');
+    if (storedMode === 'option1' || storedMode === 'option2' || storedMode === 'option3' || storedMode === 'option4') {
+      setMotionMode(storedMode);
+    } else {
+      window.localStorage?.setItem('aishaMotionMode', 'option4');
+      setMotionMode('option4');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.__preferredMotionMode = motionMode;
+    try {
+      window.localStorage?.setItem('aishaMotionMode', motionMode);
+    } catch (err) {
+      console.warn('Unable to persist motion mode preference:', err);
+    }
+    window.dispatchEvent(new CustomEvent('aisha-motion-mode-change', { detail: { mode: motionMode } }));
+    if (typeof window.setMotionMode === 'function') {
+      window.setMotionMode(motionMode);
+    }
+  }, [motionMode]);
 
   // Initialize speech recognition and pre-buffer settings
   useEffect(() => {
@@ -564,7 +591,20 @@ export const ChatInterface = () => {
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          <div className="flex items-center gap-2 bg-white bg-opacity-10 rounded px-2 py-1 text-xs">
+            <span className="uppercase tracking-wide text-white/80">Motion</span>
+            <select
+              value={motionMode}
+              onChange={(e) => setMotionMode(e.target.value)}
+              className="bg-white bg-opacity-20 border border-white/30 rounded px-2 py-1 text-xs text-white focus:outline-none focus:ring-2 focus:ring-white/60"
+            >
+              <option value="option1">Cascade</option>
+              <option value="option2">Body Focus</option>
+              <option value="option3">Normalized</option>
+              <option value="option4">Counter Rotation</option>
+            </select>
+          </div>
           {isSpeaking && (
             <div className="flex items-center gap-1">
               <span className="animate-pulse text-sm">🗣️ Speaking</span>
@@ -673,7 +713,11 @@ export const ChatInterface = () => {
             } ${(!isInitialized || isLoading) ? 'opacity-50 cursor-not-allowed' : ''}`}
             title="Hold down to speak (Push to Talk)"
           >
-            {isListening ? '🎤' : '🎤'}
+            <img
+              src={micIcon}
+              alt="Push to talk"
+              className="w-5 h-5 object-contain"
+            />
           </button>
           <button
             type="submit"

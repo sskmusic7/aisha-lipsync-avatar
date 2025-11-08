@@ -20,6 +20,21 @@ export function Avatar(props) {
   const gltf = useGLTF("/models/wawalipavatar.glb");
   const { nodes, materials, scene } = gltf;
   const [cameraPermission, setCameraPermission] = useState('prompt'); // 'prompt', 'granted', 'denied'
+  const resolvePreferredMotionMode = () => {
+    const fallback = "option4";
+    if (typeof window === "undefined") {
+      return fallback;
+    }
+    const stored =
+      window.__preferredMotionMode ||
+      window.localStorage?.getItem("aishaMotionMode");
+    if (stored === "option1" || stored === "option2" || stored === "option3" || stored === "option4") {
+      return stored;
+    }
+    window.localStorage?.setItem("aishaMotionMode", fallback);
+    window.__preferredMotionMode = fallback;
+    return fallback;
+  };
   
   // Debug: Log the loaded model structure
   useEffect(() => {
@@ -139,14 +154,21 @@ export function Avatar(props) {
 
     console.log("[Avatar] Initializing browser-based eye tracking...");
     try {
+      const preferredMotionMode = resolvePreferredMotionMode();
       const tracker = new BrowserAvatarTracking(scene, {
         enableBlinking: false, // We handle blinking separately in the component
         enableMicroMovements: true,
-        motionMode: 'option2' // 'option1' = cascading, 'option2' = body-only (eyes centered), 'option3' = normalized algorithm
+        motionMode: preferredMotionMode // Respect preferred motion mode if user selected one
       });
       
       // Wait for initialization to complete
       await tracker.initialize();
+      if (tracker.config) {
+        tracker.config.motionMode = preferredMotionMode;
+      }
+      if (typeof tracker.recreateController === 'function') {
+        tracker.recreateController();
+      }
       trackingRef.current = tracker;
       
       console.log("[Avatar] ✅ Tracking initialized and ready!");
@@ -221,47 +243,69 @@ export function Avatar(props) {
   
   // Expose calibration and motion mode functions to window for easy access
   useEffect(() => {
-    if (trackingRef.current) {
-      window.calibrateAisha = () => {
-        if (trackingRef.current && typeof trackingRef.current.calibrate === 'function') {
-          trackingRef.current.calibrate();
-          console.log('[Avatar] ✅ Calibration applied! Aisha should now look straight ahead.');
-        }
-      };
-      window.resetCalibration = () => {
-        if (trackingRef.current && typeof trackingRef.current.resetCalibration === 'function') {
-          trackingRef.current.resetCalibration();
-          console.log('[Avatar] 🔄 Calibration reset to defaults.');
-        }
-      };
-      // Motion mode switcher for testing
-      window.setMotionMode = (mode) => {
-        if (trackingRef.current) {
-          if (mode === 'option1' || mode === 'option2' || mode === 'option3') {
-            // Update config
-            if (trackingRef.current.config) {
-              trackingRef.current.config.motionMode = mode;
-            }
-            
-            // Recreate controller with new mode (controllers are mode-specific)
-            if (typeof trackingRef.current.recreateController === 'function') {
-              trackingRef.current.recreateController();
-            }
-            
-            console.log(`[Avatar] ✅ Motion mode changed to: ${mode}`);
-            console.log(`  Option 1: Cascading (eyes→head→body)`);
-            console.log(`  Option 2: Body-only (eyes/head stay forward, body turns)`);
-            console.log(`  Option 3: Normalized algorithm (deadzone, natural tracking)`);
-          } else {
-            console.warn('[Avatar] ❌ Invalid motion mode. Use "option1", "option2", or "option3"');
-          }
-        }
-      };
+    if (!trackingRef.current) {
+      return;
     }
+
+    const tracker = trackingRef.current;
+
+    window.calibrateAisha = () => {
+      if (tracker && typeof tracker.calibrate === 'function') {
+        tracker.calibrate();
+        console.log('[Avatar] ✅ Calibration applied! Aisha should now look straight ahead.');
+      }
+    };
+    window.resetCalibration = () => {
+      if (tracker && typeof tracker.resetCalibration === 'function') {
+        tracker.resetCalibration();
+        console.log('[Avatar] 🔄 Calibration reset to defaults.');
+      }
+    };
+    // Motion mode switcher for dashboard + console
+    window.setMotionMode = (mode) => {
+      if (!tracker) return;
+      if (mode === 'option1' || mode === 'option2' || mode === 'option3' || mode === 'option4') {
+        if (tracker.config) {
+          tracker.config.motionMode = mode;
+        }
+        if (typeof tracker.recreateController === 'function') {
+          tracker.recreateController();
+        }
+        window.__preferredMotionMode = mode;
+        try {
+          window.localStorage?.setItem('aishaMotionMode', mode);
+        } catch (err) {
+          console.warn('[Avatar] Unable to persist motion mode preference:', err);
+        }
+        console.log(`[Avatar] ✅ Motion mode changed to: ${mode}`);
+        console.log(`  Option 1: Cascading (eyes→head→body)`);
+        console.log(`  Option 2: Body-only (eyes/head stay forward, body turns)`);
+        console.log(`  Option 3: Normalized algorithm (deadzone, natural tracking)`);
+        console.log(`  Option 4: Counter-rotation (body/head follow, eyes counter-rotate)`);
+      } else {
+        console.warn('[Avatar] ❌ Invalid motion mode. Use "option1", "option2", "option3", or "option4"');
+      }
+    };
+
+    const preferred = resolvePreferredMotionMode();
+    if (preferred && typeof window.setMotionMode === 'function') {
+      window.setMotionMode(preferred);
+    }
+
+    const handleMotionModeChange = (event) => {
+      const mode = event?.detail?.mode;
+      if (!mode || typeof window.setMotionMode !== 'function') return;
+      if (mode === tracker?.config?.motionMode) return;
+      window.setMotionMode(mode);
+    };
+
+    window.addEventListener('aisha-motion-mode-change', handleMotionModeChange);
+
     return () => {
       delete window.calibrateAisha;
       delete window.resetCalibration;
       delete window.setMotionMode;
+      window.removeEventListener('aisha-motion-mode-change', handleMotionModeChange);
     };
   }, [trackingRef.current]);
   

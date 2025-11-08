@@ -11,7 +11,7 @@ export class BrowserAvatarTracking {
       enableMicroMovements: config.enableMicroMovements !== false,
       reducedMovement: false,
       invertX: true,  // Invert horizontal (fix mirror effect)
-      motionMode: config.motionMode || 'option1', // 'option1' = cascading (eyes→head→body), 'option2' = body-only, 'option3' = normalized algorithm
+      motionMode: config.motionMode || 'option1', // 'option1' = cascading (eyes→head→body), 'option2' = body-only, 'option3' = normalized algorithm, 'option4' = counter-rotation
       ...config
     };
 
@@ -22,6 +22,11 @@ export class BrowserAvatarTracking {
     this.isTracking = false;
     this.lastMovements = null; // Store movements to apply each frame
     this.lastFacePosition = null; // Store raw face position for option 2 body tracking
+    this.filteredTargets = {
+      head: { x: 0, y: 0 },
+      body: { y: 0 },
+      eyes: { x: 0, y: 0 }
+    };
     
     // Calibration offsets (neutral position)
     this.calibrationOffset = { x: 0, y: 0 };
@@ -38,18 +43,28 @@ export class BrowserAvatarTracking {
       };
       console.log('[BrowserAvatarTracking] 🎯 Calibrated! Neutral position set to:', this.calibrationOffset);
     }
+
+    if (this.controller && typeof this.controller.setNeutralFromFace === 'function' && this.lastFacePosition) {
+      this.controller.setNeutralFromFace(this.lastFacePosition);
+    }
   }
   
   // Reset calibration to defaults
   resetCalibration() {
     this.calibrationOffset = { x: 0, y: 0 };
     console.log('[BrowserAvatarTracking] 🔄 Calibration reset to defaults');
+
+    if (this.controller && typeof this.controller.resetNeutral === 'function') {
+      this.controller.resetNeutral();
+    }
   }
 
   // Recreate controller when motion mode changes
   recreateController() {
     if (this.config.motionMode === 'option3') {
       this.controller = new NormalizedFaceTrackerController();
+    } else if (this.config.motionMode === 'option4') {
+      this.controller = new AvatarCounterRotationController();
     } else {
       this.controller = new AvatarMovementController();
     }
@@ -73,8 +88,10 @@ export class BrowserAvatarTracking {
     // Initialize movement controller based on motion mode
     if (this.config.motionMode === 'option3') {
       this.controller = new NormalizedFaceTrackerController();
+    } else if (this.config.motionMode === 'option4') {
+      this.controller = new AvatarCounterRotationController();
     } else {
-      this.controller = new AvatarMovementController();
+    this.controller = new AvatarMovementController();
     }
     
     // Start face tracking
@@ -138,6 +155,22 @@ export class BrowserAvatarTracking {
   }
 
   onFaceDetected(faceData) {
+    if (!faceData || faceData.detected === false || faceData.x === undefined || Number.isNaN(faceData.x)) {
+      // Face lost - ensure controller returns to center smoothly
+      const movements = this.controller.calculateMovements({ detected: false });
+      this.lastMovements = movements;
+
+      if (this.filteredTargets) {
+        // Begin easing filtered targets back toward neutral
+        this.filteredTargets.head.x += (0 - this.filteredTargets.head.x) * 0.2;
+        this.filteredTargets.head.y += (0 - this.filteredTargets.head.y) * 0.2;
+        this.filteredTargets.body.y += (0 - this.filteredTargets.body.y) * 0.2;
+        this.filteredTargets.eyes.x += (0 - this.filteredTargets.eyes.x) * 0.2;
+        this.filteredTargets.eyes.y += (0 - this.filteredTargets.eyes.y) * 0.2;
+      }
+      return;
+    }
+
     // Swap left/right at the source (mirror X coordinate)
     const mirroredFaceData = {
       ...faceData,
@@ -214,6 +247,20 @@ export class BrowserAvatarTracking {
       if (this.currentRotations.spine) {
         this.currentRotations.spine.y += (0 - this.currentRotations.spine.y) * decaySpeed;
       }
+
+      if (this.filteredTargets) {
+        if (this.filteredTargets.head) {
+          this.filteredTargets.head.x += (0 - this.filteredTargets.head.x) * decaySpeed;
+          this.filteredTargets.head.y += (0 - this.filteredTargets.head.y) * decaySpeed;
+        }
+        if (this.filteredTargets.body) {
+          this.filteredTargets.body.y += (0 - this.filteredTargets.body.y) * decaySpeed;
+        }
+        if (this.filteredTargets.eyes) {
+          this.filteredTargets.eyes.x += (0 - this.filteredTargets.eyes.x) * decaySpeed;
+          this.filteredTargets.eyes.y += (0 - this.filteredTargets.eyes.y) * decaySpeed;
+        }
+      }
       
       // Apply the decaying rotations
       this.updateAvatarFromCurrentRotations();
@@ -253,6 +300,14 @@ export class BrowserAvatarTracking {
 
     const movementScale = this.config.reducedMovement ? 0.4 : 1.0;
 
+    if (!this.filteredTargets) {
+      this.filteredTargets = {
+        head: { x: 0, y: 0 },
+        body: { y: 0 },
+        eyes: { x: 0, y: 0 }
+      };
+    }
+
     // Store current rotations for smooth transitions
     if (!this.currentRotations) {
       this.currentRotations = {
@@ -274,42 +329,65 @@ export class BrowserAvatarTracking {
 
     // MOTION MODE OPTION 2: EYES stay centered, HEAD and BODY move
     if (this.config.motionMode === 'option2') {
-      // Eyes MUST stay CENTERED - locked to zero
-      if (!this.currentRotations.eyes) {
-        this.currentRotations.eyes = { x: 0, y: 0 };
-      }
-      // Force eyes to ZERO immediately (LOCKED - no movement)
-      this.currentRotations.eyes.x = 0;
-      this.currentRotations.eyes.y = 0;
-      this.updateEyesFromCurrent();
-
       // Head MOVES (follows tracking)
-      if (this.bones.head && trackingData.head) {
-        let headX = trackingData.head.x - this.calibrationOffset.x;
-        let headY = trackingData.head.y - this.calibrationOffset.y;
-        
-        // Moderate head movement
-        const maxHeadRotationDegrees = 15; // Max 15 degrees
-        const targetHeadX = this.degToRad(headX * movementScale * maxHeadRotationDegrees);
-        const targetHeadY = this.degToRad(-headY * movementScale * maxHeadRotationDegrees);
-        
-        // Clamp head rotation
-        const maxHeadRad = this.degToRad(maxHeadRotationDegrees);
-        const clampedHeadX = Math.max(-maxHeadRad, Math.min(maxHeadRad, targetHeadX));
-        const clampedHeadY = Math.max(-maxHeadRad, Math.min(maxHeadRad, targetHeadY));
-        
+      if (this.bones.head) {
         if (!this.currentRotations.head) {
           this.currentRotations.head = { x: 0, y: 0 };
         }
-        
-        // Smooth interpolation
-        const headLerp = 0.75;
-        this.currentRotations.head.x += (clampedHeadX - this.currentRotations.head.x) * headLerp;
-        this.currentRotations.head.y += (clampedHeadY - this.currentRotations.head.y) * headLerp;
-        
+        if (!this.filteredTargets.head) {
+          this.filteredTargets.head = { x: 0, y: 0 };
+        }
+
+        let desiredHeadX = 0;
+        let desiredHeadY = 0;
+        let hasHeadTracking = false;
+
+        if (trackingData.head) {
+          const headX = trackingData.head.x - this.calibrationOffset.x;
+          const headY = trackingData.head.y - this.calibrationOffset.y;
+
+          const maxHeadRotationDegrees = 12; // Max 12 degrees for smoother motion
+          desiredHeadX = this.degToRad(headX * movementScale * maxHeadRotationDegrees);
+          desiredHeadY = this.degToRad(-headY * movementScale * maxHeadRotationDegrees);
+
+          const maxHeadRad = this.degToRad(maxHeadRotationDegrees);
+          desiredHeadX = Math.max(-maxHeadRad, Math.min(maxHeadRad, desiredHeadX));
+          desiredHeadY = Math.max(-maxHeadRad, Math.min(maxHeadRad, desiredHeadY));
+
+          hasHeadTracking = true;
+        }
+
+        const headFilterLerp = hasHeadTracking ? 0.25 : 0.12;
+        this.filteredTargets.head.x += (desiredHeadX - this.filteredTargets.head.x) * headFilterLerp;
+        this.filteredTargets.head.y += (desiredHeadY - this.filteredTargets.head.y) * headFilterLerp;
+
+        const smoothHeadX = this.filteredTargets.head.x;
+        const smoothHeadY = this.filteredTargets.head.y;
+
+        const headLerp = 0.35; // Smooth response without step changes
+        this.currentRotations.head.x += (smoothHeadX - this.currentRotations.head.x) * headLerp;
+        this.currentRotations.head.y += (smoothHeadY - this.currentRotations.head.y) * headLerp;
+
         this.bones.head.rotation.x = this.currentRotations.head.y;
         this.bones.head.rotation.y = this.currentRotations.head.x;
       }
+
+      // Eyes counter-rotate to maintain forward gaze in world space
+      if (!this.currentRotations.eyes) {
+        this.currentRotations.eyes = { x: 0, y: 0 };
+      }
+      if (!this.filteredTargets.eyes) {
+        this.filteredTargets.eyes = { x: 0, y: 0 };
+      }
+      const desiredEyeX = -this.currentRotations.head.x;
+      const desiredEyeY = -this.currentRotations.head.y;
+      const eyeFilterLerp = 0.4;
+      this.filteredTargets.eyes.x += (desiredEyeX - this.filteredTargets.eyes.x) * eyeFilterLerp;
+      this.filteredTargets.eyes.y += (desiredEyeY - this.filteredTargets.eyes.y) * eyeFilterLerp;
+      const eyeCounterLerp = 0.55;
+      this.currentRotations.eyes.x += (this.filteredTargets.eyes.x - this.currentRotations.eyes.x) * eyeCounterLerp;
+      this.currentRotations.eyes.y += (this.filteredTargets.eyes.y - this.currentRotations.eyes.y) * eyeCounterLerp;
+      this.updateEyesFromCurrent();
 
       // Neck follows head movement
       if (this.bones.neck && this.currentRotations.head) {
@@ -352,10 +430,16 @@ export class BrowserAvatarTracking {
         if (!this.currentRotations.body) {
           this.currentRotations.body = { y: 0 };
         }
+        if (!this.filteredTargets.body) {
+          this.filteredTargets.body = { y: 0 };
+        }
+        
+        const bodyFilterLerp = 0.22;
+        this.filteredTargets.body.y += (clampedBodyY - this.filteredTargets.body.y) * bodyFilterLerp;
         
         // Natural, smooth body follow with momentum feel
-        const bodyLerp = 0.6; // Slower = more natural momentum
-        this.currentRotations.body.y += (clampedBodyY - this.currentRotations.body.y) * bodyLerp;
+        const bodyLerp = 0.55; // Slower = more natural momentum
+        this.currentRotations.body.y += (this.filteredTargets.body.y - this.currentRotations.body.y) * bodyLerp;
         this.bones.body.rotation.y = this.currentRotations.body.y;
         
         // Debug occasionally
@@ -383,8 +467,13 @@ export class BrowserAvatarTracking {
         if (!this.currentRotations.body) {
           this.currentRotations.body = { y: 0 };
         }
-        const bodyLerp = 0.6;
-        this.currentRotations.body.y += (clampedBodyY - this.currentRotations.body.y) * bodyLerp;
+        if (!this.filteredTargets.body) {
+          this.filteredTargets.body = { y: 0 };
+        }
+        const bodyFilterLerp = 0.22;
+        this.filteredTargets.body.y += (clampedBodyY - this.filteredTargets.body.y) * bodyFilterLerp;
+        const bodyLerp = 0.55;
+        this.currentRotations.body.y += (this.filteredTargets.body.y - this.currentRotations.body.y) * bodyLerp;
         this.bones.body.rotation.y = this.currentRotations.body.y;
       } else if (this.bones.body && trackingData.body) {
         // Final fallback: use body data if available
@@ -401,14 +490,23 @@ export class BrowserAvatarTracking {
         if (!this.currentRotations.body) {
           this.currentRotations.body = { y: 0 };
         }
-        const bodyLerp = 0.6;
-        this.currentRotations.body.y += (clampedBodyY - this.currentRotations.body.y) * bodyLerp;
+        if (!this.filteredTargets.body) {
+          this.filteredTargets.body = { y: 0 };
+        }
+        const bodyFilterLerp = 0.22;
+        this.filteredTargets.body.y += (clampedBodyY - this.filteredTargets.body.y) * bodyFilterLerp;
+        const bodyLerp = 0.55;
+        this.currentRotations.body.y += (this.filteredTargets.body.y - this.currentRotations.body.y) * bodyLerp;
         this.bones.body.rotation.y = this.currentRotations.body.y;
       } else if (this.bones.body) {
         // No tracking data - smoothly return body to center
         if (!this.currentRotations.body) {
           this.currentRotations.body = { y: 0 };
         }
+        if (!this.filteredTargets.body) {
+          this.filteredTargets.body = { y: 0 };
+        }
+        this.filteredTargets.body.y *= 0.92;
         this.currentRotations.body.y *= 0.95; // Decay to center
         this.bones.body.rotation.y = this.currentRotations.body.y;
       }
@@ -425,6 +523,97 @@ export class BrowserAvatarTracking {
       }
 
       return; // Early return for option2
+    }
+
+    // MOTION MODE OPTION 4: Counter-rotation (body/head follow, eyes counter-rotate)
+    if (this.config.motionMode === 'option4') {
+      if (Math.random() < 0.02) {
+        console.log('[BrowserAvatarTracking] Option4 counter-rotation data:', {
+          head: trackingData.head,
+          eyes: trackingData.eyes,
+          body: trackingData.body
+        });
+      }
+
+      // Body rotation (degrees → radians)
+    if (this.bones.body && trackingData.body) {
+        const bodyYaw = this.degToRad(trackingData.body.y || 0);
+        if (!this.currentRotations.body) {
+          this.currentRotations.body = { y: 0 };
+        }
+        this.currentRotations.body.y = bodyYaw;
+        this.bones.body.rotation.y = bodyYaw;
+      }
+
+      // Head rotation (yaw / pitch)
+      if (this.bones.head && trackingData.head) {
+        const headYaw = this.degToRad(trackingData.head.x || 0);
+        const headPitch = this.degToRad(trackingData.head.y || 0);
+        if (!this.currentRotations.head) {
+          this.currentRotations.head = { x: 0, y: 0 };
+        }
+        this.currentRotations.head.x = headYaw;
+        this.currentRotations.head.y = headPitch;
+        this.bones.head.rotation.y = headYaw;
+        this.bones.head.rotation.x = headPitch;
+      }
+
+      // Eyes counter-rotation to keep gaze centered
+      if (!this.currentRotations.eyes) {
+        this.currentRotations.eyes = { x: 0, y: 0 };
+      }
+
+      const bodyYaw = this.currentRotations.body ? this.currentRotations.body.y || 0 : 0;
+      const headYaw = this.currentRotations.head ? this.currentRotations.head.x || 0 : 0;
+      const headPitch = this.currentRotations.head ? this.currentRotations.head.y || 0 : 0;
+
+      // Base counter rotation keeps eyes looking forward in world space
+      let targetEyeYaw = -(bodyYaw + headYaw);
+      let targetEyePitch = -headPitch;
+
+      // Allow controller-provided offsets for fine tuning
+      if (trackingData.eyes) {
+        const eyeYawContribution = this.degToRad(trackingData.eyes.x || 0);
+        const eyePitchContribution = this.degToRad(trackingData.eyes.y || 0);
+        targetEyeYaw += eyeYawContribution * 0.25;
+        targetEyePitch += eyePitchContribution * 0.25;
+      }
+
+      // Clamp to reasonable range (eyes shouldn't over-rotate)
+      const maxEyeYaw = this.degToRad(22);
+      const maxEyePitch = this.degToRad(15);
+      targetEyeYaw = Math.max(-maxEyeYaw, Math.min(maxEyeYaw, targetEyeYaw));
+      targetEyePitch = Math.max(-maxEyePitch, Math.min(maxEyePitch, targetEyePitch));
+
+      const eyeLerp = 0.55;
+      this.currentRotations.eyes.x += (targetEyeYaw - this.currentRotations.eyes.x) * eyeLerp;
+      this.currentRotations.eyes.y += (targetEyePitch - this.currentRotations.eyes.y) * eyeLerp;
+      this.updateEyesFromCurrent();
+
+      // Neck follows head smoothly
+      if (this.bones.neck && this.currentRotations.head) {
+        if (!this.currentRotations.neck) {
+          this.currentRotations.neck = { x: 0, y: 0 };
+        }
+        const targetNeckYaw = this.currentRotations.head.x * 0.7 + (this.currentRotations.body ? this.currentRotations.body.y * 0.3 : 0);
+        const targetNeckPitch = this.currentRotations.head.y * 0.75;
+        this.currentRotations.neck.x += (targetNeckYaw - this.currentRotations.neck.x) * 0.45;
+        this.currentRotations.neck.y += (targetNeckPitch - this.currentRotations.neck.y) * 0.45;
+        this.bones.neck.rotation.y = this.currentRotations.neck.x;
+        this.bones.neck.rotation.x = this.currentRotations.neck.y;
+      }
+
+      // Spine follows body with gentle lag
+      if (this.bones.spine && this.currentRotations.body) {
+        if (!this.currentRotations.spine) {
+          this.currentRotations.spine = { y: 0 };
+        }
+        const targetSpineY = this.currentRotations.body.y * 0.35;
+        this.currentRotations.spine.y += (targetSpineY - this.currentRotations.spine.y) * 0.55;
+        this.bones.spine.rotation.y = this.currentRotations.spine.y;
+      }
+
+      return; // Early return for option4
     }
 
     // MOTION MODE OPTION 3: Normalized algorithm with deadzone and natural tracking
@@ -444,7 +633,7 @@ export class BrowserAvatarTracking {
       // Just apply the rotations from trackingData
       
       // Apply head rotation (yaw and pitch)
-      if (this.bones.head && trackingData.head) {
+    if (this.bones.head && trackingData.head) {
         if (!this.currentRotations.head) {
           this.currentRotations.head = { x: 0, y: 0 };
         }
@@ -471,7 +660,7 @@ export class BrowserAvatarTracking {
       }
 
       // Apply body rotation (follows head with factor)
-      if (this.bones.body && trackingData.body) {
+    if (this.bones.body && trackingData.body) {
         if (!this.currentRotations.body) {
           this.currentRotations.body = { y: 0 };
         }
@@ -816,6 +1005,151 @@ class AvatarMovementController {
         y: this.eyeRotation.y - this.headRotation.y * 0.5
       }
     };
+  }
+}
+
+class AvatarCounterRotationController {
+  constructor() {
+    this.neutralX = 0.5;
+    this.neutralY = 0.5;
+
+    this.maxBodyYaw = 25;
+    this.maxHeadYaw = 15;
+    this.maxEyeCounterYaw = 20;
+    this.maxHeadPitch = 12;
+    this.maxEyePitch = 8;
+
+    this.bodyStrength = 0.8;
+    this.headStrength = 0.6;
+    this.eyeStrength = 1.2;
+
+    this.smoothing = {
+      body: 0.18,
+      head: 0.28,
+      eye: 0.38,
+      pitch: 0.26
+    };
+
+    this.currentBodyYaw = 0;
+    this.currentHeadYaw = 0;
+    this.currentHeadPitch = 0;
+    this.currentEyeYaw = 0;
+    this.currentEyePitch = 0;
+
+    this.lastNormalizedX = 0;
+    this.lastNormalizedY = 0;
+    this.lastDetectionTime = performance.now();
+  }
+
+  resetNeutral() {
+    this.neutralX = 0.5;
+    this.neutralY = 0.5;
+  }
+
+  setNeutralFromFace(faceData) {
+    if (!faceData || typeof faceData.x !== 'number' || typeof faceData.y !== 'number') {
+      return;
+    }
+    this.neutralX = faceData.x;
+    this.neutralY = faceData.y;
+    console.log('[AvatarCounterRotationController] 🎯 Neutral updated:', { x: this.neutralX, y: this.neutralY });
+  }
+
+  lerp(current, target, factor) {
+    return current + (target - current) * factor;
+  }
+
+  clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  formatOutput(normX = 0, normY = 0) {
+    return {
+      head: {
+        x: this.currentHeadYaw,
+        y: this.currentHeadPitch
+      },
+      eyes: {
+        x: this.currentEyeYaw,
+        y: this.currentEyePitch
+      },
+      body: {
+        y: this.currentBodyYaw
+      },
+      meta: {
+        normalized: { x: normX, y: normY }
+      }
+    };
+  }
+
+  applyReturnToCenter() {
+    this.currentBodyYaw = this.lerp(this.currentBodyYaw, 0, Math.max(this.smoothing.body, 0.25));
+    this.currentHeadYaw = this.lerp(this.currentHeadYaw, 0, Math.max(this.smoothing.head, 0.3));
+    this.currentHeadPitch = this.lerp(this.currentHeadPitch, 0, Math.max(this.smoothing.pitch, 0.28));
+    this.currentEyeYaw = this.lerp(this.currentEyeYaw, 0, Math.max(this.smoothing.eye, 0.4));
+    this.currentEyePitch = this.lerp(this.currentEyePitch, 0, Math.max(this.smoothing.eye, 0.4));
+    this.lastNormalizedX = this.lerp(this.lastNormalizedX, 0, 0.25);
+    this.lastNormalizedY = this.lerp(this.lastNormalizedY, 0, 0.25);
+  }
+
+  calculateMovements(faceData) {
+    const now = performance.now();
+
+    if (!faceData || faceData.detected === false || typeof faceData.x !== 'number' || Number.isNaN(faceData.x)) {
+      if (now - this.lastDetectionTime > 150) {
+        this.applyReturnToCenter();
+      }
+      return this.formatOutput(this.lastNormalizedX, this.lastNormalizedY);
+    }
+
+    this.lastDetectionTime = now;
+
+    let normX = ((faceData.x ?? this.neutralX) - this.neutralX) * 2;
+    let normY = ((faceData.y ?? this.neutralY) - this.neutralY) * 2;
+
+    normX = this.clamp(normX, -1, 1);
+    normY = this.clamp(normY, -1, 1);
+
+    this.lastNormalizedX = normX;
+    this.lastNormalizedY = normY;
+
+    const targetBodyYaw = this.clamp(
+      normX * this.maxBodyYaw * this.bodyStrength,
+      -this.maxBodyYaw,
+      this.maxBodyYaw
+    );
+
+    const targetHeadYaw = this.clamp(
+      normX * this.maxHeadYaw * this.headStrength,
+      -this.maxHeadYaw,
+      this.maxHeadYaw
+    );
+
+    const targetEyeYaw = this.clamp(
+      -normX * this.maxEyeCounterYaw * this.eyeStrength,
+      -this.maxEyeCounterYaw,
+      this.maxEyeCounterYaw
+    );
+
+    const targetHeadPitch = this.clamp(
+      -normY * this.maxHeadPitch,
+      -this.maxHeadPitch,
+      this.maxHeadPitch
+    );
+
+    const targetEyePitch = this.clamp(
+      normY * this.maxEyePitch,
+      -this.maxEyePitch,
+      this.maxEyePitch
+    );
+
+    this.currentBodyYaw = this.lerp(this.currentBodyYaw, targetBodyYaw, this.smoothing.body);
+    this.currentHeadYaw = this.lerp(this.currentHeadYaw, targetHeadYaw, this.smoothing.head);
+    this.currentHeadPitch = this.lerp(this.currentHeadPitch, targetHeadPitch, this.smoothing.pitch);
+    this.currentEyeYaw = this.lerp(this.currentEyeYaw, targetEyeYaw, this.smoothing.eye);
+    this.currentEyePitch = this.lerp(this.currentEyePitch, targetEyePitch, this.smoothing.eye);
+
+    return this.formatOutput(normX, normY);
   }
 }
 
