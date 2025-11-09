@@ -1,0 +1,27 @@
+{
+  "name": "aisha-backend",
+  "version": "0.1.0",
+  "description": "Backend services for Aisha's Google integrations",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
+  },
+  "dependencies": {
+    "@google-cloud/translate": "^9.2.1",
+    "@google-cloud/vision": "^5.3.4",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "firebase-admin": "^12.6.0",
+    "googleapis": "^144.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  },
+  "engines": {
+    "node": ">=18.17.0"
+  }
+}
+
+
