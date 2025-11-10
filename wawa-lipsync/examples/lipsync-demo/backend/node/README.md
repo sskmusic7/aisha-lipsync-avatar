@@ -42,6 +42,7 @@ This lightweight Express backend exposes Google service integrations for the Ais
    ```
 
 5. Explore the helper routes (see `src/server.js` for endpoints).
+6. In the Vite frontend (`wawa-lipsync/examples/lipsync-demo`), set `VITE_AISHA_BACKEND_URL=http://localhost:3000` (or your deployed URL) so Ai'sha can reach these endpoints.
 
 ## Endpoint Map
 

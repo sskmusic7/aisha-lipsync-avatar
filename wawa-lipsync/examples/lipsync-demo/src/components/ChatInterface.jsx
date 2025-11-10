@@ -7,6 +7,12 @@ import { ApiKeyManager } from "./ApiKeyManager";
 import { VoiceSelector } from "./VoiceSelector";
 import { aishaRules } from "../services/aishaPersonalityRules";
 import { syllableAnalyzer } from "../services/syllableAnalyzer";
+import {
+  initializeBackend,
+  searchDrive as searchDriveApi,
+  searchEmails as searchEmailsApi,
+  getDirections as getDirectionsApi,
+} from "../services/aishaBackendService";
 import { useTTSStore } from "../stores/ttsStore";
 import micIcon from "../assets/mic.png";
 
@@ -31,7 +37,8 @@ export const ChatInterface = () => {
   const [apiStatus, setApiStatus] = useState({
     gemini: false,
     tts: false,
-    elevenlabs: false
+    elevenlabs: false,
+    google: false
   });
   const [preBufferSettings, setPreBufferSettings] = useState({
     enabled: true,
@@ -39,6 +46,9 @@ export const ChatInterface = () => {
     silentAnalysisDuration: 100
   });
   const [motionMode, setMotionMode] = useState('option4');
+  const [backendReady, setBackendReady] = useState(false);
+  const [backendError, setBackendError] = useState(null);
+  const [userLocation, setUserLocation] = useState(null);
   
   const messagesEndRef = useRef(null);
   const recognitionRef = useRef(null);
@@ -115,6 +125,25 @@ export const ChatInterface = () => {
     // Configure TTS pre-buffering settings
     ttsService.configurePreBuffer(preBufferSettings);
   }, [preBufferSettings]);
+
+  useEffect(() => {
+    const initBackend = async () => {
+      try {
+        const result = await initializeBackend();
+        console.log("[ChatInterface] Backend initialized:", result);
+        setBackendReady(true);
+        setBackendError(null);
+        setApiStatus((prev) => ({ ...prev, google: true }));
+      } catch (error) {
+        console.warn("[ChatInterface] Backend initialization failed:", error);
+        setBackendReady(false);
+        setBackendError(error.message || "Backend unavailable");
+        setApiStatus((prev) => ({ ...prev, google: false }));
+      }
+    };
+
+    initBackend();
+  }, []);
 
   // Initialize API services
   useEffect(() => {
@@ -520,6 +549,169 @@ export const ChatInterface = () => {
     return baseDelta.map(delta => delta * intensity);
   };
 
+  const stripHtml = (text = "") => text.replace(/<[^>]+>/g, "");
+
+  const detectBackendCommand = (rawText) => {
+    if (!rawText) return null;
+    const normalized = rawText
+      .replace(/[“”]/g, '"')
+      .replace(/[‘’]/g, "'")
+      .trim();
+
+    const sanitized = normalized.replace(/[.!?,]+$/, "").trim();
+    const lower = sanitized.toLowerCase();
+
+    const locationMatch = lower.match(/\b(i am|i'm|im)\s+(?:currently\s+)?in\s+(.+)/i);
+    if (locationMatch) {
+      return {
+        type: "set_location",
+        location: locationMatch[2].replace(/[.!?,]+$/, "").trim()
+      };
+    }
+
+    const driveMatch = sanitized.match(/search\s+drive\s+for\s+["']?(.+?)["']?$/i);
+    if (driveMatch) {
+      return {
+        type: "drive_search",
+        query: driveMatch[1].trim()
+      };
+    }
+
+    const inboxMatch = sanitized.match(/(scan|search)\s+(?:my\s+)?inbox\s+for\s+["']?(.+?)["']?$/i);
+    if (inboxMatch) {
+      return {
+        type: "gmail_search",
+        query: inboxMatch[2].trim()
+      };
+    }
+
+    const routeFromToMatch = sanitized.match(/(?:best\s+route|route|directions)\s+from\s+(.+?)\s+to\s+(.+)/i);
+    if (routeFromToMatch) {
+      return {
+        type: "maps_directions",
+        origin: routeFromToMatch[1].trim(),
+        destination: routeFromToMatch[2].trim()
+      };
+    }
+
+    const routeToMatch = sanitized.match(/(?:best\s+route|route|directions)\s+(?:to|for)\s+(.+)/i);
+    if (routeToMatch) {
+      return {
+        type: "maps_directions_to",
+        destination: routeToMatch[1].trim()
+      };
+    }
+
+    return null;
+  };
+
+  const executeBackendCommand = async (command) => {
+    if (!command) return null;
+
+    if (command.type === "set_location") {
+      setUserLocation(command.location);
+      return `Locked in ${command.location} as your starting point.`;
+    }
+
+    if (!backendReady) {
+      if (backendError) {
+        return `I can't reach my Google services yet: ${backendError}.`;
+      }
+      return "My Google integrations are still warming up—give me a moment and try again.";
+    }
+
+    switch (command.type) {
+      case "drive_search": {
+        const { files = [] } = await searchDriveApi(command.query);
+        if (!files.length) {
+          return `I didn't find anything in Drive for "${command.query}".`;
+        }
+        const summary = files.slice(0, 5).map((file) => {
+          const updated =
+            file.modifiedTime || file.createdTime
+              ? ` · updated ${new Date(file.modifiedTime || file.createdTime).toLocaleDateString()}`
+              : "";
+          return `• ${file.name}${updated}`;
+        });
+        return `Here's what I found in Drive for "${command.query}":\n${summary.join("\n")}`;
+      }
+
+      case "gmail_search": {
+        const emailResponse = await searchEmailsApi(command.query);
+        const emails = emailResponse.results ?? [];
+        const count = emailResponse.count ?? emails.length;
+        if (!emails.length) {
+          return `No emails matched "${command.query}".`;
+        }
+        const topEmails = emails.slice(0, 5).map((email, index) => {
+          const date = email.date ? ` · ${email.date}` : "";
+          return `${index + 1}. ${email.subject} — ${email.from}${date}`;
+        });
+        return `I found ${count} emails matching "${command.query}". Top results:\n${topEmails.join("\n")}`;
+      }
+
+      case "maps_directions":
+      case "maps_directions_to": {
+        const origin =
+          command.type === "maps_directions"
+            ? command.origin
+            : userLocation;
+
+        const destination = command.destination;
+
+        if (!origin) {
+          return "Tell me where you're starting from first, like “I'm in Balham.”";
+        }
+
+        const response = await getDirectionsApi({
+          origin,
+          destination
+        });
+
+        if (!response.route) {
+          return `I couldn't find a route from ${origin} to ${destination}.`;
+        }
+
+        const leg = response.route.legs?.[0];
+        const duration = leg?.duration?.text;
+        const distance = leg?.distance?.text;
+        const steps = (leg?.steps ?? []).slice(0, 3);
+        const stepSummary = steps
+          .map((step, index) => {
+            const instruction = stripHtml(step.html_instructions || "");
+            const stepDistance = step.distance?.text ? ` (${step.distance.text})` : "";
+            return `${index + 1}. ${instruction}${stepDistance}`;
+          })
+          .join("\n");
+
+        const arrivalSummary = [
+          duration ? `about ${duration}` : null,
+          distance ? distance : null
+        ]
+          .filter(Boolean)
+          .join(", ");
+
+        if (command.type === "maps_directions") {
+          setUserLocation(origin);
+        }
+
+        let message = `Fastest route from ${leg?.start_address || origin} to ${leg?.end_address || destination}`;
+        if (arrivalSummary) {
+          message += ` is ${arrivalSummary}.`;
+        } else {
+          message += ".";
+        }
+        if (stepSummary) {
+          message += `\nFirst few steps:\n${stepSummary}`;
+        }
+        return message;
+      }
+
+      default:
+        return null;
+    }
+  };
+
   // Handle sending a message
   const handleSendMessage = async (text = inputText) => {
     if (!text.trim() || isLoading) return;
@@ -536,6 +728,44 @@ export const ChatInterface = () => {
     setIsLoading(true);
 
     try {
+      const backendCommand = detectBackendCommand(text.trim());
+
+      if (backendCommand) {
+        try {
+          const backendResponse = await executeBackendCommand(backendCommand);
+          if (backendResponse) {
+            const assistantMessage = {
+              id: Date.now() + 1,
+              type: "assistant",
+              content: backendResponse,
+              timestamp: new Date()
+            };
+            setMessages(prev => [...prev, assistantMessage]);
+            setIsLoading(false);
+            await textToSpeech(backendResponse);
+            return;
+          }
+        } catch (backendError) {
+          console.error("Backend command failed:", backendError);
+          if (backendError.status === 503) {
+            setApiStatus(prev => ({ ...prev, google: false }));
+            setBackendReady(false);
+            setBackendError(backendError.message || "Service unavailable");
+          }
+          const errorMessage = backendError.message || "I couldn't complete that Google command.";
+          const assistantMessage = {
+            id: Date.now() + 1,
+            type: "assistant",
+            content: errorMessage,
+            timestamp: new Date()
+          };
+          setMessages(prev => [...prev, assistantMessage]);
+          setIsLoading(false);
+          await textToSpeech(errorMessage);
+          return;
+        }
+      }
+
       // Get AI response
       const aiResponse = await sendToGemini(text.trim());
       
@@ -588,6 +818,12 @@ export const ChatInterface = () => {
             </span>
             <span className={apiStatus.tts ? "text-green-300" : "text-yellow-300"}>
               {apiStatus.tts ? "✅ GCP TTS" : "⚠️ GCP TTS"}
+            </span>
+            <span
+              className={apiStatus.google ? "text-green-300" : "text-yellow-300"}
+              title={backendError || undefined}
+            >
+              {apiStatus.google ? "✅ Google APIs" : "⚠️ Google APIs"}
             </span>
           </div>
         </div>
@@ -667,7 +903,7 @@ export const ChatInterface = () => {
                   : "bg-gray-100 text-gray-800"
               }`}
             >
-              <p className="text-sm">{message.content}</p>
+              <p className="text-sm whitespace-pre-line">{message.content}</p>
               <p className="text-xs opacity-70 mt-1">
                 {message.timestamp.toLocaleTimeString()}
               </p>
