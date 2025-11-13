@@ -671,49 +671,51 @@ export const ChatInterface = () => {
       return `Locked in ${command.location} as your starting point.`;
     }
 
+    // These commands work even when backend isn't ready
+    if (command.type === "connect_backend") {
+      try {
+        const { url: authUrl } = await getAuthUrlApi();
+        // Return URL that will be auto-linked by browser
+        return `To connect your Google account:\n\nClick this link to sign in:\n${authUrl}\n\nAfter you sign in and see "Authentication successful!", come back here and say "initialize backend" to finish the setup.`;
+      } catch (error) {
+        console.error("Failed to get auth URL:", error);
+        return `I couldn't get the authentication URL. Error: ${error.message}. Make sure the backend is running.`;
+      }
+    }
+
+    if (command.type === "initialize_backend") {
+      try {
+        const result = await initializeBackend();
+        setBackendReady(true);
+        setBackendError(null);
+        setApiStatus((prev) => ({ ...prev, google: true }));
+        return `✅ Successfully connected! I can now access your Google services (Gmail, Drive, Calendar, etc.). Try asking me to check your emails or show your Drive files!`;
+      } catch (error) {
+        console.error("Backend initialization failed:", error);
+        setBackendReady(false);
+        setBackendError(error.message || "Initialization failed");
+        setApiStatus((prev) => ({ ...prev, google: false }));
+        
+        if (error.message?.includes("ENOENT") || error.message?.includes("No OAuth tokens")) {
+          return `I couldn't initialize because OAuth tokens weren't found. Please:\n\n1. Say "connect google" to get the OAuth link\n2. Sign in with Google\n3. Then say "initialize backend" again`;
+        }
+        return `Initialization failed: ${error.message}. Make sure you've completed the OAuth flow first by saying "connect google".`;
+      }
+    }
+
+    // All other commands require backend to be ready
     if (!backendReady) {
       if (backendError) {
         // Check if it's an OAuth/initialization error
         if (backendError.includes("not initialized") || backendError.includes("OAuth") || backendError.includes("503") || backendError.includes("ENOENT")) {
-          return `I can't access your Google services right now. The backend needs to be initialized with OAuth tokens. Please complete the OAuth flow at the backend URL and initialize it.`;
+          return `I can't access your Google services right now. Say "connect google" to get started, or complete the OAuth flow at the backend URL and initialize it.`;
         }
-        return `I can't reach my Google services: ${backendError}. The backend may need to be re-initialized.`;
+        return `I can't reach my Google services: ${backendError}. Say "connect google" to reconnect.`;
       }
-      return "I can't access your Google services right now—the backend isn't initialized. Please complete OAuth authentication and initialize the backend first.";
+      return "I can't access your Google services right now. Say \"connect google\" to get the OAuth link and start the setup.";
     }
 
     switch (command.type) {
-      case "connect_backend": {
-        try {
-          const { url: authUrl } = await getAuthUrlApi();
-          // Return URL that will be auto-linked by browser
-          return `To connect your Google account:\n\nClick this link to sign in:\n${authUrl}\n\nAfter you sign in and see "Authentication successful!", come back here and say "initialize backend" to finish the setup.`;
-        } catch (error) {
-          console.error("Failed to get auth URL:", error);
-          return `I couldn't get the authentication URL. Error: ${error.message}. Make sure the backend is running.`;
-        }
-      }
-
-      case "initialize_backend": {
-        try {
-          const result = await initializeBackend();
-          setBackendReady(true);
-          setBackendError(null);
-          setApiStatus((prev) => ({ ...prev, google: true }));
-          return `✅ Successfully connected! I can now access your Google services (Gmail, Drive, Calendar, etc.). Try asking me to check your emails or show your Drive files!`;
-        } catch (error) {
-          console.error("Backend initialization failed:", error);
-          setBackendReady(false);
-          setBackendError(error.message || "Initialization failed");
-          setApiStatus((prev) => ({ ...prev, google: false }));
-          
-          if (error.message?.includes("ENOENT") || error.message?.includes("No OAuth tokens")) {
-            return `I couldn't initialize because OAuth tokens weren't found. Please:\n\n1. Say "connect google" to get the OAuth link\n2. Sign in with Google\n3. Then say "initialize backend" again`;
-          }
-          return `Initialization failed: ${error.message}. Make sure you've completed the OAuth flow first by saying "connect google".`;
-        }
-      }
-
       case "drive_list": {
         const { files = [] } = await listRecentDriveFilesApi(10);
         if (!files.length) {
