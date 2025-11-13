@@ -3,12 +3,23 @@
 const BASE_URL =
   import.meta.env.VITE_AISHA_BACKEND_URL || "http://localhost:3000";
 
+// Log the backend URL being used (only in development)
+if (import.meta.env.DEV) {
+  console.log("[AishaBackend] Using backend URL:", BASE_URL);
+}
+
 const defaultHeaders = {
   "Content-Type": "application/json",
 };
 
 async function request(path, { method = "POST", body, headers = {} } = {}) {
   const url = `${BASE_URL}${path}`;
+  
+  // Log requests in development
+  if (import.meta.env.DEV) {
+    console.log("[AishaBackend] Request:", method, url);
+  }
+  
   const options = {
     method,
     headers: { ...defaultHeaders, ...headers },
@@ -18,19 +29,33 @@ async function request(path, { method = "POST", body, headers = {} } = {}) {
     options.body = JSON.stringify(body);
   }
 
-  const response = await fetch(url, options);
-  if (!response.ok) {
-    const errorPayload = await response.json().catch(() => ({}));
-    const message =
-      errorPayload.error ||
-      response.statusText ||
-      "Unknown error calling Aisha backend";
-    const error = new Error(message);
-    error.status = response.status;
-    error.payload = errorPayload;
+  try {
+    const response = await fetch(url, options);
+    if (!response.ok) {
+      const errorPayload = await response.json().catch(() => ({}));
+      const message =
+        errorPayload.error ||
+        response.statusText ||
+        "Unknown error calling Aisha backend";
+      const error = new Error(message);
+      error.status = response.status;
+      error.payload = errorPayload;
+      throw error;
+    }
+    return response.json().catch(() => ({}));
+  } catch (error) {
+    // Handle network/CSP errors
+    if (error instanceof TypeError && error.message.includes("fetch")) {
+      console.error("[AishaBackend] Network error:", error.message);
+      console.error("[AishaBackend] Attempted URL:", url);
+      console.error("[AishaBackend] Check CSP settings and backend URL configuration");
+      throw new Error(
+        `Cannot connect to backend at ${BASE_URL}. ` +
+        `Check that the backend is running and CSP allows connections to this URL.`
+      );
+    }
     throw error;
   }
-  return response.json().catch(() => ({}));
 }
 
 export async function initializeBackend() {
