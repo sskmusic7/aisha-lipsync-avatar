@@ -554,11 +554,66 @@ export const ChatInterface = () => {
 
   const stripHtml = (text = "") => text.replace(/<[^>]+>/g, "");
 
+  // Use Gemini to intelligently parse user queries for backend commands
+  const detectBackendCommandWithLLM = async (rawText) => {
+    if (!rawText || !apiStatus.gemini) return null;
+    
+    try {
+      const prompt = `Analyze this user query and determine if it's requesting access to Google services (Gmail, Drive, Maps, etc.).
+
+User query: "${rawText}"
+
+Respond with ONLY valid JSON in this exact format:
+{
+  "intent": "gmail_search" | "gmail_unread" | "gmail_latest" | "drive_list" | "drive_search" | "maps_directions" | "maps_directions_to" | "set_location" | null,
+  "query": "search term if applicable",
+  "count": number if requesting specific count,
+  "from": "sender name if looking for emails from someone",
+  "to": "recipient name if looking for emails to someone",
+  "origin": "starting location for directions",
+  "destination": "destination for directions",
+  "location": "location name if setting location"
+}
+
+Examples:
+- "latest email from twitch" → {"intent": "gmail_search", "query": "twitch", "from": "twitch"}
+- "what are my last 3 emails" → {"intent": "gmail_unread", "count": 3}
+- "last email to Glen from 528 post" → {"intent": "gmail_search", "query": "Glen 528 post", "to": "Glen"}
+- "show my drive files" → {"intent": "drive_list"}
+- "directions to London" → {"intent": "maps_directions_to", "destination": "London"}
+
+If the query is NOT about Google services, return: {"intent": null}`;
+
+      const response = await geminiService.sendMessage(prompt, []);
+      
+      // Try to extract JSON from response
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (parsed.intent) {
+          return {
+            type: parsed.intent,
+            query: parsed.query || parsed.from || parsed.to || "",
+            count: parsed.count,
+            from: parsed.from,
+            to: parsed.to,
+            origin: parsed.origin,
+            destination: parsed.destination,
+            location: parsed.location
+          };
+        }
+      }
+    } catch (error) {
+      console.error("LLM intent detection failed:", error);
+    }
+    return null;
+  };
+
   const detectBackendCommand = (rawText) => {
     if (!rawText) return null;
     const normalized = rawText
-      .replace(/[“”]/g, '"')
-      .replace(/[‘’]/g, "'")
+      .replace(/[""]/g, '"')
+      .replace(/['']/g, "'")
       .trim();
 
     const sanitized = normalized.replace(/[.!?,]+$/, "").trim();
@@ -780,6 +835,19 @@ export const ChatInterface = () => {
       }
 
       case "gmail_latest": {
+        // If there's a "from" parameter, search for emails from that sender
+        if (command.from || command.query) {
+          const searchQuery = command.from ? `from:${command.from}` : command.query;
+          const emailResponse = await searchEmailsApi(searchQuery);
+          const emails = emailResponse.results ?? emailResponse.emails ?? [];
+          if (!emails.length) {
+            return `I couldn't find any emails${command.from ? ` from ${command.from}` : ''} in your inbox.`;
+          }
+          const latest = emails[0];
+          const date = latest.date ? ` · ${latest.date}` : "";
+          return `Your latest email${command.from ? ` from ${command.from}` : ''}:\n${latest.subject} — from ${latest.from}${date}`;
+        }
+        
         // Get the most recent email by searching for all emails and taking the first one
         const emailResponse = await searchEmailsApi("in:inbox");
         const emails = emailResponse.results ?? emailResponse.emails ?? [];
@@ -805,17 +873,31 @@ export const ChatInterface = () => {
       }
 
       case "gmail_search": {
-        const emailResponse = await searchEmailsApi(command.query);
+        // Build search query from parameters
+        let searchQuery = command.query || "";
+        
+        if (command.from) {
+          searchQuery = `from:${command.from} ${searchQuery}`.trim();
+        }
+        if (command.to) {
+          searchQuery = `to:${command.to} ${searchQuery}`.trim();
+        }
+        
+        if (!searchQuery && !command.from && !command.to) {
+          return "What should I search for in your emails?";
+        }
+        
+        const emailResponse = await searchEmailsApi(searchQuery);
         const emails = emailResponse.results ?? emailResponse.emails ?? [];
         const count = emailResponse.count ?? emails.length;
         if (!emails.length) {
-          return `No emails matched "${command.query}".`;
+          return `I couldn't find any emails${command.from ? ` from ${command.from}` : ''}${command.to ? ` to ${command.to}` : ''}${command.query ? ` matching "${command.query}"` : ''}.`;
         }
         const topEmails = emails.slice(0, 5).map((email, index) => {
           const date = email.date ? ` · ${email.date}` : "";
           return `${index + 1}. ${email.subject} — ${email.from}${date}`;
         });
-        return `I found ${count} email${count > 1 ? 's' : ''} matching "${command.query}". Top results:\n${topEmails.join("\n")}`;
+        return `I found ${count} email${count > 1 ? 's' : ''}${command.from ? ` from ${command.from}` : ''}${command.to ? ` to ${command.to}` : ''}${command.query ? ` matching "${command.query}"` : ''}. Top results:\n${topEmails.join("\n")}`;
       }
 
       case "maps_directions":
@@ -896,7 +978,14 @@ export const ChatInterface = () => {
     setIsLoading(true);
 
     try {
-      const backendCommand = detectBackendCommand(text.trim());
+      // Try regex patterns first (fast)
+      let backendCommand = detectBackendCommand(text.trim());
+      
+      // If no regex match, try LLM-based detection (more flexible)
+      if (!backendCommand && apiStatus.gemini && backendReady) {
+        console.log("[ChatInterface] Trying LLM-based intent detection...");
+        backendCommand = await detectBackendCommandWithLLM(text.trim());
+      }
 
       if (backendCommand) {
         try {
