@@ -585,6 +585,15 @@ export const ChatInterface = () => {
     }
 
     // === GMAIL QUERIES ===
+    // "last X emails" or "last three emails" pattern
+    const lastEmailsMatch = lower.match(/\b(?:what are|show|get|list|see|check)\s+(?:my\s+)?(?:last|recent)\s+(\d+)\s+(?:email|emails|gmail|messages|mail)/i);
+    if (lastEmailsMatch) {
+      return { 
+        type: "gmail_unread", 
+        count: parseInt(lastEmailsMatch[1]) || 10 
+      };
+    }
+
     // Latest email / most recent email
     if (lower.match(/\b(what'?s|what is|show me|get|fetch|check|see|read)\s+(?:my\s+)?(?:latest|most recent|newest|last|recent)\s+(?:email|gmail|message|mail)/i)) {
       return { type: "gmail_latest" };
@@ -598,6 +607,25 @@ export const ChatInterface = () => {
     // General Gmail access
     if (lower.match(/\b(can you|can u|show me|list|see|access|check|read|open)\s+(?:my\s+)?(?:gmail|email|emails|inbox|mail)/i)) {
       return { type: "gmail_unread" }; // Default to unread emails
+    }
+
+    // "what was my last email to X" or "email to X from Y"
+    const emailToMatch = lower.match(/\b(?:what was|show|find|get)\s+(?:my\s+)?(?:last|recent)\s+(?:email|message)\s+(?:to|from)\s+["']?(.+?)["']?(?:\s+from\s+["']?(.+?)["']?)?/i);
+    if (emailToMatch) {
+      const query = emailToMatch[1] + (emailToMatch[2] ? ` ${emailToMatch[2]}` : '');
+      return {
+        type: "gmail_search",
+        query: query.trim()
+      };
+    }
+
+    // "email about X" or "emails with X"
+    const emailAboutMatch = lower.match(/\b(?:what|show|find|get|check)\s+(?:was|were|are)\s+(?:my\s+)?(?:last|recent|any)\s+(?:email|emails|message|messages)\s+(?:about|with|regarding|for)\s+["']?(.+?)["']?/i);
+    if (emailAboutMatch) {
+      return {
+        type: "gmail_search",
+        query: emailAboutMatch[1].trim()
+      };
     }
 
     // Search inbox for specific query
@@ -619,6 +647,11 @@ export const ChatInterface = () => {
     }
 
     // === DRIVE QUERIES ===
+    // "last uploads" or "recent uploads"
+    if (lower.match(/\b(?:what are|show|get|list|see|check)\s+(?:my\s+)?(?:last|recent|latest)\s+(?:google\s+)?drive\s+(?:upload|uploads|files)/i)) {
+      return { type: "drive_list" };
+    }
+
     // General Drive access
     if (lower.match(/\b(can you|can u|show me|list|see|access|check|open)\s+(?:my\s+)?(?:google\s+)?drive/i)) {
       return { type: "drive_list" };
@@ -759,15 +792,16 @@ export const ChatInterface = () => {
       }
 
       case "gmail_unread": {
-        const { emails = [] } = await getUnreadEmailsApi(10);
+        const count = command.count || 10;
+        const { emails = [] } = await getUnreadEmailsApi(count);
         if (!emails.length) {
           return "You have no unread emails! 🎉";
         }
-        const emailList = emails.slice(0, 10).map((email, index) => {
+        const emailList = emails.slice(0, count).map((email, index) => {
           const date = email.date ? ` · ${email.date}` : "";
           return `${index + 1}. ${email.subject} — ${email.from}${date}`;
         });
-        return `You have ${emails.length} unread email${emails.length > 1 ? 's' : ''}:\n${emailList.join("\n")}`;
+        return `Here are your ${emails.length > count ? `last ${count}` : emails.length} email${emails.length > 1 ? 's' : ''}:\n${emailList.join("\n")}`;
       }
 
       case "gmail_search": {
