@@ -837,15 +837,57 @@ If the query is NOT about Google services, return: {"intent": null}`;
       case "gmail_latest": {
         // If there's a "from" parameter, search for emails from that sender
         if (command.from || command.query) {
-          const searchQuery = command.from ? `from:${command.from}` : command.query;
-          const emailResponse = await searchEmailsApi(searchQuery);
-          const emails = emailResponse.results ?? emailResponse.emails ?? [];
+          const originalFrom = command.from;
+          let searchQuery = command.from ? `from:${command.from}` : command.query;
+          let emailResponse = await searchEmailsApi(searchQuery);
+          let emails = emailResponse.results ?? emailResponse.emails ?? [];
+          
+          // If no results and we have a "from" parameter without @, try fuzzy matching
+          if (!emails.length && originalFrom && !originalFrom.includes('@')) {
+            console.log(`[Gmail Latest] No exact match for "${originalFrom}", trying fuzzy search...`);
+            
+            // Try searching without "from:" operator
+            const fuzzyQuery = originalFrom;
+            emailResponse = await searchEmailsApi(fuzzyQuery);
+            emails = emailResponse.results ?? emailResponse.emails ?? [];
+            
+            // If still no results, use LLM to find closest match
+            if (!emails.length && apiStatus.gemini) {
+              try {
+                const recentResponse = await getUnreadEmailsApi(50);
+                const recentEmails = recentResponse.emails || [];
+                
+                if (recentEmails.length > 0) {
+                  const senderList = recentEmails.map(e => e.from).join('\n');
+                  const matchPrompt = `Find the closest matching email sender from this list for the name "${originalFrom}":
+
+${senderList}
+
+Respond with ONLY the exact sender email address or name from the list above that best matches "${originalFrom}". If no good match, respond with "NO_MATCH".`;
+
+                  const matchResponse = await geminiService.sendMessage(matchPrompt, []);
+                  const matchedSender = matchResponse.trim().split('\n')[0].trim();
+                  
+                  if (matchedSender && matchedSender !== "NO_MATCH" && !matchedSender.toLowerCase().includes("i couldn't")) {
+                    const emailMatch = matchedSender.match(/<([^>]+)>/) || matchedSender.match(/([\w\.-]+@[\w\.-]+\.\w+)/);
+                    const matchedEmail = emailMatch ? emailMatch[1] : matchedSender;
+                    
+                    emailResponse = await searchEmailsApi(`from:${matchedEmail}`);
+                    emails = emailResponse.results ?? emailResponse.emails ?? [];
+                  }
+                }
+              } catch (error) {
+                console.error("[Gmail Latest] LLM matching failed:", error);
+              }
+            }
+          }
+          
           if (!emails.length) {
-            return `I couldn't find any emails${command.from ? ` from ${command.from}` : ''} in your inbox.`;
+            return `I couldn't find any emails${originalFrom ? ` from ${originalFrom}` : ''} in your inbox.`;
           }
           const latest = emails[0];
           const date = latest.date ? ` · ${latest.date}` : "";
-          return `Your latest email${command.from ? ` from ${command.from}` : ''}:\n${latest.subject} — from ${latest.from}${date}`;
+          return `Your latest email${originalFrom ? ` from ${originalFrom}` : ''}:\n${latest.subject} — from ${latest.from}${date}`;
         }
         
         // Get the most recent email by searching for all emails and taking the first one
@@ -875,8 +917,10 @@ If the query is NOT about Google services, return: {"intent": null}`;
       case "gmail_search": {
         // Build search query from parameters
         let searchQuery = command.query || "";
+        const originalFrom = command.from;
         
         if (command.from) {
+          // First try exact match with from: operator
           searchQuery = `from:${command.from} ${searchQuery}`.trim();
         }
         if (command.to) {
@@ -887,17 +931,65 @@ If the query is NOT about Google services, return: {"intent": null}`;
           return "What should I search for in your emails?";
         }
         
-        const emailResponse = await searchEmailsApi(searchQuery);
-        const emails = emailResponse.results ?? emailResponse.emails ?? [];
+        let emailResponse = await searchEmailsApi(searchQuery);
+        let emails = emailResponse.results ?? emailResponse.emails ?? [];
+        
+        // If no results and we have a "from" parameter, try fuzzy matching
+        if (!emails.length && originalFrom && !originalFrom.includes('@')) {
+          console.log(`[Gmail Search] No exact match for "${originalFrom}", trying fuzzy search...`);
+          
+          // Try searching without "from:" operator - Gmail will search in sender name/email
+          const fuzzyQuery = `${originalFrom} ${command.query || ''}`.trim();
+          emailResponse = await searchEmailsApi(fuzzyQuery);
+          emails = emailResponse.results ?? emailResponse.emails ?? [];
+          
+          // If still no results, get recent emails and use LLM to find closest match
+          if (!emails.length && apiStatus.gemini) {
+            console.log(`[Gmail Search] Trying to find closest sender match using LLM...`);
+            try {
+              // Get recent emails to find sender names
+              const recentResponse = await getUnreadEmailsApi(50);
+              const recentEmails = recentResponse.emails || [];
+              
+              if (recentEmails.length > 0) {
+                // Use LLM to find the closest matching sender
+                const senderList = recentEmails.map(e => e.from).join('\n');
+                const matchPrompt = `Find the closest matching email sender from this list for the name "${originalFrom}":
+
+${senderList}
+
+Respond with ONLY the exact sender email address or name from the list above that best matches "${originalFrom}". If no good match, respond with "NO_MATCH".`;
+
+                const matchResponse = await geminiService.sendMessage(matchPrompt, []);
+                const matchedSender = matchResponse.trim().split('\n')[0].trim();
+                
+                if (matchedSender && matchedSender !== "NO_MATCH" && !matchedSender.toLowerCase().includes("i couldn't")) {
+                  console.log(`[Gmail Search] LLM matched "${originalFrom}" to "${matchedSender}"`);
+                  // Extract email from matched sender (format: "Name <email@domain.com>")
+                  const emailMatch = matchedSender.match(/<([^>]+)>/) || matchedSender.match(/([\w\.-]+@[\w\.-]+\.\w+)/);
+                  const matchedEmail = emailMatch ? emailMatch[1] : matchedSender;
+                  
+                  // Search with the matched email
+                  const finalQuery = `from:${matchedEmail} ${command.query || ''}`.trim();
+                  emailResponse = await searchEmailsApi(finalQuery);
+                  emails = emailResponse.results ?? emailResponse.emails ?? [];
+                }
+              }
+            } catch (error) {
+              console.error("[Gmail Search] LLM matching failed:", error);
+            }
+          }
+        }
+        
         const count = emailResponse.count ?? emails.length;
         if (!emails.length) {
-          return `I couldn't find any emails${command.from ? ` from ${command.from}` : ''}${command.to ? ` to ${command.to}` : ''}${command.query ? ` matching "${command.query}"` : ''}.`;
+          return `I couldn't find any emails${originalFrom ? ` from ${originalFrom}` : ''}${command.to ? ` to ${command.to}` : ''}${command.query ? ` matching "${command.query}"` : ''}.`;
         }
         const topEmails = emails.slice(0, 5).map((email, index) => {
           const date = email.date ? ` · ${email.date}` : "";
           return `${index + 1}. ${email.subject} — ${email.from}${date}`;
         });
-        return `I found ${count} email${count > 1 ? 's' : ''}${command.from ? ` from ${command.from}` : ''}${command.to ? ` to ${command.to}` : ''}${command.query ? ` matching "${command.query}"` : ''}. Top results:\n${topEmails.join("\n")}`;
+        return `I found ${count} email${count > 1 ? 's' : ''}${originalFrom ? ` from ${originalFrom}` : ''}${command.to ? ` to ${command.to}` : ''}${command.query ? ` matching "${command.query}"` : ''}. Top results:\n${topEmails.join("\n")}`;
       }
 
       case "maps_directions":
