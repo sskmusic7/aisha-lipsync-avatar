@@ -62,6 +62,21 @@ export async function initializeBackend() {
   return request("/aisha/initialize");
 }
 
+export async function getAuthUrl() {
+  const response = await fetch(`${BASE_URL}/aisha/auth-url`, { method: "GET" });
+  if (!response.ok) {
+    const errorPayload = await response.json().catch(() => ({}));
+    const message =
+      errorPayload.error ||
+      response.statusText ||
+      "Unknown error getting auth URL";
+    const error = new Error(message);
+    error.status = response.status;
+    throw error;
+  }
+  return response.json();
+}
+
 export async function searchEmails(query) {
   return request("/aisha/email/search", { body: { query } });
 }

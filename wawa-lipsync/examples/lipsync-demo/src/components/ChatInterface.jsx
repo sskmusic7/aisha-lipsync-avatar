@@ -9,6 +9,7 @@ import { aishaRules } from "../services/aishaPersonalityRules";
 import { syllableAnalyzer } from "../services/syllableAnalyzer";
 import {
   initializeBackend,
+  getAuthUrl as getAuthUrlApi,
   searchDrive as searchDriveApi,
   listRecentDriveFiles as listRecentDriveFilesApi,
   searchEmails as searchEmailsApi,
@@ -563,6 +564,17 @@ export const ChatInterface = () => {
     const sanitized = normalized.replace(/[.!?,]+$/, "").trim();
     const lower = sanitized.toLowerCase();
 
+    // === BACKEND CONNECTION ===
+    // Get OAuth URL
+    if (lower.match(/\b(connect|setup|set up|link|authenticate|login|sign in|get\s+auth)\s+(?:to\s+)?(?:google|backend|services|my\s+account)/i)) {
+      return { type: "connect_backend" };
+    }
+    
+    // Initialize after OAuth
+    if (lower.match(/\b(initialize|init|finish|complete|finalize)\s+(?:backend|google|services|setup)/i)) {
+      return { type: "initialize_backend" };
+    }
+
     // === LOCATION SETTING ===
     const locationMatch = lower.match(/\b(i am|i'm|im)\s+(?:currently\s+)?in\s+(.+)/i);
     if (locationMatch) {
@@ -671,6 +683,37 @@ export const ChatInterface = () => {
     }
 
     switch (command.type) {
+      case "connect_backend": {
+        try {
+          const { url: authUrl } = await getAuthUrlApi();
+          // Return URL that will be auto-linked by browser
+          return `To connect your Google account:\n\nClick this link to sign in:\n${authUrl}\n\nAfter you sign in and see "Authentication successful!", come back here and say "initialize backend" to finish the setup.`;
+        } catch (error) {
+          console.error("Failed to get auth URL:", error);
+          return `I couldn't get the authentication URL. Error: ${error.message}. Make sure the backend is running.`;
+        }
+      }
+
+      case "initialize_backend": {
+        try {
+          const result = await initializeBackend();
+          setBackendReady(true);
+          setBackendError(null);
+          setApiStatus((prev) => ({ ...prev, google: true }));
+          return `✅ Successfully connected! I can now access your Google services (Gmail, Drive, Calendar, etc.). Try asking me to check your emails or show your Drive files!`;
+        } catch (error) {
+          console.error("Backend initialization failed:", error);
+          setBackendReady(false);
+          setBackendError(error.message || "Initialization failed");
+          setApiStatus((prev) => ({ ...prev, google: false }));
+          
+          if (error.message?.includes("ENOENT") || error.message?.includes("No OAuth tokens")) {
+            return `I couldn't initialize because OAuth tokens weren't found. Please:\n\n1. Say "connect google" to get the OAuth link\n2. Sign in with Google\n3. Then say "initialize backend" again`;
+          }
+          return `Initialization failed: ${error.message}. Make sure you've completed the OAuth flow first by saying "connect google".`;
+        }
+      }
+
       case "drive_list": {
         const { files = [] } = await listRecentDriveFilesApi(10);
         if (!files.length) {
