@@ -12,6 +12,7 @@ import {
   searchDrive as searchDriveApi,
   listRecentDriveFiles as listRecentDriveFilesApi,
   searchEmails as searchEmailsApi,
+  getUnreadEmails as getUnreadEmailsApi,
   getDirections as getDirectionsApi,
 } from "../services/aishaBackendService";
 import { useTTSStore } from "../stores/ttsStore";
@@ -562,6 +563,7 @@ export const ChatInterface = () => {
     const sanitized = normalized.replace(/[.!?,]+$/, "").trim();
     const lower = sanitized.toLowerCase();
 
+    // === LOCATION SETTING ===
     const locationMatch = lower.match(/\b(i am|i'm|im)\s+(?:currently\s+)?in\s+(.+)/i);
     if (locationMatch) {
       return {
@@ -570,8 +572,48 @@ export const ChatInterface = () => {
       };
     }
 
-    // Drive queries - more flexible matching
-    const driveSearchMatch = sanitized.match(/search\s+drive\s+for\s+["']?(.+?)["']?$/i);
+    // === GMAIL QUERIES ===
+    // Latest email / most recent email
+    if (lower.match(/\b(what'?s|what is|show me|get|fetch|check|see|read)\s+(?:my\s+)?(?:latest|most recent|newest|last|recent)\s+(?:email|gmail|message|mail)/i)) {
+      return { type: "gmail_latest" };
+    }
+
+    // Unread emails
+    if (lower.match(/\b(show|get|fetch|check|see|list|read|what are)\s+(?:my\s+)?(?:unread|new)\s+(?:email|emails|gmail|messages|mail)/i)) {
+      return { type: "gmail_unread" };
+    }
+
+    // General Gmail access
+    if (lower.match(/\b(can you|can u|show me|list|see|access|check|read|open)\s+(?:my\s+)?(?:gmail|email|emails|inbox|mail)/i)) {
+      return { type: "gmail_unread" }; // Default to unread emails
+    }
+
+    // Search inbox for specific query
+    const inboxSearchMatch = lower.match(/\b(?:search|scan|find|look for|check for)\s+(?:my\s+)?(?:inbox|gmail|email|emails)\s+(?:for|about)\s+["']?(.+?)["']?$/i);
+    if (inboxSearchMatch) {
+      return {
+        type: "gmail_search",
+        query: inboxSearchMatch[1].trim()
+      };
+    }
+
+    // Search with query in different positions
+    const gmailQueryMatch = lower.match(/\b(?:search|find|look for)\s+["']?(.+?)["']?\s+(?:in|from)\s+(?:my\s+)?(?:gmail|email|inbox)/i);
+    if (gmailQueryMatch) {
+      return {
+        type: "gmail_search",
+        query: gmailQueryMatch[1].trim()
+      };
+    }
+
+    // === DRIVE QUERIES ===
+    // General Drive access
+    if (lower.match(/\b(can you|can u|show me|list|see|access|check|open)\s+(?:my\s+)?(?:google\s+)?drive/i)) {
+      return { type: "drive_list" };
+    }
+
+    // Search Drive for specific query
+    const driveSearchMatch = lower.match(/\b(?:search|find|look for|show|list)\s+(?:my\s+)?(?:google\s+)?drive\s+(?:for|about|with)\s+["']?(.+?)["']?$/i);
     if (driveSearchMatch) {
       return {
         type: "drive_search",
@@ -579,33 +621,17 @@ export const ChatInterface = () => {
       };
     }
 
-    // General Drive access queries
-    const driveGeneralMatch = lower.match(/\b(can you|can u|show me|list|see|access|check)\s+(?:my\s+)?(?:google\s+)?drive/i);
-    if (driveGeneralMatch) {
-      return {
-        type: "drive_list",
-        query: "" // Empty query to list recent files
-      };
-    }
-
-    // Drive with a specific query
-    const driveWithQueryMatch = lower.match(/\b(?:show|find|list|see)\s+(?:me\s+)?(?:my\s+)?(?:google\s+)?drive\s+(?:files\s+)?(?:for|about|with)\s+["']?(.+?)["']?$/i);
-    if (driveWithQueryMatch) {
+    // Drive search with query in different position
+    const driveQueryMatch = lower.match(/\b(?:search|find|look for)\s+["']?(.+?)["']?\s+(?:in|from)\s+(?:my\s+)?(?:google\s+)?drive/i);
+    if (driveQueryMatch) {
       return {
         type: "drive_search",
-        query: driveWithQueryMatch[1].trim()
+        query: driveQueryMatch[1].trim()
       };
     }
 
-    const inboxMatch = sanitized.match(/(scan|search)\s+(?:my\s+)?inbox\s+for\s+["']?(.+?)["']?$/i);
-    if (inboxMatch) {
-      return {
-        type: "gmail_search",
-        query: inboxMatch[2].trim()
-      };
-    }
-
-    const routeFromToMatch = sanitized.match(/(?:best\s+route|route|directions)\s+from\s+(.+?)\s+to\s+(.+)/i);
+    // === MAPS QUERIES ===
+    const routeFromToMatch = sanitized.match(/(?:best\s+route|route|directions|how to get|navigate)\s+from\s+(.+?)\s+to\s+(.+)/i);
     if (routeFromToMatch) {
       return {
         type: "maps_directions",
@@ -614,7 +640,7 @@ export const ChatInterface = () => {
       };
     }
 
-    const routeToMatch = sanitized.match(/(?:best\s+route|route|directions)\s+(?:to|for)\s+(.+)/i);
+    const routeToMatch = sanitized.match(/(?:best\s+route|route|directions|how to get|navigate)\s+(?:to|for)\s+(.+)/i);
     if (routeToMatch) {
       return {
         type: "maps_directions_to",
@@ -636,12 +662,12 @@ export const ChatInterface = () => {
     if (!backendReady) {
       if (backendError) {
         // Check if it's an OAuth/initialization error
-        if (backendError.includes("not initialized") || backendError.includes("OAuth") || backendError.includes("503")) {
-          return `I need to connect to your Google account first. The backend needs OAuth authentication—check the Cloud Run logs or complete the OAuth flow at the backend URL.`;
+        if (backendError.includes("not initialized") || backendError.includes("OAuth") || backendError.includes("503") || backendError.includes("ENOENT")) {
+          return `I can't access your Google services right now. The backend needs to be initialized with OAuth tokens. Please complete the OAuth flow at the backend URL and initialize it.`;
         }
-        return `I can't reach my Google services yet: ${backendError}.`;
+        return `I can't reach my Google services: ${backendError}. The backend may need to be re-initialized.`;
       }
-      return "My Google integrations are still warming up—give me a moment and try again. If this persists, the backend may need OAuth authentication.";
+      return "I can't access your Google services right now—the backend isn't initialized. Please complete OAuth authentication and initialize the backend first.";
     }
 
     switch (command.type) {
@@ -675,9 +701,33 @@ export const ChatInterface = () => {
         return `Here's what I found in Drive for "${command.query}":\n${summary.join("\n")}`;
       }
 
+      case "gmail_latest": {
+        // Get the most recent email by searching for all emails and taking the first one
+        const emailResponse = await searchEmailsApi("in:inbox");
+        const emails = emailResponse.results ?? emailResponse.emails ?? [];
+        if (!emails.length) {
+          return "Your inbox is empty or I couldn't access it right now.";
+        }
+        const latest = emails[0];
+        const date = latest.date ? ` · ${latest.date}` : "";
+        return `Your latest email:\n${latest.subject} — from ${latest.from}${date}`;
+      }
+
+      case "gmail_unread": {
+        const { emails = [] } = await getUnreadEmailsApi(10);
+        if (!emails.length) {
+          return "You have no unread emails! 🎉";
+        }
+        const emailList = emails.slice(0, 10).map((email, index) => {
+          const date = email.date ? ` · ${email.date}` : "";
+          return `${index + 1}. ${email.subject} — ${email.from}${date}`;
+        });
+        return `You have ${emails.length} unread email${emails.length > 1 ? 's' : ''}:\n${emailList.join("\n")}`;
+      }
+
       case "gmail_search": {
         const emailResponse = await searchEmailsApi(command.query);
-        const emails = emailResponse.results ?? [];
+        const emails = emailResponse.results ?? emailResponse.emails ?? [];
         const count = emailResponse.count ?? emails.length;
         if (!emails.length) {
           return `No emails matched "${command.query}".`;
@@ -686,7 +736,7 @@ export const ChatInterface = () => {
           const date = email.date ? ` · ${email.date}` : "";
           return `${index + 1}. ${email.subject} — ${email.from}${date}`;
         });
-        return `I found ${count} emails matching "${command.query}". Top results:\n${topEmails.join("\n")}`;
+        return `I found ${count} email${count > 1 ? 's' : ''} matching "${command.query}". Top results:\n${topEmails.join("\n")}`;
       }
 
       case "maps_directions":
@@ -786,12 +836,13 @@ export const ChatInterface = () => {
           }
         } catch (backendError) {
           console.error("Backend command failed:", backendError);
-          if (backendError.status === 503) {
+          if (backendError.status === 503 || backendError.message?.includes("not initialized") || backendError.message?.includes("ENOENT")) {
             setApiStatus(prev => ({ ...prev, google: false }));
             setBackendReady(false);
             setBackendError(backendError.message || "Service unavailable");
           }
-          const errorMessage = backendError.message || "I couldn't complete that Google command.";
+          // Be honest about the error - don't make up responses
+          const errorMessage = backendError.message || "I couldn't complete that Google command. The backend service may need to be re-initialized.";
           const assistantMessage = {
             id: Date.now() + 1,
             type: "assistant",
@@ -801,7 +852,7 @@ export const ChatInterface = () => {
           setMessages(prev => [...prev, assistantMessage]);
           setIsLoading(false);
           await textToSpeech(errorMessage);
-          return;
+          return; // Don't fall through to Gemini
         }
       }
 
