@@ -65,10 +65,36 @@ This lightweight Express backend exposes Google service integrations for the Ais
 4. Create new frontend utilities or hooks that fetch the REST endpoints above (e.g., request a morning briefing, Vision analysis, Maps search).
 5. Deploy the backend separately (Render, Fly, Netlify Functions, etc.) if desired—the static frontend build remains unchanged.
 
+## Deployment
+
+### Google Cloud Platform (Cloud Run)
+
+**Recommended for GCP users.** See [GCP_DEPLOYMENT.md](./GCP_DEPLOYMENT.md) for complete instructions.
+
+Quick deploy:
+```bash
+cd backend/node
+./deploy-gcp.sh YOUR_PROJECT_ID us-central1
+```
+
+The deployment includes:
+- Dockerfile for containerization
+- Cloud Build configuration
+- Automatic scaling (scales to zero when idle)
+- Secret Manager integration for sensitive credentials
+
+### Other Platforms
+
+- **Render**: Use the Dockerfile with Render's Docker deployment
+- **Fly.io**: `fly launch` with the Dockerfile
+- **Railway**: Connect GitHub repo, Railway auto-detects Node.js
+- **Netlify Functions**: Requires refactoring to serverless functions (not recommended for this use case)
+
 ## Notes
 
 - Node 18+ is required (native `fetch` support).
 - Cloud client libraries expect the `GOOGLE_APPLICATION_CREDENTIALS` env variable when using service accounts.
 - Firebase is optional; the service is skipped unless all Firebase env vars are present.
+- Default port is 8080 (Cloud Run compatible); set `PORT` env var to override.
 
 

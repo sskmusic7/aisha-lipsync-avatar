@@ -38,7 +38,8 @@ class AishaAuthService {
       "https://www.googleapis.com/auth/tasks",
       "https://www.googleapis.com/auth/contacts.readonly",
       "https://www.googleapis.com/auth/youtube.readonly",
-      "https://www.googleapis.com/auth/homegraph",
+      // Note: homegraph scope requires special Google approval - removed for now
+      // "https://www.googleapis.com/auth/homegraph",
       "https://www.googleapis.com/auth/cloud-platform",
     ];
   }

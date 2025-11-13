@@ -12,7 +12,7 @@ dotenv.config({ path: envPath });
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080; // Cloud Run uses 8080 by default
 
 app.use(express.json());
 app.use(cors({ origin: true }));
@@ -60,20 +60,40 @@ app.get("/aisha/auth-url", (req, res) => {
 });
 
 app.get("/oauth2callback", async (req, res) => {
+  // Check for OAuth errors first
+  if (req.query.error) {
+    console.error("[/oauth2callback] OAuth error:", req.query.error, req.query.error_description);
+    return res.status(400).send(
+      `OAuth Error: ${req.query.error}<br><br>` +
+      `Description: ${req.query.error_description || 'No description'}<br><br>` +
+      `Make sure the redirect URI is added to your OAuth client in Google Cloud Console.`
+    );
+  }
+
   const code = req.query.code;
   if (!code) {
-    return res.status(400).send("No authorization code provided.");
+    return res.status(400).send(
+      "No authorization code provided.<br><br>" +
+      "This usually means:<br>" +
+      "1. The redirect URI wasn't added to your OAuth client<br>" +
+      "2. You visited this URL directly (you need to start from /aisha/auth-url)<br><br>" +
+      "Redirect URI needed: https://aisha-backend-287783957820.us-central1.run.app/oauth2callback"
+    );
   }
 
   try {
     const authService = new AishaAuthService();
     await authService.getTokens(code);
     res.send(
-      "Authentication successful! You can close this window and restart Aisha."
+      "<h2>✅ Authentication successful!</h2>" +
+      "<p>You can close this window.</p>" +
+      "<p>Next step: POST to /aisha/initialize to start the services.</p>"
     );
   } catch (error) {
     console.error("[/oauth2callback] Authentication failed:", error);
-    res.status(500).send(`Authentication failed: ${error.message}`);
+    res.status(500).send(
+      `<h2>❌ Authentication failed</h2><p>${error.message}</p>`
+    );
   }
 });
 

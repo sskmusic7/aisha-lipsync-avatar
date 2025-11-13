@@ -10,6 +10,7 @@ import { syllableAnalyzer } from "../services/syllableAnalyzer";
 import {
   initializeBackend,
   searchDrive as searchDriveApi,
+  listRecentDriveFiles as listRecentDriveFilesApi,
   searchEmails as searchEmailsApi,
   getDirections as getDirectionsApi,
 } from "../services/aishaBackendService";
@@ -569,11 +570,30 @@ export const ChatInterface = () => {
       };
     }
 
-    const driveMatch = sanitized.match(/search\s+drive\s+for\s+["']?(.+?)["']?$/i);
-    if (driveMatch) {
+    // Drive queries - more flexible matching
+    const driveSearchMatch = sanitized.match(/search\s+drive\s+for\s+["']?(.+?)["']?$/i);
+    if (driveSearchMatch) {
       return {
         type: "drive_search",
-        query: driveMatch[1].trim()
+        query: driveSearchMatch[1].trim()
+      };
+    }
+
+    // General Drive access queries
+    const driveGeneralMatch = lower.match(/\b(can you|can u|show me|list|see|access|check)\s+(?:my\s+)?(?:google\s+)?drive/i);
+    if (driveGeneralMatch) {
+      return {
+        type: "drive_list",
+        query: "" // Empty query to list recent files
+      };
+    }
+
+    // Drive with a specific query
+    const driveWithQueryMatch = lower.match(/\b(?:show|find|list|see)\s+(?:me\s+)?(?:my\s+)?(?:google\s+)?drive\s+(?:files\s+)?(?:for|about|with)\s+["']?(.+?)["']?$/i);
+    if (driveWithQueryMatch) {
+      return {
+        type: "drive_search",
+        query: driveWithQueryMatch[1].trim()
       };
     }
 
@@ -615,12 +635,31 @@ export const ChatInterface = () => {
 
     if (!backendReady) {
       if (backendError) {
+        // Check if it's an OAuth/initialization error
+        if (backendError.includes("not initialized") || backendError.includes("OAuth") || backendError.includes("503")) {
+          return `I need to connect to your Google account first. The backend needs OAuth authentication—check the Cloud Run logs or complete the OAuth flow at the backend URL.`;
+        }
         return `I can't reach my Google services yet: ${backendError}.`;
       }
-      return "My Google integrations are still warming up—give me a moment and try again.";
+      return "My Google integrations are still warming up—give me a moment and try again. If this persists, the backend may need OAuth authentication.";
     }
 
     switch (command.type) {
+      case "drive_list": {
+        const { files = [] } = await listRecentDriveFilesApi(10);
+        if (!files.length) {
+          return "Your Drive is empty or I couldn't access it right now.";
+        }
+        const summary = files.slice(0, 10).map((file) => {
+          const updated =
+            file.modifiedTime || file.createdTime
+              ? ` · updated ${new Date(file.modifiedTime || file.createdTime).toLocaleDateString()}`
+              : "";
+          return `• ${file.name}${updated}`;
+        });
+        return `Here are your recent Drive files:\n${summary.join("\n")}`;
+      }
+
       case "drive_search": {
         const { files = [] } = await searchDriveApi(command.query);
         if (!files.length) {
