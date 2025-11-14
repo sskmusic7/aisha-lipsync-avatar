@@ -6,9 +6,12 @@ const { google } = require("googleapis");
 const vision = require("@google-cloud/vision");
 const { Translate } = require("@google-cloud/translate").v2;
 const admin = require("firebase-admin");
+const { SecretManagerServiceClient } = require("@google-cloud/secret-manager");
 
 const TOKEN_DIR = path.resolve(__dirname, "../../tokens");
 const TOKEN_FILE = path.join(TOKEN_DIR, "aisha-tokens.json");
+const SECRET_NAME = "aisha-oauth-tokens";
+const PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT_ID || process.env.GCLOUD_PROJECT;
 
 /**
  * Core authentication service responsible for handling Google OAuth flows.
@@ -54,21 +57,97 @@ class AishaAuthService {
 
   async getTokens(code) {
     const { tokens } = await this.oauth2Client.getToken(code);
+    
+    // Ensure refresh_token is included for long-term persistence
+    if (!tokens.refresh_token && tokens.access_token) {
+      console.warn("[AishaAuth] No refresh_token received. Make sure prompt=consent is used in OAuth flow.");
+    }
+    
     await this.saveTokens(tokens);
     this.oauth2Client.setCredentials(tokens);
     return tokens;
   }
 
   async saveTokens(tokens) {
+    // Try Secret Manager first (for Cloud Run), fallback to filesystem (for local dev)
+    if (PROJECT_ID) {
+      try {
+        const client = new SecretManagerServiceClient();
+        const secretName = `projects/${PROJECT_ID}/secrets/${SECRET_NAME}/versions/latest`;
+        
+        // Check if secret exists, create if not
+        try {
+          await client.getSecret({ name: `projects/${PROJECT_ID}/secrets/${SECRET_NAME}` });
+        } catch (error) {
+          if (error.code === 5) { // NOT_FOUND
+            console.log(`[AishaAuth] Creating secret ${SECRET_NAME}...`);
+            await client.createSecret({
+              parent: `projects/${PROJECT_ID}`,
+              secretId: SECRET_NAME,
+              secret: {
+                replication: { automatic: {} }
+              }
+            });
+          } else {
+            throw error;
+          }
+        }
+        
+        // Add new version with tokens
+        const payload = JSON.stringify(tokens);
+        await client.addSecretVersion({
+          parent: `projects/${PROJECT_ID}/secrets/${SECRET_NAME}`,
+          payload: {
+            data: Buffer.from(payload, "utf8")
+          }
+        });
+        
+        console.log(`[AishaAuth] Tokens saved to Secret Manager: ${SECRET_NAME}`);
+        return;
+      } catch (error) {
+        console.warn(`[AishaAuth] Failed to save to Secret Manager, falling back to filesystem:`, error.message);
+      }
+    }
+    
+    // Fallback to filesystem (local development)
     await fs.mkdir(TOKEN_DIR, { recursive: true });
     await fs.writeFile(TOKEN_FILE, JSON.stringify(tokens, null, 2), "utf8");
+    console.log(`[AishaAuth] Tokens saved to filesystem: ${TOKEN_FILE}`);
   }
 
   async loadTokens() {
-    const raw = await fs.readFile(TOKEN_FILE, "utf8");
-    const tokens = JSON.parse(raw);
-    this.oauth2Client.setCredentials(tokens);
-    return tokens;
+    // Try Secret Manager first (for Cloud Run), fallback to filesystem (for local dev)
+    if (PROJECT_ID) {
+      try {
+        const client = new SecretManagerServiceClient();
+        const name = `projects/${PROJECT_ID}/secrets/${SECRET_NAME}/versions/latest`;
+        
+        const [version] = await client.accessSecretVersion({ name });
+        const payload = version.payload.data.toString("utf8");
+        const tokens = JSON.parse(payload);
+        
+        this.oauth2Client.setCredentials(tokens);
+        console.log(`[AishaAuth] Tokens loaded from Secret Manager: ${SECRET_NAME}`);
+        return tokens;
+      } catch (error) {
+        if (error.code === 5) { // NOT_FOUND
+          console.log(`[AishaAuth] Secret ${SECRET_NAME} not found in Secret Manager, trying filesystem...`);
+        } else {
+          console.warn(`[AishaAuth] Failed to load from Secret Manager, trying filesystem:`, error.message);
+        }
+      }
+    }
+    
+    // Fallback to filesystem (local development)
+    try {
+      const raw = await fs.readFile(TOKEN_FILE, "utf8");
+      const tokens = JSON.parse(raw);
+      this.oauth2Client.setCredentials(tokens);
+      console.log(`[AishaAuth] Tokens loaded from filesystem: ${TOKEN_FILE}`);
+      return tokens;
+    } catch (error) {
+      throw new Error(`No OAuth tokens found. Authenticate and retry.`);
+    }
   }
 
   getClient() {
