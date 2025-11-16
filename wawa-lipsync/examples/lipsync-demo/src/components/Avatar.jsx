@@ -301,13 +301,74 @@ export function Avatar(props) {
 
     window.addEventListener('aisha-motion-mode-change', handleMotionModeChange);
 
+    // Expose animation control function for dance emotes and other animations
+    window.triggerAishaAnimation = (animationName, duration = null, returnToAnimation = null) => {
+      if (!animationName) {
+        console.warn('[Avatar] No animation name provided');
+        return;
+      }
+      
+      // Check if animation exists
+      const animExists = availableAnimations.some(a => a.name === animationName);
+      if (!animExists) {
+        console.warn(`[Avatar] Animation "${animationName}" not found. Available:`, availableAnimations.map(a => a.name));
+        return;
+      }
+      
+      // Determine what animation to return to
+      // If returnToAnimation is specified, use it; otherwise use current animation
+      const currentAnim = animation;
+      const targetReturnAnim = returnToAnimation || currentAnim;
+      
+      // If returnToAnimation is specified but doesn't exist, try to find an idle animation
+      let finalReturnAnim = targetReturnAnim;
+      if (returnToAnimation) {
+        const returnAnimExists = availableAnimations.some(a => a.name === returnToAnimation);
+        if (!returnAnimExists) {
+          // Try to find an idle animation
+          const idleAnim = availableAnimations.find(a => 
+            a.name.toLowerCase().includes('idle') || 
+            a.name === 'Idle' || 
+            a.name === 'idle talk'
+          );
+          finalReturnAnim = idleAnim ? idleAnim.name : currentAnim;
+          console.warn(`[Avatar] Return animation "${returnToAnimation}" not found, using "${finalReturnAnim}" instead`);
+        }
+      }
+      
+      console.log(`[Avatar] 🎬 Triggering animation: ${animationName} (will return to ${finalReturnAnim} after ${duration || 'default'}ms)`);
+      
+      // Set the new animation
+      setAnimation(animationName);
+      
+      // If duration is specified, return to target animation after that time
+      if (duration && duration > 0) {
+        setTimeout(() => {
+          console.log(`[Avatar] 🎬 Returning to animation: ${finalReturnAnim}`);
+          setAnimation(finalReturnAnim);
+        }, duration);
+      }
+    };
+
+    // Listen for animation trigger events
+    const handleAnimationTrigger = (event) => {
+      const { animationName, duration, returnToAnimation } = event.detail || {};
+      if (animationName) {
+        window.triggerAishaAnimation(animationName, duration, returnToAnimation);
+      }
+    };
+
+    window.addEventListener('aisha-trigger-animation', handleAnimationTrigger);
+
     return () => {
       delete window.calibrateAisha;
       delete window.resetCalibration;
       delete window.setMotionMode;
+      delete window.triggerAishaAnimation;
       window.removeEventListener('aisha-motion-mode-change', handleMotionModeChange);
+      window.removeEventListener('aisha-trigger-animation', handleAnimationTrigger);
     };
-  }, [trackingRef.current]);
+  }, [trackingRef.current, animation, availableAnimations]);
   
   // Store the current playing action for smooth crossfades
   const currentActionRef = useRef(null);

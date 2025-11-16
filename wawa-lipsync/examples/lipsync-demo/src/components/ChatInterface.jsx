@@ -609,6 +609,96 @@ If the query is NOT about Google services, return: {"intent": null}`;
     return null;
   };
 
+  // Detect dance commands using LLM for flexible natural language understanding
+  const detectDanceCommandWithLLM = async (rawText) => {
+    if (!rawText || !apiStatus.gemini) return false;
+    
+    try {
+      const prompt = `Analyze this user query and determine if the user is asking Aisha to dance or perform a dance animation.
+
+User query: "${rawText}"
+
+Respond with ONLY valid JSON in this exact format:
+{
+  "isDanceCommand": true | false
+}
+
+Examples of dance commands:
+- "aisha dance for me" → {"isDanceCommand": true}
+- "show me a dance" → {"isDanceCommand": true}
+- "can you dance" → {"isDanceCommand": true}
+- "dance aisha" → {"isDanceCommand": true}
+- "do a dance" → {"isDanceCommand": true}
+- "let's see you dance" → {"isDanceCommand": true}
+- "perform a dance" → {"isDanceCommand": true}
+- "show me your moves" → {"isDanceCommand": true}
+
+Examples of NON-dance commands:
+- "what's the weather" → {"isDanceCommand": false}
+- "check my email" → {"isDanceCommand": false}
+- "dance music" (asking about music genre) → {"isDanceCommand": false}
+
+If the query is asking Aisha to dance, return: {"isDanceCommand": true}
+Otherwise, return: {"isDanceCommand": false}`;
+
+      const response = await geminiService.sendMessage(prompt, []);
+      
+      // Try to extract JSON from response
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        return parsed.isDanceCommand === true;
+      }
+    } catch (error) {
+      console.error("LLM dance detection failed:", error);
+    }
+    return false;
+  };
+
+  // Detect dance commands using regex (fast fallback)
+  const detectDanceCommand = (rawText) => {
+    if (!rawText) return false;
+    const lower = rawText.toLowerCase().trim();
+    
+    // Patterns for dance commands
+    const dancePatterns = [
+      /\b(aisha|you)\s+(dance|dancing)/i,
+      /\b(dance|dancing)\s+(for\s+me|aisha|please)/i,
+      /\b(show\s+me|let'?s\s+see|can\s+you|do\s+a|perform\s+a)\s+(a\s+)?(dance|dancing)/i,
+      /\b(show\s+me|let'?s\s+see)\s+(your\s+)?(moves|dance)/i,
+    ];
+    
+    return dancePatterns.some(pattern => pattern.test(lower));
+  };
+
+  // Trigger dance animation
+  const triggerDanceAnimation = () => {
+    // Find the idle animation name to return to
+    // Try common idle animation names
+    const idleAnimations = ['idle talk', 'Idle', 'idle'];
+    let returnToAnimation = 'idle talk'; // Default fallback
+    
+    const danceDuration = 5000; // 5 seconds
+    
+    // Dispatch event to trigger animation
+    window.dispatchEvent(new CustomEvent('aisha-trigger-animation', {
+      detail: {
+        animationName: 'dance1',
+        duration: danceDuration,
+        returnToAnimation: returnToAnimation
+      }
+    }));
+    
+    // Also try direct function call as fallback
+    if (typeof window.triggerAishaAnimation === 'function') {
+      window.triggerAishaAnimation('dance1', danceDuration, returnToAnimation);
+    } else {
+      console.warn('[ChatInterface] Animation trigger function not available yet');
+    }
+    
+    return "🎵 *starts dancing* Let me show you my moves! 💃";
+  };
+
   const detectBackendCommand = (rawText) => {
     if (!rawText) return null;
     const normalized = rawText
@@ -1070,6 +1160,30 @@ Respond with ONLY the exact sender email address or name from the list above tha
     setIsLoading(true);
 
     try {
+      // Check for dance commands first (before backend commands)
+      let isDanceCommand = detectDanceCommand(text.trim());
+      
+      // If no regex match, try LLM-based detection (more flexible)
+      if (!isDanceCommand && apiStatus.gemini) {
+        console.log("[ChatInterface] Checking for dance command with LLM...");
+        isDanceCommand = await detectDanceCommandWithLLM(text.trim());
+      }
+
+      if (isDanceCommand) {
+        // Trigger dance animation
+        const danceResponse = triggerDanceAnimation();
+        const assistantMessage = {
+          id: Date.now() + 1,
+          type: "assistant",
+          content: danceResponse,
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, assistantMessage]);
+        setIsLoading(false);
+        await textToSpeech(danceResponse);
+        return; // Don't process further
+      }
+
       // Try regex patterns first (fast)
       let backendCommand = detectBackendCommand(text.trim());
       
