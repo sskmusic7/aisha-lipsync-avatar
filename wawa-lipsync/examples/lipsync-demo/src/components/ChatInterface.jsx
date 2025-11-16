@@ -671,7 +671,7 @@ Otherwise, return: {"isDanceCommand": false}`;
     return dancePatterns.some(pattern => pattern.test(lower));
   };
 
-  // Trigger dance animation
+  // Trigger dance animation (called after TTS completes)
   const triggerDanceAnimation = () => {
     // Find the idle animation name to return to
     // Try common idle animation names
@@ -695,8 +695,42 @@ Otherwise, return: {"isDanceCommand": false}`;
     } else {
       console.warn('[ChatInterface] Animation trigger function not available yet');
     }
-    
-    return "🎵 *starts dancing* Let me show you my moves! 💃";
+  };
+
+  // Wait for TTS to complete, then trigger dance
+  const waitForTTSThenDance = () => {
+    return new Promise((resolve) => {
+      // Give TTS a moment to start (set isSpeaking to true)
+      setTimeout(() => {
+        // If not currently speaking, trigger dance immediately
+        if (!isSpeaking) {
+          triggerDanceAnimation();
+          resolve();
+          return;
+        }
+
+        // Otherwise, wait for isSpeaking to become false
+        const checkInterval = setInterval(() => {
+          if (!isSpeaking) {
+            clearInterval(checkInterval);
+            // Small delay to ensure animation system is ready
+            setTimeout(() => {
+              console.log('[ChatInterface] 🎬 TTS completed, triggering dance animation');
+              triggerDanceAnimation();
+              resolve();
+            }, 200);
+          }
+        }, 100); // Check every 100ms
+
+        // Safety timeout - trigger dance after 10 seconds max
+        setTimeout(() => {
+          clearInterval(checkInterval);
+          console.log('[ChatInterface] 🎬 TTS timeout, triggering dance animation anyway');
+          triggerDanceAnimation();
+          resolve();
+        }, 10000);
+      }, 200); // Wait 200ms for TTS to start
+    });
   };
 
   const detectBackendCommand = (rawText) => {
@@ -1170,8 +1204,8 @@ Respond with ONLY the exact sender email address or name from the list above tha
       }
 
       if (isDanceCommand) {
-        // Trigger dance animation
-        const danceResponse = triggerDanceAnimation();
+        // Respond with dance message (without "*starts dancing*")
+        const danceResponse = "🎵 Let me show you my moves! 💃";
         const assistantMessage = {
           id: Date.now() + 1,
           type: "assistant",
@@ -1180,7 +1214,13 @@ Respond with ONLY the exact sender email address or name from the list above tha
         };
         setMessages(prev => [...prev, assistantMessage]);
         setIsLoading(false);
+        
+        // Speak the response first
         await textToSpeech(danceResponse);
+        
+        // Wait for TTS to complete, then trigger dance animation
+        await waitForTTSThenDance();
+        
         return; // Don't process further
       }
 
